@@ -9,6 +9,7 @@ import { Scene06Stadium } from "./scenes/Scene06Stadium";
 import { Scene06bLineup } from "./scenes/Scene06bLineup";
 import { Scene06cManager } from "./scenes/Scene06cManager";
 import { Scene07Homerun } from "./scenes/Scene07Homerun";
+import { Scene07dHomerun2 } from "./scenes/Scene07dHomerun2";
 import { Scene07cBatFlip } from "./scenes/Scene07cBatFlip";
 import { Scene07bCrowd } from "./scenes/Scene07bCrowd";
 import { Scene08Steal } from "./scenes/Scene08Steal";
@@ -35,6 +36,7 @@ export const SCENE_COMPONENTS: Record<string, React.FC> = {
   "S06B-Lineup": Scene06bLineup,
   "S06C-Manager": Scene06cManager,
   "S07-Homerun": Scene07Homerun,
+  "S07D-Homerun2": Scene07dHomerun2,
   "S07C-BatFlip": Scene07cBatFlip,
   "S07B-Crowd": Scene07bCrowd,
   "S08-Steal": Scene08Steal,

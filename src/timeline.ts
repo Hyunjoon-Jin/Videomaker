@@ -120,6 +120,15 @@ export const SCENES: SceneMeta[] = [
     note: "타격→궤적→세리머니 8초 클립 3종 조립 · 실적 자막",
   },
   {
+    id: "S07D-Homerun2",
+    label: "Scene 7D",
+    title: "홈런 ② 대형 수주",
+    seconds: 8,
+    part: "PART2",
+    kind: "placeholder",
+    note: "업로드 홈런 영상 ② · 4번째 수주(4점) · 원본 그래픽 블러",
+  },
+  {
     id: "S07C-BatFlip",
     label: "Scene 7C",
     title: "배트 플립(빠던)",

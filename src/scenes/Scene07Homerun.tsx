@@ -14,7 +14,7 @@ import { LiveBug } from "../components/Broadcast";
 const HITS = [
   { at: 30, main: "○○기관 42억 수주", sub: "시즌 첫 홈런포!", runs: 1 },
   { at: 240, main: "△△그룹 68억 수주", sub: "연타석 아치!", runs: 1 },
-  { at: 440, main: "□□공사 91억 수주", sub: "대형 계약 투런포!", runs: 2 },
+  { at: 440, main: "□□공사 55억 수주", sub: "우측 대형 아치!", runs: 1 },
 ];
 
 export const Scene07Homerun: React.FC = () => {
