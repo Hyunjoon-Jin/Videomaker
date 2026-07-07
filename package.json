@@ -1,0 +1,26 @@
+{
+  "name": "kt-workshop-animatic",
+  "version": "1.0.0",
+  "description": "KT 수도권강남법인고객본부 상반기 직책자 워크샵 오프닝 영상 애니매틱 (Remotion)",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "dev": "remotion studio",
+    "studio": "remotion studio",
+    "render": "remotion render FullAnimatic out/full-animatic.mp4",
+    "render:scene": "remotion render",
+    "upgrade": "remotion upgrade",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.290",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "remotion": "4.0.290"
+  },
+  "devDependencies": {
+    "@types/react": "19.0.0",
+    "@types/react-dom": "19.0.0",
+    "typescript": "5.8.3"
+  }
+}
