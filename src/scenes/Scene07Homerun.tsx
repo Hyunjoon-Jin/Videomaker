@@ -10,19 +10,18 @@ import { Subtitle } from "../components/Subtitle";
  * 오버레이: 실적 임팩트 자막 + 홈런마다 GANGNAM 스코어 +1.
  */
 
-// 수주 = 득점. 4건으로 최상강남 4점.
+// 수주 = 득점. 3건(마지막 투런)으로 최상강남 4점. 빠릿한 리듬 + 성과 워딩.
 const HITS = [
-  { at: 20, main: "○○기관 42억 수주", sub: "비거리 140m 장외 홈런!" },
-  { at: 165, main: "△△그룹 68억 수주", sub: "우측 담장 훌쩍!" },
-  { at: 310, main: "◇◇전자 91억 수주", sub: "우중간 투런포!" },
-  { at: 455, main: "□□공사 55억 수주", sub: "쐐기 솔로포!" },
+  { at: 30, main: "○○기관 42억 수주", sub: "시즌 첫 홈런포!", runs: 1 },
+  { at: 240, main: "△△그룹 68억 수주", sub: "연타석 아치!", runs: 1 },
+  { at: 440, main: "□□공사 91억 수주", sub: "대형 계약 투런포!", runs: 2 },
 ];
 
 export const Scene07Homerun: React.FC = () => {
   const frame = useCurrentFrame();
-  // 자막 등장 시점마다 스코어 누적
-  const score = HITS.filter((h) => frame >= h.at + 6).length;
-  const active = [...HITS].reverse().find((h) => frame >= h.at && frame < h.at + 120);
+  // 등장한 수주의 득점 합산
+  const score = HITS.filter((h) => frame >= h.at + 6).reduce((a, h) => a + h.runs, 0);
+  const active = [...HITS].reverse().find((h) => frame >= h.at && frame < h.at + 110);
 
   return (
     <AbsoluteFill>

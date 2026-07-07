@@ -128,18 +128,21 @@ PROMPTS = {
             f"(KBO ppa-dun) after a home run, tossing the bat high in the air with "
             f"swagger while watching the ball fly, confident triumphant pose, night "
             f"stadium lights, cinematic sports, {NEG}",
-    "S07B": f"Ecstatic Korean baseball fans in the stands at night cheering wildly, "
-            f"waving red and black thundersticks, crowd celebrating with raised arms, "
-            f"stadium floodlights, confetti in the air, dynamic energy, cinematic sports "
+    "S07B": f"Ecstatic Korean baseball fans in the stands at night wearing BLACK and RED "
+            f"KT Wiz team jerseys and gear (KT Wiz colors: black, red, white), cheering "
+            f"wildly and waving red and black thundersticks with raised arms, stadium "
+            f"floodlights, confetti in the air, dynamic energy, cinematic sports "
             f"broadcast, {NEG}",
     "S11B": f"Night baseball: a group of {HOME} gathered on the pitching mound for a "
             f"tense strategy meeting, pitcher and infielders leaning in with heads "
             f"together, focused serious faces, stadium lights, cinematic sports "
             f"documentary, maximum five players, {NEG}",
-    "S08B": f"Dramatic slow motion: {HOME_ONE}, an outfielder making a spectacular "
-            f"full-stretch diving catch, body parallel to the ground, glove extended, "
-            f"grass and dust flying, night stadium lights, cinematic sports photography, "
-            f"shallow depth of field, {NEG}",
+    "S08B": f"Dramatic slow motion: a Korean outfielder in the real KT Wiz home uniform "
+            f"(clean WHITE jersey with 'KT WIZ' in bold BLACK lettering and a red star, "
+            f"black collar/sleeve piping, a BLACK team CAP — absolutely NO batting helmet), "
+            f"making a spectacular full-stretch diving catch, body parallel to the ground, "
+            f"glove extended, grass and dust flying, night stadium lights, cinematic "
+            f"sports photography, shallow depth of field, {NEG}",
     "S10B": f"An opposing baseball player in a grey and navy blue uniform sliding into "
             f"home plate scoring a run at night, dust cloud, teammates celebrating in the "
             f"background, tense disappointing mood, cinematic sports, {NEG}",
