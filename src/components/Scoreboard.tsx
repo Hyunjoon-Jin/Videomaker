@@ -1,11 +1,17 @@
 import React from "react";
+import {
+  useCurrentFrame,
+  useVideoConfig,
+  spring,
+  interpolate,
+} from "remotion";
 import { COLORS } from "../theme";
 import { KR_FONT, NUM_STYLE } from "../fonts";
 
 /**
- * 방송 중계 스타일 상단 스코어바 (Scene 6~13 상시 노출).
- * 가이드 원칙: 숫자 대신 점등 도트 = 방송 그래픽 문법. 전광판 실사 금지.
- * 마스터 1개를 만들어 씬별 숫자만 교체 — 여기서는 props로 구현.
+ * 프로야구 중계 스타일 코너 스코어버그 (우측 하단 상시 노출, Scene 6~13).
+ * 실제 중계 그래픽처럼 팀·점수 + 이닝 + 주자(베이스) + 볼카운트(B/S/O)를 한 박스에.
+ * 마스터 1개를 씬별 props(점수/이닝/카운트/주자)로만 바꿔 사용.
  */
 export interface Count {
   balls: number; // 0-3
@@ -14,96 +20,133 @@ export interface Count {
 }
 
 export interface ScoreboardProps {
-  home?: string; // 우리 팀
-  away?: string; // 상대
+  home?: string;
+  away?: string;
   homeScore: number;
   awayScore: number;
-  inning: string; // "1회초", "8회 말" 등
-  count?: Count; // 풀카운트 표기(선택)
-  bases?: [boolean, boolean, boolean]; // 1,2,3루 주자
-  /** 전체 스케일(Scene 10 확대 애니메이션 등) */
-  scale?: number;
+  inning: string; // "7회 초"
+  count?: Count;
+  bases?: [boolean, boolean, boolean]; // 1,2,3루
+  /** 등장 애니메이션 여부 */
+  appear?: boolean;
+  /** 강조 펄스(예: Scene 10 스코어 공개) */
+  emphasize?: boolean;
   opacity?: number;
 }
 
-const Dots: React.FC<{ total: number; on: number; color: string }> = ({
+const Dot: React.FC<{ on: boolean; color: string; size?: number }> = ({
+  on,
+  color,
+  size = 13,
+}) => (
+  <div
+    style={{
+      width: size,
+      height: size,
+      borderRadius: "50%",
+      background: on ? color : "rgba(255,255,255,0.16)",
+      boxShadow: on ? `0 0 7px ${color}` : "none",
+    }}
+  />
+);
+
+const CountRow: React.FC<{ label: string; total: number; on: number; color: string }> = ({
+  label,
   total,
   on,
   color,
 }) => (
-  <div style={{ display: "flex", gap: 6 }}>
+  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+    <span
+      style={{
+        color: COLORS.subtleGrey,
+        fontSize: 15,
+        fontWeight: 900,
+        width: 13,
+        fontFamily: KR_FONT,
+      }}
+    >
+      {label}
+    </span>
     {Array.from({ length: total }).map((_, i) => (
-      <div
-        key={i}
-        style={{
-          width: 16,
-          height: 16,
-          borderRadius: "50%",
-          background: i < on ? color : "rgba(255,255,255,0.18)",
-          boxShadow: i < on ? `0 0 8px ${color}` : "none",
-        }}
-      />
+      <Dot key={i} on={i < on} color={color} />
     ))}
   </div>
 );
 
-const Diamond: React.FC<{ bases: [boolean, boolean, boolean] }> = ({
-  bases,
-}) => {
-  // 2루(위), 3루(왼), 1루(오른) — 방송 다이아몬드 배치
-  const base = (on: boolean, style: React.CSSProperties) => (
+const Diamond: React.FC<{ bases: [boolean, boolean, boolean] }> = ({ bases }) => {
+  const base = (on: boolean, s: React.CSSProperties) => (
     <div
       style={{
         position: "absolute",
-        width: 18,
-        height: 18,
+        width: 17,
+        height: 17,
         transform: "rotate(45deg)",
-        background: on ? COLORS.amberCaption : "rgba(255,255,255,0.2)",
-        boxShadow: on ? `0 0 10px ${COLORS.amberCaption}` : "none",
-        ...style,
+        background: on ? COLORS.amberCaption : "rgba(255,255,255,0.18)",
+        boxShadow: on ? `0 0 9px ${COLORS.amberCaption}` : "none",
+        border: "1px solid rgba(0,0,0,0.4)",
+        ...s,
       }}
     />
   );
   return (
-    <div style={{ position: "relative", width: 58, height: 48 }}>
-      {base(bases[1], { top: 0, left: 20 })}
-      {base(bases[2], { top: 15, left: 2 })}
-      {base(bases[0], { top: 15, right: 2 })}
+    <div style={{ position: "relative", width: 52, height: 44 }}>
+      {base(bases[1], { top: 0, left: 17 })}
+      {base(bases[2], { top: 14, left: 1 })}
+      {base(bases[0], { top: 14, right: 1 })}
     </div>
   );
 };
 
-const TeamCell: React.FC<{
+const TeamRow: React.FC<{
   name: string;
   score: number;
   color: string;
-}> = ({ name, score, color }) => (
-  <div style={{ display: "flex", alignItems: "stretch" }}>
+  dot: boolean;
+}> = ({ name, score, color, dot }) => (
+  <div style={{ display: "flex", alignItems: "stretch", height: 46 }}>
+    <div style={{ width: 6, background: color }} />
     <div
       style={{
-        background: color,
-        color: COLORS.white,
-        fontFamily: KR_FONT,
-        fontWeight: 900,
-        fontSize: 30,
-        letterSpacing: 2,
-        padding: "0 24px",
+        flex: 1,
         display: "flex",
         alignItems: "center",
+        gap: 8,
+        padding: "0 14px",
+        background: "rgba(10,15,24,0.94)",
+        minWidth: 168,
       }}
     >
-      {name}
+      <div
+        style={{
+          width: 8,
+          height: 8,
+          borderRadius: "50%",
+          background: dot ? COLORS.amberCaption : "transparent",
+        }}
+      />
+      <span
+        style={{
+          color: COLORS.white,
+          fontFamily: KR_FONT,
+          fontWeight: 800,
+          fontSize: 26,
+          letterSpacing: 1,
+          flex: 1,
+        }}
+      >
+        {name}
+      </span>
     </div>
     <div
       style={{
-        background: "rgba(0,0,0,0.55)",
-        color: COLORS.white,
-        minWidth: 60,
-        padding: "0 18px",
+        width: 52,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        fontSize: 40,
+        background: color,
+        color: COLORS.white,
+        fontSize: 30,
         fontWeight: 900,
         ...NUM_STYLE,
       }}
@@ -114,100 +157,80 @@ const TeamCell: React.FC<{
 );
 
 export const Scoreboard: React.FC<ScoreboardProps> = ({
-  home = "GANGNAM",
+  home = "최상강남",
   away = "RIVALS",
   homeScore,
   awayScore,
   inning,
-  count,
-  bases,
-  scale = 1,
+  count = { balls: 0, strikes: 0, outs: 0 },
+  bases = [false, false, false],
+  appear = true,
+  emphasize = false,
   opacity = 1,
 }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+
+  const enter = appear
+    ? spring({ frame, fps, config: { damping: 200, mass: 0.7 } })
+    : 1;
+  const slide = interpolate(enter, [0, 1], [80, 0]);
+  const pulse = emphasize
+    ? 1 + Math.max(0, Math.sin((frame - 30) / 6)) * 0.06 * (frame > 30 && frame < 90 ? 1 : 0)
+    : 1;
+
+  // 홈 공격(말)일 때 홈 팀에 타격 표시 도트
+  const homeAtBat = inning.includes("말");
+
   return (
     <div
       style={{
         position: "absolute",
-        top: 56,
-        left: "50%",
-        transform: `translateX(-50%) scale(${scale})`,
-        transformOrigin: "top center",
-        opacity,
-        display: "flex",
-        alignItems: "stretch",
-        borderRadius: 8,
+        right: 46,
+        bottom: 46,
+        transform: `translateY(${slide}px) scale(${pulse})`,
+        transformOrigin: "bottom right",
+        opacity: opacity * enter,
+        borderRadius: 10,
         overflow: "hidden",
-        boxShadow: "0 12px 40px rgba(0,0,0,0.55)",
+        boxShadow: "0 16px 48px rgba(0,0,0,0.6)",
         border: "1px solid rgba(255,255,255,0.12)",
+        fontFamily: KR_FONT,
       }}
     >
-      <TeamCell name={home} score={homeScore} color={COLORS.gangnamNavy} />
+      {/* 팀 두 줄 */}
+      <TeamRow name={home} score={homeScore} color={COLORS.homeRed} dot={homeAtBat} />
+      <div style={{ height: 1, background: "rgba(255,255,255,0.08)" }} />
+      <TeamRow name={away} score={awayScore} color={COLORS.awayNavy} dot={!homeAtBat} />
 
-      {/* 이닝 */}
+      {/* 하단 스트립: 주자 + 이닝 + B/S/O */}
       <div
         style={{
-          background: "rgba(10,16,26,0.95)",
-          color: COLORS.gold,
-          fontFamily: KR_FONT,
-          fontWeight: 700,
-          fontSize: 26,
-          padding: "0 22px",
           display: "flex",
           alignItems: "center",
-          borderLeft: "1px solid rgba(255,255,255,0.1)",
-          borderRight: "1px solid rgba(255,255,255,0.1)",
+          gap: 16,
+          padding: "10px 16px",
+          background: "rgba(6,10,17,0.96)",
+          borderTop: "2px solid " + COLORS.homeRed,
         }}
       >
-        {inning}
-      </div>
-
-      <TeamCell name={away} score={awayScore} color={COLORS.rivalsRed} />
-
-      {/* B/S/O + 다이아몬드(선택) */}
-      {(count || bases) && (
+        <Diamond bases={bases} />
         <div
           style={{
-            background: "rgba(10,16,26,0.95)",
-            display: "flex",
-            alignItems: "center",
-            gap: 22,
-            padding: "0 24px",
-            borderLeft: "1px solid rgba(255,255,255,0.1)",
+            color: COLORS.gold,
+            fontWeight: 800,
+            fontSize: 20,
+            minWidth: 58,
           }}
         >
-          {bases && <Diamond bases={bases} />}
-          {count && (
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 5,
-                fontFamily: KR_FONT,
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={label}>B</span>
-                <Dots total={3} on={count.balls} color={COLORS.fieldGreenLight} />
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={label}>S</span>
-                <Dots total={2} on={count.strikes} color={COLORS.amberCaption} />
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={label}>O</span>
-                <Dots total={2} on={count.outs} color={COLORS.breakingRed} />
-              </div>
-            </div>
-          )}
+          {inning}
         </div>
-      )}
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <CountRow label="B" total={3} on={count.balls} color={COLORS.fieldGreenLight} />
+          <CountRow label="S" total={2} on={count.strikes} color={COLORS.amberCaption} />
+          <CountRow label="O" total={2} on={count.outs} color={COLORS.homeRed} />
+        </div>
+      </div>
     </div>
   );
-};
-
-const label: React.CSSProperties = {
-  color: COLORS.subtleGrey,
-  fontSize: 18,
-  fontWeight: 900,
-  width: 16,
 };

@@ -18,7 +18,7 @@ export const Scene09Strikeout: React.FC = () => {
 
   return (
     <AbsoluteFill>
-      <Plate img="scenes/S09.png" label="Scene 9" title="삼진 · 연속 수주" seconds={10} />
+      <Plate img="scenes/S09.png" label="Scene 9" title="삼진 · 연속 수주" seconds={10} live />
 
       {/* 관중 K 팻말 문법 — 누적 K 마크 */}
       <div
@@ -56,7 +56,12 @@ export const Scene09Strikeout: React.FC = () => {
         ))}
       </div>
 
-      <Scoreboard homeScore={3} awayScore={0} inning="6회 말" />
+      <Scoreboard
+        homeScore={3}
+        awayScore={0}
+        inning="6회 말"
+        count={{ balls: 1, strikes: 2, outs: 2 }}
+      />
       <Subtitle kind="lower" text="연속 수주 행진 — 상대 타선 침묵!" appearAt={200} />
     </AbsoluteFill>
   );

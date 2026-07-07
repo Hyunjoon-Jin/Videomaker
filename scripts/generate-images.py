@@ -21,13 +21,23 @@ import tempfile
 MODEL = os.environ.get("IMAGEN_MODEL", "imagen-4.0-generate-001")
 NEG = "no text, no letters, no logos, no captions, no watermarks"
 
-# id: (프롬프트, 종횡비)
+# 유니폼 규칙: 홈=최상강남(KT 위즈 스타일, 실제 로고/글자는 no-logos로 배제),
+#            원정=그레이·네이비. 선수는 모두 한국인.
+HOME = ("Korean baseball players wearing a KT Wiz style uniform "
+        "(white jersey with bold red and black accents, black cap with red trim)")
+HOME_ONE = ("a Korean professional baseball player wearing a KT Wiz style uniform "
+            "(white jersey with bold red and black accents, black cap with red trim)")
+AWAY_ONE = "an opposing player in a grey and navy blue uniform"
+
+# id: 프롬프트
 PROMPTS = {
     # PART 1
-    "S02": f"Empty modern broadcast news studio, sleek anchor desk in foreground, "
-           f"large wall screen behind showing abstract blue city skyline graphics, "
-           f"cool blue and white studio lighting, wide shot, no people, "
-           f"photorealistic, cinematic, {NEG}",
+    "S02": f"A Korean female news anchor in her 30s with neat shoulder-length black hair, "
+           f"wearing a sharp light grey blazer over a white blouse, sitting confidently at "
+           f"a sleek modern anchor desk facing camera, a large wall screen behind her "
+           f"showing abstract blue city skyline graphics, cool blue and white studio "
+           f"lighting, medium shot, broadcast news presenter, photorealistic, cinematic, "
+           f"{NEG}",
     "S03": f"A fictional comedic national leader, an ORIGINAL character NOT resembling "
            f"any real politician: heavyset bald man in his 60s, round face, thick grey "
            f"eyebrows, navy blue suit with an oversized long red tie, sitting confidently "
@@ -44,39 +54,57 @@ PROMPTS = {
            f"panoramic window behind an empty luxurious desk, planet Earth slowly rotating "
            f"outside the window with a soft blue glow, stars in deep space, warm desk lamp "
            f"lighting in foreground, cinematic, photorealistic, no people, {NEG}",
-    # PART 2
+    # PART 2 — 한국인 선수 + KT 위즈 스타일 홈 유니폼
     "S06": f"Epic aerial drone view of a packed baseball stadium at night, stadium "
            f"floodlights blazing against dark sky, glowing green field below, crowd as a "
            f"sea of lights, cinematic sports broadcast opening, anamorphic lens flares, {NEG}",
-    "S07": f"Slow motion medium close-up: a professional baseball batter in a navy blue "
-           f"and white uniform making powerful contact with the ball at night, perfect "
-           f"swing mechanics, bat blur, stadium lights flaring behind him, dust particles "
-           f"in the air, cinematic sports film, shallow depth of field, {NEG}",
-    "S08": f"Dramatic slow motion side angle at ground level: a baseball runner in a navy "
-           f"blue and white uniform diving head-first into second base, dust cloud "
-           f"exploding, fielder in grey and dark red uniform applying a late tag, night "
-           f"stadium lights, cinematic sports photography, shallow depth of field, {NEG}",
-    "S09": f"Slow motion close-up from behind the pitcher: a professional baseball pitcher "
-           f"in a navy blue and white uniform releasing a blazing fastball, perfect "
-           f"pitching mechanics, arm blur, intense focused eyes under cap brim, night "
-           f"stadium lights, cinematic sports film, {NEG}",
-    "S10": f"Static medium shot: tense baseball dugout at night, three players in navy "
-           f"blue and white uniforms sitting with serious focused expressions, one "
-           f"gripping his helmet, dramatic low-key side lighting, quiet heavy atmosphere, "
-           f"muted color grade, cinematic sports documentary, {NEG}",
-    "S11": f"Slow motion low angle: baseball players in navy blue and white uniforms "
-           f"standing up from the dugout bench with quiet determination, adjusting "
-           f"helmets, jaws set, dramatic rim lighting from stadium lights behind them, "
-           f"rising heroic mood, cinematic, maximum three players in frame, {NEG}",
-    "S12": f"Extreme close-up: a baseball pitcher's sweating face under his cap brim at "
+    "S07": f"Slow motion medium close-up: {HOME_ONE}, a batter making powerful contact "
+           f"with the ball at night, perfect swing mechanics, bat blur, stadium lights "
+           f"flaring behind him, dust particles in the air, cinematic sports film, "
+           f"shallow depth of field, {NEG}",
+    "S08": f"Dramatic slow motion side angle at ground level: {HOME_ONE}, a runner diving "
+           f"head-first into second base, dust cloud exploding, {AWAY_ONE} applying a late "
+           f"tag, night stadium lights, cinematic sports photography, shallow depth of "
+           f"field, {NEG}",
+    "S09": f"Slow motion close-up from behind the pitcher: {HOME_ONE}, a pitcher releasing "
+           f"a blazing fastball, perfect pitching mechanics, arm blur, intense focused "
+           f"eyes under cap brim, night stadium lights, cinematic sports film, {NEG}",
+    "S10": f"Static medium shot: tense baseball dugout at night, three {HOME} sitting with "
+           f"serious focused expressions, one gripping his helmet, dramatic low-key side "
+           f"lighting, quiet heavy atmosphere, muted color grade, cinematic sports "
+           f"documentary, {NEG}",
+    "S11": f"Slow motion low angle: {HOME} standing up from the dugout bench with quiet "
+           f"determination, adjusting helmets, jaws set, dramatic rim lighting from "
+           f"stadium lights behind them, rising heroic mood, cinematic, maximum three "
+           f"players in frame, {NEG}",
+    "S12": f"Extreme close-up: {HOME_ONE}, a pitcher's sweating face under his cap brim at "
            f"night, single sweat drop rolling down his temple, intense eyes staring toward "
            f"home plate, stadium lights creating a rim light on his cap, ultra shallow "
            f"depth of field, cinematic thriller tension, {NEG}",
-    "S13": f"Ultra slow motion extreme close-up: the exact moment a wooden baseball bat "
-           f"makes explosive contact with a baseball, ball compressing against the bat, "
-           f"shockwave of dust and sweat droplets suspended in air, stadium lights flaring "
-           f"directly behind creating a silhouette halo, cinematic sports film climax, "
+    # 만루 상황 — 1/2/3루 주자 분할화면용 3컷 (Scene 13 직전)
+    "S12B1": f"Medium close-up portrait: {HOME_ONE}, a base runner crouched low on first "
+             f"base at night, determined intense focused expression, eyes locked forward "
+             f"ready to sprint, stadium floodlights behind, shallow depth of field, "
+             f"vertical composition, cinematic sports, {NEG}",
+    "S12B2": f"Medium close-up portrait: {HOME_ONE}, a base runner leading off second base "
+             f"at night, fierce determined focused expression, gritted jaw, coiled and "
+             f"ready to run, stadium floodlights behind, shallow depth of field, vertical "
+             f"composition, cinematic sports, {NEG}",
+    "S12B3": f"Medium close-up portrait: {HOME_ONE}, a base runner on third base at night, "
+             f"tense determined expression staring toward home plate, coiled to charge "
+             f"home, stadium floodlights behind, shallow depth of field, vertical "
+             f"composition, cinematic sports, {NEG}",
+    # 타격의 순간 — 실제 스윙 컨택
+    "S13": f"Dynamic slow motion: {HOME_ONE}, a batter mid-swing making explosive solid "
+           f"contact with the ball at night, full body powerful follow-through, bat "
+           f"connecting with the ball, dust and light particles bursting, stadium lights "
+           f"flaring behind creating a heroic silhouette, cinematic sports climax, "
            f"shallow depth of field, {NEG}",
+    # 공이 밤하늘 저 멀리 (여운)
+    "S13B": f"Slow motion low angle looking up: a single baseball soaring high and far "
+            f"into the dark night sky between two blazing stadium light towers, the ball "
+            f"a bright point against the stars, anamorphic lens flare, majestic and "
+            f"hopeful mood, no players visible, cinematic, {NEG}",
 }
 
 OUT_DIR = "public/scenes"

@@ -36,8 +36,15 @@ export const Scene11Eighth: React.FC = () => {
             label="Scene 11"
             title="약속의 8회 말"
             seconds={10}
+            live
           />
-          <Scoreboard homeScore={3} awayScore={5} inning="8회 말" />
+          <Scoreboard
+            homeScore={3}
+            awayScore={5}
+            inning="8회 말"
+            bases={[true, false, false]}
+            count={{ balls: 1, strikes: 1, outs: 1 }}
+          />
           <Subtitle
             kind="lower"
             text="약속의 8회 말. 우리가 가장 강해지는 시간입니다."

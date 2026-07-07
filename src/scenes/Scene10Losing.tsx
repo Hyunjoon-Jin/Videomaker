@@ -1,5 +1,5 @@
 import React from "react";
-import { AbsoluteFill, useCurrentFrame, interpolate, Easing } from "remotion";
+import { AbsoluteFill, useCurrentFrame, interpolate } from "remotion";
 import { Plate } from "../components/Plate";
 import { Scoreboard } from "../components/Scoreboard";
 import { Subtitle } from "../components/Subtitle";
@@ -12,12 +12,6 @@ import { Subtitle } from "../components/Subtitle";
 export const Scene10Losing: React.FC = () => {
   const frame = useCurrentFrame();
 
-  // 스코어바 중앙 확대
-  const scale = interpolate(frame, [40, 90], [1, 2.4], {
-    easing: Easing.inOut(Easing.cubic),
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
   // 채도 -20 느낌
   const desat = interpolate(frame, [0, 30], [1, 0.55], {
     extrapolateLeft: "clamp",
@@ -32,9 +26,16 @@ export const Scene10Losing: React.FC = () => {
           label="Scene 10"
           title="뒤지는 스코어"
           seconds={10}
+          live
         />
       </AbsoluteFill>
-      <Scoreboard homeScore={3} awayScore={5} inning="7회 초" scale={scale} />
+      <Scoreboard
+        homeScore={3}
+        awayScore={5}
+        inning="7회 초"
+        count={{ balls: 0, strikes: 0, outs: 2 }}
+        emphasize
+      />
       <Subtitle
         kind="lower"
         text="하지만 경기는… 아직 우리의 것이 아닙니다."

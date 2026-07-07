@@ -36,6 +36,7 @@ export const Scene12FullCount: React.FC = () => {
         label="Scene 12"
         title={cur.k}
         seconds={15}
+        live
       />
       <Scoreboard
         homeScore={3}

@@ -25,8 +25,13 @@ export const Scene07Homerun: React.FC = () => {
 
   return (
     <AbsoluteFill>
-      <Plate img="scenes/S07.png" label="Scene 7" title="홈런 몽타주" seconds={20} />
-      <Scoreboard homeScore={score} awayScore={0} inning="3회 말" />
+      <Plate img="scenes/S07.png" label="Scene 7" title="홈런 몽타주" seconds={20} live />
+      <Scoreboard
+        homeScore={score}
+        awayScore={0}
+        inning="3회 말"
+        count={{ balls: 2, strikes: 1, outs: 1 }}
+      />
       {active && (
         <Subtitle
           key={active.at}

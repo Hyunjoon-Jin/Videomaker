@@ -10,12 +10,13 @@ import { Subtitle } from "../components/Subtitle";
  */
 export const Scene08Steal: React.FC = () => (
   <AbsoluteFill>
-    <Plate img="scenes/S08.png" label="Scene 8" title="도루 · 고객사 탈환" seconds={10} />
+    <Plate img="scenes/S08.png" label="Scene 8" title="도루 · 고객사 탈환" seconds={10} live />
     <Scoreboard
       homeScore={3}
       awayScore={0}
       inning="5회 초"
       bases={[false, true, false]}
+      count={{ balls: 1, strikes: 1, outs: 1 }}
     />
     <Subtitle
       kind="lower"

@@ -12,6 +12,7 @@ import { Scene09Strikeout } from "./scenes/Scene09Strikeout";
 import { Scene10Losing } from "./scenes/Scene10Losing";
 import { Scene11Eighth } from "./scenes/Scene11Eighth";
 import { Scene12FullCount } from "./scenes/Scene12FullCount";
+import { Scene12bBasesLoaded } from "./scenes/Scene12bBasesLoaded";
 import { Scene13Swing } from "./scenes/Scene13Swing";
 import { Scene14Ending } from "./scenes/Scene14Ending";
 
@@ -30,6 +31,7 @@ export const SCENE_COMPONENTS: Record<string, React.FC> = {
   "S10-Losing": Scene10Losing,
   "S11-Eighth": Scene11Eighth,
   "S12-FullCount": Scene12FullCount,
+  "S12B-BasesLoaded": Scene12bBasesLoaded,
   "S13-Swing": Scene13Swing,
   "S14-Ending": Scene14Ending,
 };

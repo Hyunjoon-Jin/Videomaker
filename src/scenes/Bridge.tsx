@@ -1,13 +1,14 @@
 import React from "react";
 import {
   AbsoluteFill,
+  Img,
+  staticFile,
   useCurrentFrame,
   useVideoConfig,
   interpolate,
   Easing,
 } from "remotion";
 import { COLORS } from "../theme";
-import { KR_FONT } from "../fonts";
 import { Subtitle } from "../components/Subtitle";
 
 /**
@@ -50,25 +51,14 @@ export const Bridge: React.FC = () => {
             borderRadius: round,
             overflow: "hidden",
             boxShadow: "0 0 120px rgba(0,0,0,0.6)",
-            background: `radial-gradient(80% 80% at 50% 40%, ${COLORS.fieldGreenLight} 0%, ${COLORS.fieldGreen} 55%, #050D08 100%)`,
             border: zoom < 1 ? "3px solid rgba(255,255,255,0.25)" : "none",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
           }}
         >
-          <div
-            style={{
-              fontFamily: KR_FONT,
-              color: "rgba(255,255,255,0.5)",
-              fontSize: 34,
-              fontWeight: 700,
-              letterSpacing: 3,
-              transform: `scale(${1 / zoom})`,
-            }}
-          >
-            ▷ 야구장 부감샷 (Scene 6 연결)
-          </div>
+          {/* 스크린 속 야구장 부감샷 (Scene 6 이미지) */}
+          <Img
+            src={staticFile("scenes/S06.png")}
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
         </div>
       </AbsoluteFill>
 

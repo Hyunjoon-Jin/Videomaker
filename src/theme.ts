@@ -16,7 +16,12 @@ export const COLORS = {
   paper: "#F4F6FA",
   mutedLine: "rgba(255,255,255,0.14)",
 
-  // 팀 컬러 (스코어바)
+  // 팀 컬러 (스코어바) — 홈=최상강남(KT 위즈 레드/블랙), 원정=네이비
+  homeRed: "#E4002B",
+  homeRedDark: "#9E0020",
+  awayNavy: "#26374D",
+  awayNavyDark: "#16212F",
+  // (레거시 액센트 — Scene 14/네임택 등에서 사용)
   gangnamNavy: "#1B3A8F",
   gangnamNavyLight: "#4E77D6",
   rivalsRed: "#6E1B22",

@@ -147,6 +147,15 @@ export const SCENES: SceneMeta[] = [
     note: "투수/타자/그립 클로즈업 교차 · 풀카운트 스코어바",
   },
   {
+    id: "S12B-BasesLoaded",
+    label: "Scene 12B",
+    title: "만루!",
+    seconds: 5,
+    part: "PART2",
+    kind: "placeholder",
+    note: "타격 직전 2사 만루 establishing · 만화식 임팩트 + 집중선",
+  },
+  {
     id: "S13-Swing",
     label: "Scene 13",
     title: "타격의 순간",

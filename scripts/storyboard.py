@@ -29,11 +29,12 @@ SHOTS = [
     ("S09-Strikeout", 215, "9 · 삼진 행진"),
     ("S10-Losing", 110, "10 · 뒤지는 스코어"),
     ("S11-Eighth", 95, "11 · 약속의 8회말"),
-    ("S12-FullCount", 130, "12 · 2사 만루"),
-    ("S13-Swing", 60, "13 · 타격의 순간"),
+    ("S12-FullCount", 130, "12 · 2사 만루 풀카운트"),
+    ("S12B-BasesLoaded", 45, "12B · 만루(분할)"),
+    ("S13-Swing", 44, "13 · 타격의 순간"),
     ("S14-Ending", 200, "14 · 엔딩 카피"),
 ]
-COLS, ROWS = 3, 5
+COLS, ROWS = 4, 4
 
 
 def main() -> None:

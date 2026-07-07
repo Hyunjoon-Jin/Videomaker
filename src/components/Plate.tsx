@@ -7,8 +7,8 @@ import {
   useVideoConfig,
   interpolate,
 } from "remotion";
-import { COLORS } from "../theme";
 import { KR_FONT } from "../fonts";
+import { LiveBug } from "./Broadcast";
 
 /**
  * 실사 플레이트 — Imagen(또는 Veo 프레임)으로 생성한 이미지를 full-bleed 배경으로.
@@ -26,6 +26,7 @@ export interface PlateProps {
   scrimTop?: boolean; // 스코어바 가독성
   scrimBottom?: boolean; // 자막 가독성
   grade?: string; // CSS filter, 예: "saturate(0.6)"
+  live?: boolean; // 좌상단 LIVE 방송 버그(중계 느낌, PART2)
 }
 
 export const Plate: React.FC<PlateProps> = ({
@@ -37,6 +38,7 @@ export const Plate: React.FC<PlateProps> = ({
   scrimTop = true,
   scrimBottom = true,
   grade,
+  live = false,
 }) => {
   const frame = useCurrentFrame();
   const { durationInFrames } = useVideoConfig();
@@ -80,16 +82,18 @@ export const Plate: React.FC<PlateProps> = ({
         />
       )}
 
+      {live && <LiveBug />}
+
       {(label || title) && (
         <div
           style={{
             position: "absolute",
-            right: 40,
-            bottom: 34,
+            left: 44,
+            bottom: 30,
             fontFamily: KR_FONT,
-            fontSize: 22,
+            fontSize: 20,
             fontWeight: 700,
-            color: "rgba(255,255,255,0.62)",
+            color: "rgba(255,255,255,0.5)",
             letterSpacing: 1,
             textShadow: "0 2px 8px rgba(0,0,0,0.8)",
           }}

@@ -9,6 +9,7 @@ import {
 } from "remotion";
 import { COLORS } from "../theme";
 import { KR_FONT } from "../fonts";
+import { B2BLogo } from "../components/B2BLogo";
 
 /**
  * Scene 14 — 엔딩 카피 (10초, 100% 그래픽 · Veo 불필요).
@@ -102,19 +103,23 @@ export const Scene14Ending: React.FC = () => {
         </div>
       )}
 
-      {/* 2단계: 슬로건 */}
+      {/* 2단계: 슬로건 (B2B = 야구공 로고) */}
       {frame >= 150 && (
         <div
           style={{
             position: "absolute",
-            transform: `scale(${0.8 + slogan * 0.2})`,
+            transform: `scale(${0.82 + slogan * 0.18})`,
             opacity: Math.min(slogan, sloganOut),
             textAlign: "center",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 24,
           }}
         >
           <div
             style={{
-              fontSize: 128,
+              fontSize: 124,
               fontWeight: 900,
               color: "#fff",
               letterSpacing: -2,
@@ -125,14 +130,23 @@ export const Scene14Ending: React.FC = () => {
           </div>
           <div
             style={{
-              fontSize: 128,
-              fontWeight: 900,
-              color: COLORS.amberCaption,
-              letterSpacing: -2,
-              textShadow: "0 0 60px rgba(246,196,69,0.6)",
+              display: "flex",
+              alignItems: "center",
+              gap: 26,
             }}
           >
-            B2B 최상!
+            <B2BLogo scale={1.05} />
+            <span
+              style={{
+                fontSize: 128,
+                fontWeight: 900,
+                color: "#fff",
+                letterSpacing: -2,
+                textShadow: "0 6px 30px rgba(0,0,0,0.6)",
+              }}
+            >
+              최상!
+            </span>
           </div>
         </div>
       )}
