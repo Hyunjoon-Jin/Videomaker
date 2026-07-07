@@ -33,15 +33,15 @@ export const Scene07Homerun: React.FC = () => {
           position: "absolute",
           top: 0,
           left: 0,
-          width: 820,
-          height: 320,
-          backdropFilter: "blur(30px)",
-          WebkitBackdropFilter: "blur(30px)",
+          width: 560,
+          height: 260,
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
           background: "rgba(6,10,17,0.32)",
           WebkitMaskImage:
-            "radial-gradient(135% 135% at 14% 24%, #000 72%, transparent 100%)",
+            "radial-gradient(115% 115% at 22% 32%, #000 84%, transparent 100%)",
           maskImage:
-            "radial-gradient(135% 135% at 14% 24%, #000 72%, transparent 100%)",
+            "radial-gradient(115% 115% at 22% 32%, #000 84%, transparent 100%)",
         }}
       />
 
