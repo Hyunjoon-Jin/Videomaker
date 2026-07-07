@@ -46,10 +46,18 @@ export const Scene13Swing: React.FC = () => {
       {/* 전반: 실제 타격 컨택 */}
       <Plate img="scenes/S13.png" label="Scene 13" title="타격의 순간" seconds={10} kenBurns={false} />
 
-      {/* 후반: 공이 담장을 향해 */}
+      {/* 후반: 공이 담장을 향해 — 좌우 흔들림 없이 직선으로 멀어짐(살짝 줌아웃) */}
       {showBall && (
-        <AbsoluteFill style={{ opacity: ballIn }}>
-          <Plate img="scenes/S13B.png" kenBurns scrimTop={false} scrimBottom={false} />
+        <AbsoluteFill
+          style={{
+            opacity: ballIn,
+            transform: `scale(${interpolate(frame, [110, 260], [1.16, 1.0], {
+              extrapolateLeft: "clamp",
+              extrapolateRight: "clamp",
+            })})`,
+          }}
+        >
+          <Plate img="scenes/S13B.png" kenBurns={false} scrimTop={false} scrimBottom={false} />
         </AbsoluteFill>
       )}
 

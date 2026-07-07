@@ -201,10 +201,10 @@ export const Scoreboard: React.FC<ScoreboardProps> = ({
         fontFamily: KR_FONT,
       }}
     >
-      {/* 팀 두 줄 */}
-      <TeamRow name={home} score={homeScore} color={COLORS.homeRed} dot={homeAtBat} mark />
-      <div style={{ height: 1, background: "rgba(255,255,255,0.08)" }} />
+      {/* 팀 두 줄 — 프로야구 관례: 원정(초 공격) 위, 홈(말 공격) 아래 */}
       <TeamRow name={away} score={awayScore} color={COLORS.awayNavy} dot={!homeAtBat} />
+      <div style={{ height: 1, background: "rgba(255,255,255,0.08)" }} />
+      <TeamRow name={home} score={homeScore} color={COLORS.homeRed} dot={homeAtBat} mark />
 
       {/* 하단 스트립: 주자 + 이닝 + B/S/O */}
       <div

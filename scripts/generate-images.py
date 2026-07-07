@@ -64,20 +64,40 @@ PROMPTS = {
            f"crouched in a KT Wiz style uniform (white with red pinstripes, black catcher "
            f"gear and mask), batter's box and home plate, blazing stadium floodlights, "
            f"packed roaring crowd, cinematic sports broadcast opening, {NEG}",
-    "S07": f"Dynamic slow motion: {HOME_ONE}, a power hitter finishing an explosive "
-           f"home-run swing with a full high follow-through — hips fully rotated toward "
-           f"the pitcher, torso uncoiling, the bat whipped up and wrapped around the "
-           f"shoulder, front leg braced, chin up and eyes locked on the ball soaring "
-           f"away, the baseball already launched high and far into the night sky ahead, "
-           f"majestic heroic power pose, stadium lights flaring, dust particles, "
+    "S07": f"Dynamic slow motion side view: {HOME_ONE}, a power hitter finishing an "
+           f"explosive home-run swing with a full high follow-through — hips fully "
+           f"rotated, bat whipped up around the shoulder, front leg braced, eyes locked "
+           f"on the ball, the baseball already launched high and far into the night sky "
+           f"ahead, majestic heroic power pose, stadium lights flaring, dust particles, "
            f"cinematic sports film, {NEG}",
+    "S072": f"Dramatic low angle hero shot: {HOME_ONE}, a power hitter frozen just after a "
+            f"home-run swing, standing tall and watching his blast soar, bat still raised "
+            f"in one hand, chin up, proud confident stance, the baseball a bright dot high "
+            f"in the night sky, blazing stadium floodlights behind, cinematic sports "
+            f"film, {NEG}",
+    "S073": f"Dynamic three-quarter rear view: {HOME_ONE}, a power hitter uncoiling "
+            f"through a massive home-run swing, back muscles and hips rotating explosively, "
+            f"bat blur, dirt and dust kicking up, the baseball rocketing off toward the "
+            f"outfield lights, night stadium, cinematic sports film, {NEG}",
     "S08": f"Dramatic slow motion side angle at ground level: {HOME_ONE}, a runner diving "
            f"head-first into second base, dust cloud exploding, {AWAY_ONE} applying a late "
            f"tag, night stadium lights, cinematic sports photography, shallow depth of "
            f"field, {NEG}",
-    "S09": f"Slow motion close-up from behind the pitcher: {HOME_ONE}, a pitcher releasing "
-           f"a blazing fastball, perfect pitching mechanics, arm blur, intense focused "
-           f"eyes under cap brim, night stadium lights, cinematic sports film, {NEG}",
+    # 뒷면은 비워서 생성(이름/등번호는 그래픽으로 얹음)
+    "S09": f"Slow motion close-up from directly behind a Korean baseball pitcher in a KT "
+           f"Wiz style white jersey and black cap, captured mid-pitch releasing a "
+           f"fastball, the back of the jersey completely PLAIN and clean with NO name, NO "
+           f"number and NO logo on the back, arm blur, night stadium floodlights, "
+           f"cinematic sports film, {NEG}",
+    "S09B": f"Extreme slow motion: an opposing RIVAL batter in a grey and navy blue "
+            f"uniform swinging hard and completely MISSING the baseball, badly fooled and "
+            f"off-balance, bat whipping through empty air, the ball snapping into the "
+            f"catcher's mitt behind, dust, night stadium lights, dramatic, cinematic "
+            f"sports, {NEG}",
+    "S09C": f"Slow motion low angle: an opposing RIVAL batter in a grey and navy blue "
+            f"uniform lunging and swinging through a pitch and missing completely, "
+            f"twisted off-balance follow-through, the catcher's mitt catching the ball, "
+            f"night stadium, dramatic whiff, cinematic sports, {NEG}",
     "S10": f"Static medium shot: tense baseball dugout at night, three {HOME} sitting on "
            f"the bench wearing black team caps (NOT helmets) with serious focused "
            f"expressions, dramatic low-key side lighting, quiet heavy atmosphere, muted "
@@ -106,13 +126,13 @@ PROMPTS = {
              f"taking a lead-off stance just off third base at night, poised and ready to "
              f"break for home but NOT running, tense determined expression, stadium "
              f"floodlights, vertical composition, cinematic sports, {NEG}",
-    # 타격의 순간 — 실제 홈런 스윙 컨택
-    "S13": f"Dynamic slow motion: {HOME_ONE}, a power hitter at the explosive moment of a "
-           f"home-run swing, driving through the ball with maximum force, hips and "
-           f"shoulders rotating powerfully, front arm extended, bat blur as it crushes "
-           f"the baseball which compresses and launches off the barrel, dust and light "
-           f"bursting, stadium lights flaring behind creating a heroic silhouette, "
-           f"cinematic sports climax, {NEG}",
+    # 타격의 순간 — 자연스러운 홈런 스윙 컨택(온전한 배트)
+    "S13": f"Dynamic slow motion: {HOME_ONE}, a power hitter making clean solid contact on "
+           f"a home-run swing, natural well-balanced professional batting mechanics, both "
+           f"hands firmly gripping a single INTACT wooden bat (bat is whole and not "
+           f"broken) connecting squarely with the baseball, the ball launching cleanly "
+           f"off the barrel toward the outfield, strong controlled posture, stadium "
+           f"lights flaring, light dust, cinematic sports film, {NEG}",
     # 공이 밤하늘 저 멀리 (여운)
     "S13B": f"Slow motion low angle looking up: a single baseball soaring high and far "
             f"into the dark night sky between two blazing stadium light towers, the ball "

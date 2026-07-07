@@ -98,12 +98,6 @@ const Panel: React.FC<{ img: string; base: string; index: number }> = ({
 };
 
 export const Scene12bBasesLoaded: React.FC = () => {
-  const frame = useCurrentFrame();
-  const capIn = interpolate(frame, [8, 20], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-
   return (
     <AbsoluteFill style={{ background: "#000" }}>
       <div style={{ display: "flex", width: "100%", height: "100%" }}>
@@ -113,35 +107,6 @@ export const Scene12bBasesLoaded: React.FC = () => {
       </div>
 
       <LiveBug />
-
-      {/* 상단 중계 자막 */}
-      <div
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          display: "flex",
-          justifyContent: "center",
-          opacity: capIn,
-        }}
-      >
-        <div
-          style={{
-            marginTop: 96,
-            background: "rgba(8,14,26,0.92)",
-            borderBottom: `3px solid ${COLORS.homeRed}`,
-            padding: "16px 44px",
-            fontFamily: KR_FONT,
-            fontWeight: 900,
-            fontSize: 52,
-            color: "#fff",
-            letterSpacing: 1,
-          }}
-        >
-          2사 만루 — 최대의 위기, 최고의 기회
-        </div>
-      </div>
 
       <Scoreboard
         homeScore={4}
