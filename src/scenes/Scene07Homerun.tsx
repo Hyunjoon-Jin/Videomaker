@@ -3,11 +3,13 @@ import { AbsoluteFill, useCurrentFrame } from "remotion";
 import { Plate } from "../components/Plate";
 import { Scoreboard } from "../components/Scoreboard";
 import { Subtitle } from "../components/Subtitle";
+import { LiveBug } from "../components/Broadcast";
 
 /**
  * Scene 7 — 홈런 몽타주: 대형 수주 (20초).
  * 배경: 업로드된 홈런 영상(clips/S07.mp4) 전체 재생.
- * 오버레이: 수주 실적 자막(득점) + 스코어바. 마지막 투런으로 최상강남 4점.
+ * 영상 좌상단에 박힌 'HOME RUN' 그래픽은 feather 마스크로 가리고, 그 위에 LIVE 버그.
+ * 오버레이: 수주 실적 자막(득점) + 스코어바.
  */
 const HITS = [
   { at: 30, main: "○○기관 42억 수주", sub: "시즌 첫 홈런포!", runs: 1 },
@@ -22,14 +24,28 @@ export const Scene07Homerun: React.FC = () => {
 
   return (
     <AbsoluteFill>
-      <Plate
-        img="scenes/S07.png"
-        clip="clips/S07.mp4"
-        label="Scene 7"
-        title="홈런 몽타주"
-        seconds={20}
-        live
+      {/* LIVE 버그는 마스크 위에 다시 얹기 위해 Plate에서는 끔 */}
+      <Plate img="scenes/S07.png" clip="clips/S07.mp4" label="Scene 7" title="홈런 몽타주" seconds={20} />
+
+      {/* 영상 좌상단 원본 방송 그래픽(HOME RUN/스코어바) 블러 처리 */}
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: 820,
+          height: 320,
+          backdropFilter: "blur(30px)",
+          WebkitBackdropFilter: "blur(30px)",
+          background: "rgba(6,10,17,0.32)",
+          WebkitMaskImage:
+            "radial-gradient(135% 135% at 14% 24%, #000 72%, transparent 100%)",
+          maskImage:
+            "radial-gradient(135% 135% at 14% 24%, #000 72%, transparent 100%)",
+        }}
       />
+
+      <LiveBug />
       <Scoreboard
         homeScore={score}
         awayScore={0}
