@@ -1,8 +1,8 @@
 import React from "react";
 import { AbsoluteFill, useCurrentFrame, interpolate } from "remotion";
 import { Plate } from "../components/Plate";
-import { COLORS } from "../theme";
 import { KR_FONT } from "../fonts";
+import { SHOW_SPEECH_SUBTITLES } from "../config";
 
 /**
  * Scene 13 — 타격의 순간 (10초).
@@ -53,8 +53,8 @@ export const Scene13Swing: React.FC = () => {
         </AbsoluteFill>
       )}
 
-      {/* 캐스터 자막 */}
-      {cap1 > 0 && (
+      {/* 캐스터 자막(말) — 토글 */}
+      {SHOW_SPEECH_SUBTITLES && cap1 > 0 && (
         <div
           style={{
             position: "absolute",

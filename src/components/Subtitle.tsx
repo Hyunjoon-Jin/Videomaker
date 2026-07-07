@@ -7,6 +7,7 @@ import {
 } from "remotion";
 import { COLORS } from "../theme";
 import { KR_FONT } from "../fonts";
+import { SHOW_SPEECH_SUBTITLES } from "../config";
 
 /**
  * 통일 자막 시스템. 가이드: 자막은 전부 후반(여기)에서 얹고 Veo엔 no text.
@@ -45,6 +46,8 @@ export const Subtitle: React.FC<SubtitleProps> = ({
     config: { damping: 200, mass: 0.6 },
   });
 
+  // '말' 자막(대사·내레이션 = lower)은 토글로 제어. 그래픽 자막(caption·newsbar)은 유지.
+  if (kind === "lower" && !SHOW_SPEECH_SUBTITLES) return null;
   if (local < 0) return null;
 
   if (kind === "newsbar") {

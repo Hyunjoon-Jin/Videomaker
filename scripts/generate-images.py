@@ -57,10 +57,12 @@ PROMPTS = {
            f"outside the window with a soft blue glow, stars in deep space, warm desk lamp "
            f"lighting in foreground, cinematic, photorealistic, no people, {NEG}",
     # PART 2 — 한국인 선수 + KT 위즈 스타일 홈 유니폼
-    "S06": f"Dynamic cinematic action shot at a packed night baseball stadium: {HOME_ONE} "
-           f"sprinting hard onto the brightly floodlit field with intensity as a huge "
-           f"crowd roars, motion blur and kicked-up dust, dramatic low angle, anamorphic "
-           f"lens flares, energetic sports broadcast opening, {NEG}",
+    "S06": f"Dramatic low angle from behind home plate at night: a baseball home plate "
+           f"umpire in dark navy uniform behind the catcher emphatically calling PLAY "
+           f"BALL with a strong raised-arm gesture, mouth open shouting, the catcher "
+           f"crouched in a KT Wiz style uniform (white with red pinstripes, black catcher "
+           f"gear and mask), batter's box and home plate, blazing stadium floodlights, "
+           f"packed roaring crowd, cinematic sports broadcast opening, {NEG}",
     "S07": f"Slow motion medium shot: {HOME_ONE}, a batter an instant after clean contact, "
            f"the baseball already launched and flying forward well ahead of the bat, "
            f"powerful follow-through, bat blur trailing behind, stadium lights flaring, "
