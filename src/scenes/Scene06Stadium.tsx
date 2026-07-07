@@ -1,6 +1,6 @@
 import React from "react";
 import { AbsoluteFill, useCurrentFrame, interpolate } from "remotion";
-import { Placeholder } from "../components/Placeholder";
+import { Plate } from "../components/Plate";
 import { Scoreboard } from "../components/Scoreboard";
 
 /**
@@ -16,13 +16,7 @@ export const Scene06Stadium: React.FC = () => {
   });
   return (
     <AbsoluteFill>
-      <Placeholder
-        label="Scene 6"
-        title="경기 시작"
-        seconds={5}
-        tone="field"
-        note="Veo 야간 만원 야구장 드론 부감 하강샷 · 하강 모션 4~5초 사용 · 웅장한 브라스 + 관중 함성."
-      />
+      <Plate img="scenes/S06.png" label="Scene 6" title="경기 시작" seconds={5} />
       <Scoreboard
         homeScore={0}
         awayScore={0}

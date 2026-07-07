@@ -1,6 +1,6 @@
 import React from "react";
 import { AbsoluteFill, useCurrentFrame } from "remotion";
-import { Placeholder } from "../components/Placeholder";
+import { Plate } from "../components/Plate";
 import { Scoreboard } from "../components/Scoreboard";
 import { Subtitle } from "../components/Subtitle";
 import { COLORS } from "../theme";
@@ -18,13 +18,7 @@ export const Scene09Strikeout: React.FC = () => {
 
   return (
     <AbsoluteFill>
-      <Placeholder
-        label="Scene 9"
-        title="삼진 · 연속 수주 행진"
-        seconds={10}
-        tone="field"
-        note="[투구 2s → 미트+헛스윙 1.5s] × 2~3회, 반복마다 컷 길이 축소로 속도감 상승. 미트 임팩트마다 '퍽!' SFX."
-      />
+      <Plate img="scenes/S09.png" label="Scene 9" title="삼진 · 연속 수주" seconds={10} />
 
       {/* 관중 K 팻말 문법 — 누적 K 마크 */}
       <div

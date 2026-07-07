@@ -1,6 +1,6 @@
 import React from "react";
 import { AbsoluteFill, useCurrentFrame, interpolate } from "remotion";
-import { Placeholder } from "../components/Placeholder";
+import { Plate } from "../components/Plate";
 import { Scoreboard } from "../components/Scoreboard";
 import { Subtitle } from "../components/Subtitle";
 import { COLORS } from "../theme";
@@ -31,12 +31,11 @@ export const Scene11Eighth: React.FC = () => {
     <AbsoluteFill style={{ background: "#000" }}>
       {frame >= 60 && (
         <AbsoluteFill>
-          <Placeholder
+          <Plate
+            img="scenes/S11.png"
             label="Scene 11"
             title="약속의 8회 말"
             seconds={10}
-            tone="field"
-            note="일어서는 선수들 4s → 주먹 인사 2s. 결의에 찬 라이징 히어로 무드 · 심장박동 비트 시작."
           />
           <Scoreboard homeScore={3} awayScore={5} inning="8회 말" />
           <Subtitle

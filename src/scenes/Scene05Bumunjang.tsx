@@ -1,6 +1,6 @@
 import React from "react";
 import { AbsoluteFill, useCurrentFrame, interpolate } from "remotion";
-import { Placeholder } from "../components/Placeholder";
+import { Plate } from "../components/Plate";
 import { Subtitle } from "../components/Subtitle";
 import { NameTag } from "../components/NameTag";
 import { COLORS } from "../theme";
@@ -20,12 +20,11 @@ export const Scene05Bumunjang: React.FC = () => {
   });
   return (
     <AbsoluteFill>
-      <Placeholder
+      <Plate
+        img="scenes/S05.png"
         label="Scene 5 ★"
-        title="KT ○○부문장 김봉균"
+        title="김봉균 부문장 (우주정거장 배경)"
         seconds={20}
-        tone="news"
-        note="실촬영 권장(정면 4K, 자연광) / 대체 시 HeyGen Photo Avatar(본인 서면 동의·육성 20초 선행). 우주정거장 집무실(창밖 지구) 합성 · 클린 풀스크린."
       />
       {/* 진정성 톤 — 창밖 지구 광원 느낌의 미세 블루 글로우 */}
       <AbsoluteFill

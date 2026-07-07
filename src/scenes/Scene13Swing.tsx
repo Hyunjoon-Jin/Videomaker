@@ -1,6 +1,6 @@
 import React from "react";
 import { AbsoluteFill, useCurrentFrame, interpolate } from "remotion";
-import { Placeholder } from "../components/Placeholder";
+import { Plate } from "../components/Plate";
 
 /**
  * Scene 13 — 타격의 순간 (10초).
@@ -25,13 +25,7 @@ export const Scene13Swing: React.FC = () => {
 
   return (
     <AbsoluteFill>
-      <Placeholder
-        label="Scene 13"
-        title="타격의 순간"
-        seconds={10}
-        tone="field"
-        note={`${label} · 결과를 보여주지 않고 공이 가장 밝은 프레임에서 블랙 페이드.`}
-      />
+      <Plate img="scenes/S13.png" label="Scene 13" title={label} seconds={10} />
       <AbsoluteFill style={{ background: "#fff", opacity: impact }} />
       <AbsoluteFill style={{ background: "#000", opacity: blackout }} />
     </AbsoluteFill>

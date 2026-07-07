@@ -1,6 +1,6 @@
 import React from "react";
 import { AbsoluteFill, useCurrentFrame } from "remotion";
-import { Placeholder } from "../components/Placeholder";
+import { Plate } from "../components/Plate";
 import { Scoreboard } from "../components/Scoreboard";
 import { Subtitle } from "../components/Subtitle";
 
@@ -25,13 +25,7 @@ export const Scene07Homerun: React.FC = () => {
 
   return (
     <AbsoluteFill>
-      <Placeholder
-        label="Scene 7"
-        title="홈런 몽타주 · 대형 수주"
-        seconds={20}
-        tone="field"
-        note="[타격 2s → 궤적 1.5s → 자막 임팩트] × 3건, 마지막 건만 세리머니. 속도 램프(타격 순간 20%) · 캐스터 샤우팅."
-      />
+      <Plate img="scenes/S07.png" label="Scene 7" title="홈런 몽타주" seconds={20} />
       <Scoreboard homeScore={score} awayScore={0} inning="3회 말" />
       {active && (
         <Subtitle

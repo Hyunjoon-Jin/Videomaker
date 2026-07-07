@@ -1,6 +1,6 @@
 import React from "react";
 import { AbsoluteFill, useCurrentFrame, interpolate } from "remotion";
-import { Placeholder } from "../components/Placeholder";
+import { Plate } from "../components/Plate";
 import { Scoreboard } from "../components/Scoreboard";
 
 /**
@@ -31,12 +31,11 @@ export const Scene12FullCount: React.FC = () => {
 
   return (
     <AbsoluteFill>
-      <Placeholder
+      <Plate
+        img="scenes/S12.png"
         label="Scene 12"
-        title="2사 만루, 풀카운트"
+        title={cur.k}
         seconds={15}
-        tone="field"
-        note={cur.k}
       />
       <Scoreboard
         homeScore={3}
