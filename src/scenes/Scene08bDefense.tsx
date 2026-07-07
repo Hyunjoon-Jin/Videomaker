@@ -9,7 +9,7 @@ import { Subtitle } from "../components/Subtitle";
  */
 export const Scene08bDefense: React.FC = () => (
   <AbsoluteFill>
-    <Plate img="scenes/S08B.png" label="Scene 8B" title="호수비 · 위기 방어" seconds={8} live />
+    <Plate img="scenes/S08B.png" label="Scene 8B" title="호수비 · 위기 방어" seconds={8} live motion="left" amount={0.1} atmosphere={{ tone: "white", intensity: 0.6 }} />
     <Scoreboard homeScore={4} awayScore={0} inning="5회 말" count={{ balls: 1, strikes: 2, outs: 2 }} />
     <Subtitle kind="lower" text="위기 방어 — 완벽한 호수비!" appearAt={130} />
   </AbsoluteFill>

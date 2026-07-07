@@ -21,7 +21,7 @@ import { KR_FONT } from "../fonts";
  */
 const RUNNERS = [
   { img: "scenes/S12B1.png", base: "1루", clip: undefined as string | undefined },
-  { img: "scenes/S12B2.png", base: "2루", clip: "clips/S12B2.mp4" },
+  { img: "scenes/S12B2.png", base: "2루", clip: undefined as string | undefined },
   { img: "scenes/S12B3.png", base: "3루", clip: undefined as string | undefined },
 ];
 

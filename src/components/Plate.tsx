@@ -7,53 +7,78 @@ import {
   useCurrentFrame,
   useVideoConfig,
   interpolate,
+  Easing,
 } from "remotion";
 import { KR_FONT } from "../fonts";
 import { LiveBug } from "./Broadcast";
+import { Atmosphere, AtmosphereProps } from "./Atmosphere";
 
 /**
- * 실사 플레이트 — Imagen(또는 Veo 프레임)으로 생성한 이미지를 full-bleed 배경으로.
- * 켄번스(느린 줌)로 정지 이미지에 생명감 부여 + 상/하단 스크림(오버레이 가독성).
- * 우하단에 작은 씬 태그(애니매틱 식별용).
- *
- * 실제 영상 클립이 준비되면 <Img>를 <OffthreadVideo>로 바꾸면 됨.
+ * 실사 플레이트 — 생성 이미지를 시네마틱 카메라 무빙으로 애니메이팅.
+ * 방향성 있는 느린 무빙(푸시인/풀아웃/틸트/팬) + 선택적 분위기 레이어(먼지·빛)로
+ * 정지 이미지에 생명감을 준다. 상/하단 스크림 + 좌하단 씬 태그.
  */
+export type Motion = "in" | "out" | "up" | "down" | "left" | "right" | "none";
+
 export interface PlateProps {
-  img: string; // staticFile 상대경로, 예: "scenes/S07.png"
-  label?: string; // "Scene 7"
-  title?: string; // "홈런 몽타주"
+  img: string;
+  label?: string;
+  title?: string;
   seconds?: number;
+  /** 카메라 무빙 프리셋(기본 "in") */
+  motion?: Motion;
+  /** 무빙 강도(기본 0.09 = 9%) */
+  amount?: number;
+  /** 하위호환: false면 motion="none" */
   kenBurns?: boolean;
-  scrimTop?: boolean; // 스코어바 가독성
-  scrimBottom?: boolean; // 자막 가독성
-  grade?: string; // CSS filter, 예: "saturate(0.6)"
-  live?: boolean; // 좌상단 LIVE 방송 버그(중계 느낌, PART2)
-  clip?: string; // Veo 영상 클립 경로(있으면 이미지 대신 재생), 예: "clips/S07.mp4"
+  scrimTop?: boolean;
+  scrimBottom?: boolean;
+  grade?: string;
+  live?: boolean;
+  /** 분위기 레이어(먼지·빛). true 또는 옵션 객체 */
+  atmosphere?: boolean | AtmosphereProps;
+  /** Veo 등 외부 클립 경로(있으면 이미지 대신 재생) */
+  clip?: string;
 }
+
+const EASE = Easing.bezier(0.33, 0, 0.2, 1);
 
 export const Plate: React.FC<PlateProps> = ({
   img,
   label,
   title,
   seconds,
+  motion = "in",
+  amount = 0.09,
   kenBurns = true,
   scrimTop = true,
   scrimBottom = true,
   grade,
   live = false,
+  atmosphere,
   clip,
 }) => {
   const frame = useCurrentFrame();
   const { durationInFrames } = useVideoConfig();
+  const p = interpolate(frame, [0, durationInFrames], [0, 1], {
+    easing: EASE,
+    extrapolateRight: "clamp",
+  });
 
-  // 영상 클립이 있으면 자체 모션이 있으므로 켄번스 비활성
-  const useKenBurns = kenBurns && !clip;
-  const scale = useKenBurns
-    ? interpolate(frame, [0, durationInFrames], [1.06, 1.14])
-    : 1;
-  const drift = useKenBurns
-    ? interpolate(frame, [0, durationInFrames], [-1.2, 1.2])
-    : 0;
+  const m: Motion = clip ? "none" : kenBurns ? motion : "none";
+  // 팬/틸트 시 가장자리 노출 방지용 베이스 오버스캔
+  const base = m === "in" || m === "out" || m === "none" ? 1.03 : 1.09;
+  const pan = amount * 100; // % 이동량
+
+  let scale = base;
+  let tx = 0;
+  let ty = 0;
+  if (m === "in") scale = base + amount * p;
+  else if (m === "out") scale = base + amount * (1 - p);
+  else if (m === "up") ty = interpolate(p, [0, 1], [pan / 2, -pan / 2]);
+  else if (m === "down") ty = interpolate(p, [0, 1], [-pan / 2, pan / 2]);
+  else if (m === "left") tx = interpolate(p, [0, 1], [pan / 2, -pan / 2]);
+  else if (m === "right") tx = interpolate(p, [0, 1], [-pan / 2, pan / 2]);
 
   return (
     <AbsoluteFill style={{ background: "#000" }}>
@@ -71,12 +96,16 @@ export const Plate: React.FC<PlateProps> = ({
               width: "100%",
               height: "100%",
               objectFit: "cover",
-              transform: `scale(${scale}) translateX(${drift}%)`,
+              transform: `scale(${scale}) translate(${tx}%, ${ty}%)`,
               filter: grade,
             }}
           />
         )}
       </AbsoluteFill>
+
+      {atmosphere && (
+        <Atmosphere {...(typeof atmosphere === "object" ? atmosphere : {})} />
+      )}
 
       {scrimTop && (
         <AbsoluteFill

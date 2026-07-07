@@ -10,7 +10,7 @@ import { Subtitle } from "../components/Subtitle";
  */
 export const Scene08Steal: React.FC = () => (
   <AbsoluteFill>
-    <Plate img="scenes/S08.png" label="Scene 8" title="도루 · 고객사 탈환" seconds={10} live />
+    <Plate img="scenes/S08.png" label="Scene 8" title="도루 · 고객사 탈환" seconds={10} live motion="in" amount={0.12} atmosphere={{ tone: "warm", intensity: 0.7 }} />
     <Scoreboard
       homeScore={4}
       awayScore={0}
