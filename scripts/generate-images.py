@@ -64,21 +64,26 @@ PROMPTS = {
            f"crouched in a KT Wiz style uniform (white with red pinstripes, black catcher "
            f"gear and mask), batter's box and home plate, blazing stadium floodlights, "
            f"packed roaring crowd, cinematic sports broadcast opening, {NEG}",
-    "S07": f"Dynamic slow motion side view: {HOME_ONE}, a power hitter finishing an "
-           f"explosive home-run swing with a full high follow-through — hips fully "
-           f"rotated, bat whipped up around the shoulder, front leg braced, eyes locked "
-           f"on the ball, the baseball already launched high and far into the night sky "
-           f"ahead, majestic heroic power pose, stadium lights flaring, dust particles, "
-           f"cinematic sports film, {NEG}",
-    "S072": f"Dramatic low angle hero shot: {HOME_ONE}, a power hitter frozen just after a "
-            f"home-run swing, standing tall and watching his blast soar, bat still raised "
-            f"in one hand, chin up, proud confident stance, the baseball a bright dot high "
-            f"in the night sky, blazing stadium floodlights behind, cinematic sports "
-            f"film, {NEG}",
-    "S073": f"Dynamic three-quarter rear view: {HOME_ONE}, a power hitter uncoiling "
-            f"through a massive home-run swing, back muscles and hips rotating explosively, "
-            f"bat blur, dirt and dust kicking up, the baseball rocketing off toward the "
-            f"outfield lights, night stadium, cinematic sports film, {NEG}",
+    "S07": f"Slow motion three-quarter front view: {HOME_ONE}, a power hitter at the "
+           f"COMPLETE FOLLOW-THROUGH of a real home-run swing — the wooden bat has "
+           f"whipped all the way around and is finishing high behind the lead shoulder "
+           f"near his neck, hips fully rotated so the belt buckle faces the pitcher, "
+           f"weight fully transferred onto a firmly braced front leg with the back foot "
+           f"up on its toe, head up and eyes tracking the ball flying out, balanced "
+           f"athletic professional KBO power-hitter mechanics, NOT off-balance, stadium "
+           f"lights flaring, cinematic sports film, {NEG}",
+    "S072": f"Dramatic low hero angle: {HOME_ONE}, a slugger holding a picture-perfect "
+            f"home-run finish and admiring his blast — standing tall and proud, top hand "
+            f"released with one hand holding the bat high, chin lifted, eyes locked on "
+            f"the soaring ball, back foot on its toe, textbook balanced follow-through "
+            f"pose like a hitter watching a no-doubt home run, blazing stadium "
+            f"floodlights behind, cinematic sports film, {NEG}",
+    "S073": f"Explosive slow motion at the moment of contact: {HOME_ONE}, a power hitter "
+            f"driving a home-run swing with both arms fully extended out front, the bat "
+            f"barrel squaring up and crushing the baseball, hips firing open and shoulders "
+            f"rotating through, back foot pivoting on the toe, the ball exploding off the "
+            f"barrel, dust and light bursting, correct professional swing plane, night "
+            f"stadium lights, cinematic sports film, {NEG}",
     "S08": f"Dramatic slow motion side angle at ground level: {HOME_ONE}, a runner diving "
            f"head-first into second base, dust cloud exploding, {AWAY_ONE} applying a late "
            f"tag, night stadium lights, cinematic sports photography, shallow depth of "
@@ -126,13 +131,15 @@ PROMPTS = {
              f"taking a lead-off stance just off third base at night, poised and ready to "
              f"break for home but NOT running, tense determined expression, stadium "
              f"floodlights, vertical composition, cinematic sports, {NEG}",
-    # 타격의 순간 — 자연스러운 홈런 스윙 컨택(온전한 배트)
-    "S13": f"Dynamic slow motion: {HOME_ONE}, a power hitter making clean solid contact on "
-           f"a home-run swing, natural well-balanced professional batting mechanics, both "
-           f"hands firmly gripping a single INTACT wooden bat (bat is whole and not "
-           f"broken) connecting squarely with the baseball, the ball launching cleanly "
-           f"off the barrel toward the outfield, strong controlled posture, stadium "
-           f"lights flaring, light dust, cinematic sports film, {NEG}",
+    # 타격의 순간 — 결정적 역전 홈런 스윙(머니샷)
+    "S13": f"Majestic slow motion three-quarter view: {HOME_ONE}, a power hitter unloading "
+           f"the decisive home-run swing at the instant of a perfect launch — a single "
+           f"INTACT wooden bat (whole, not broken) making explosive square contact out "
+           f"front, arms extended, hips fully fired open with the belt buckle to the "
+           f"pitcher, back foot up on the toe, weight on a braced front leg, the baseball "
+           f"rocketing off the barrel toward the outfield lights, dramatic backlit "
+           f"silhouette, textbook professional KBO power-hitter mechanics, balanced and "
+           f"powerful, cinematic sports climax, {NEG}",
     # 공이 밤하늘 저 멀리 (여운)
     "S13B": f"Slow motion low angle looking up: a single baseball soaring high and far "
             f"into the dark night sky between two blazing stadium light towers, the ball "
