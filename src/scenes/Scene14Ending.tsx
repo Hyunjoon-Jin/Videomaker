@@ -8,6 +8,7 @@ import {
 } from "remotion";
 import { COLORS } from "../theme";
 import { KR_FONT } from "../fonts";
+import { KTWizMark } from "../components/KTWizMark";
 
 const BB_RED = "#E11B2C";
 
@@ -122,7 +123,7 @@ export const Scene14Ending: React.FC = () => {
           style={{
             position: "absolute",
             transform: `scale(${0.86 + slogan * 0.14})`,
-            opacity: Math.min(slogan, sloganOut),
+            opacity: slogan,
             textAlign: "center",
             display: "flex",
             flexDirection: "column",
@@ -159,35 +160,17 @@ export const Scene14Ending: React.FC = () => {
         </div>
       )}
 
-      {/* 3단계: KT 로고 플레이스홀더 */}
+      {/* 3단계: KT 위즈 워드마크 사인오프 (하단, 최종본은 공식 로고로 교체) */}
       {frame >= 240 && (
         <div
           style={{
             position: "absolute",
+            bottom: 150,
             opacity: logoIn,
             transform: `translateY(${interpolate(logoIn, [0, 1], [20, 0])}px)`,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: 20,
           }}
         >
-          <div
-            style={{
-              border: `2px dashed ${COLORS.rivalsRedLight}`,
-              borderRadius: 16,
-              padding: "28px 60px",
-              color: "#fff",
-              fontSize: 72,
-              fontWeight: 900,
-              letterSpacing: 8,
-            }}
-          >
-            KT
-          </div>
-          <div style={{ color: COLORS.subtleGrey, fontSize: 24 }}>
-            로고 사용 승인 확인 후 교체
-          </div>
+          <KTWizMark size={56} color="#fff" />
         </div>
       )}
     </AbsoluteFill>

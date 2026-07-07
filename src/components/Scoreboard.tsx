@@ -7,6 +7,7 @@ import {
 } from "remotion";
 import { COLORS } from "../theme";
 import { KR_FONT, NUM_STYLE } from "../fonts";
+import { KTWizMark } from "./KTWizMark";
 
 /**
  * 프로야구 중계 스타일 코너 스코어버그 (우측 하단 상시 노출, Scene 6~13).
@@ -103,7 +104,8 @@ const TeamRow: React.FC<{
   score: number;
   color: string;
   dot: boolean;
-}> = ({ name, score, color, dot }) => (
+  mark?: boolean;
+}> = ({ name, score, color, dot, mark }) => (
   <div style={{ display: "flex", alignItems: "stretch", height: 46 }}>
     <div style={{ width: 6, background: color }} />
     <div
@@ -114,7 +116,7 @@ const TeamRow: React.FC<{
         gap: 8,
         padding: "0 14px",
         background: "rgba(10,15,24,0.94)",
-        minWidth: 168,
+        minWidth: 190,
       }}
     >
       <div
@@ -137,6 +139,7 @@ const TeamRow: React.FC<{
       >
         {name}
       </span>
+      {mark && <KTWizMark size={17} color="#fff" />}
     </div>
     <div
       style={{
@@ -199,7 +202,7 @@ export const Scoreboard: React.FC<ScoreboardProps> = ({
       }}
     >
       {/* 팀 두 줄 */}
-      <TeamRow name={home} score={homeScore} color={COLORS.homeRed} dot={homeAtBat} />
+      <TeamRow name={home} score={homeScore} color={COLORS.homeRed} dot={homeAtBat} mark />
       <div style={{ height: 1, background: "rgba(255,255,255,0.08)" }} />
       <TeamRow name={away} score={awayScore} color={COLORS.awayNavy} dot={!homeAtBat} />
 

@@ -19,17 +19,18 @@ import sys
 import tempfile
 
 MODEL = os.environ.get("IMAGEN_MODEL", "imagen-4.0-generate-001")
-NEG = "no text, no letters, no logos, no captions, no watermarks"
+# 화면 자막/워터마크만 금지(유니폼 워드마크·로고는 허용해 실제 KT 위즈처럼).
+NEG = "no caption bars, no watermarks, no scoreboard graphics"
 
-# 유니폼 규칙: 홈=최상강남(KT 위즈 스타일, 실제 로고/글자는 no-logos로 배제),
-#            원정=그레이·네이비. 선수는 모두 한국인.
-HOME = ("Korean baseball players wearing KT Wiz style uniforms (white jersey with thin "
-        "red pinstripes and red accents, solid BLACK cap and BLACK batting helmet with "
-        "red trim, matching real KT Wiz colors)")
-HOME_ONE = ("a Korean professional baseball player wearing a KT Wiz style uniform (white "
-            "jersey with thin red pinstripes and red accents, solid BLACK cap/helmet with "
-            "red trim, matching real KT Wiz colors)")
-AWAY_ONE = "an opposing player in a grey and navy blue uniform with a navy cap"
+# 유니폼 규칙(실제 KT 위즈 홈): 흰색 저지 + 검정 'KT WIZ' 워드마크 + 빨강 별,
+# 검정 칼라/소매 파이핑, 검정 모자·헬멧에 'KW' 크레스트 엠블럼. 선수는 모두 한국인.
+KTWIZ = ("the real KT Wiz home uniform: a clean WHITE jersey with 'KT WIZ' across the "
+         "chest in bold BLACK lettering accented with a small red star, black collar and "
+         "sleeve piping, white pants, a solid BLACK cap and BLACK batting helmet bearing "
+         "the KT Wiz 'KW' crest emblem with a red star")
+HOME = f"Korean baseball players in {KTWIZ}"
+HOME_ONE = f"a Korean professional baseball player in {KTWIZ}"
+AWAY_ONE = "an opposing player in a plain grey and navy blue uniform with a navy cap"
 
 # id: 프롬프트
 PROMPTS = {
@@ -63,10 +64,13 @@ PROMPTS = {
            f"crouched in a KT Wiz style uniform (white with red pinstripes, black catcher "
            f"gear and mask), batter's box and home plate, blazing stadium floodlights, "
            f"packed roaring crowd, cinematic sports broadcast opening, {NEG}",
-    "S07": f"Slow motion medium shot: {HOME_ONE}, a batter an instant after clean contact, "
-           f"the baseball already launched and flying forward well ahead of the bat, "
-           f"powerful follow-through, bat blur trailing behind, stadium lights flaring, "
-           f"dust particles in the air, cinematic sports film, shallow depth of field, {NEG}",
+    "S07": f"Dynamic slow motion: {HOME_ONE}, a power hitter finishing an explosive "
+           f"home-run swing with a full high follow-through — hips fully rotated toward "
+           f"the pitcher, torso uncoiling, the bat whipped up and wrapped around the "
+           f"shoulder, front leg braced, chin up and eyes locked on the ball soaring "
+           f"away, the baseball already launched high and far into the night sky ahead, "
+           f"majestic heroic power pose, stadium lights flaring, dust particles, "
+           f"cinematic sports film, {NEG}",
     "S08": f"Dramatic slow motion side angle at ground level: {HOME_ONE}, a runner diving "
            f"head-first into second base, dust cloud exploding, {AWAY_ONE} applying a late "
            f"tag, night stadium lights, cinematic sports photography, shallow depth of "
@@ -102,12 +106,13 @@ PROMPTS = {
              f"taking a lead-off stance just off third base at night, poised and ready to "
              f"break for home but NOT running, tense determined expression, stadium "
              f"floodlights, vertical composition, cinematic sports, {NEG}",
-    # 타격의 순간 — 실제 스윙 컨택
-    "S13": f"Dynamic slow motion: {HOME_ONE}, a batter mid-swing making explosive solid "
-           f"contact with the ball at night, full body powerful follow-through, bat "
-           f"connecting with the ball, dust and light particles bursting, stadium lights "
-           f"flaring behind creating a heroic silhouette, cinematic sports climax, "
-           f"shallow depth of field, {NEG}",
+    # 타격의 순간 — 실제 홈런 스윙 컨택
+    "S13": f"Dynamic slow motion: {HOME_ONE}, a power hitter at the explosive moment of a "
+           f"home-run swing, driving through the ball with maximum force, hips and "
+           f"shoulders rotating powerfully, front arm extended, bat blur as it crushes "
+           f"the baseball which compresses and launches off the barrel, dust and light "
+           f"bursting, stadium lights flaring behind creating a heroic silhouette, "
+           f"cinematic sports climax, {NEG}",
     # 공이 밤하늘 저 멀리 (여운)
     "S13B": f"Slow motion low angle looking up: a single baseball soaring high and far "
             f"into the dark night sky between two blazing stadium light towers, the ball "

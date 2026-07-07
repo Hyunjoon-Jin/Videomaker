@@ -9,6 +9,7 @@ import {
 import { COLORS } from "../theme";
 import { KR_FONT } from "../fonts";
 import { LiveBug } from "../components/Broadcast";
+import { KTWizMark } from "../components/KTWizMark";
 
 /**
  * Scene 6B — 선발 라인업 소개 (8초, 그래픽).
@@ -55,8 +56,19 @@ export const Scene06bLineup: React.FC = () => {
         >
           <div style={{ width: 10, height: 64, background: COLORS.homeRed }} />
           <div>
-            <div style={{ color: COLORS.subtleGrey, fontSize: 26, fontWeight: 700, letterSpacing: 6 }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 14,
+                color: COLORS.subtleGrey,
+                fontSize: 26,
+                fontWeight: 700,
+                letterSpacing: 6,
+              }}
+            >
               STARTING LINEUP
+              <KTWizMark size={26} color="#fff" />
             </div>
             <div style={{ color: "#fff", fontSize: 60, fontWeight: 900 }}>
               최상강남 선발 라인업
