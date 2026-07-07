@@ -1,32 +1,27 @@
 /**
  * 자막·헤드라인용 한글 폰트 = Pretendard (가이드 지정).
- * woff2 서브셋을 base64 데이터 URI로 임베드해 로드한다(src/fonts-data.ts).
- * → 렌더 시 로컬 폰트 서버 왕복이 없어 CPU 포화 상태에서도 delayRender 타임아웃이 없다.
- *
- * 폰트 교체: public/fonts 갱신 → scripts/subset-fonts.py → fonts-data 재생성.
+ * woff2 서브셋을 base64 데이터 URI로 CSS @font-face에 '직접 주입'한다.
+ * → delayRender를 쓰지 않으므로, 영상 클립(OffthreadVideo) 디코딩으로 CPU가
+ *   포화되어 페이지가 리로드돼도 폰트 delayRender 타임아웃이 발생하지 않는다.
+ *   데이터 URI는 즉시 디코딩되고 font-display:block 이라 폴백 깜빡임도 없다.
  */
-import { continueRender, delayRender } from "remotion";
 import { PRETENDARD_FACES } from "./fonts-data";
 
 const FAMILY = "Pretendard";
 
-// 렌더 전에 폰트 로딩 보장(데이터 URI라 즉시 resolve).
-if (typeof window !== "undefined" && typeof document !== "undefined") {
-  const handle = delayRender("Loading Pretendard fonts", {
-    timeoutInMilliseconds: 300000,
-  });
-  Promise.all(
-    PRETENDARD_FACES.map(async ({ weight, dataUrl }) => {
-      const face = new FontFace(FAMILY, `url(${dataUrl}) format("woff2")`, {
-        weight,
-        style: "normal",
-      });
-      await face.load();
-      (document.fonts as FontFaceSet).add(face);
-    }),
-  )
-    .then(() => continueRender(handle))
-    .catch(() => continueRender(handle));
+if (typeof document !== "undefined") {
+  const id = "pretendard-faces";
+  if (!document.getElementById(id)) {
+    const css = PRETENDARD_FACES.map(
+      ({ weight, dataUrl }) =>
+        `@font-face{font-family:'${FAMILY}';font-style:normal;font-weight:${weight};` +
+        `font-display:block;src:url(${dataUrl}) format('woff2');}`,
+    ).join("\n");
+    const style = document.createElement("style");
+    style.id = id;
+    style.textContent = css;
+    document.head.appendChild(style);
+  }
 }
 
 export const KR_FONT = `Pretendard, "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif`;
