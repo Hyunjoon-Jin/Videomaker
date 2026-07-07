@@ -16,7 +16,7 @@ export const Scene06Stadium: React.FC = () => {
   });
   return (
     <AbsoluteFill>
-      <Plate img="scenes/S06.png" label="Scene 6" title="경기 시작" seconds={5} live />
+      <Plate img="scenes/S06.png" clip="clips/S06.mp4" label="Scene 6" title="경기 시작" seconds={5} live />
       <Scoreboard
         homeScore={0}
         awayScore={0}

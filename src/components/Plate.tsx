@@ -2,6 +2,7 @@ import React from "react";
 import {
   AbsoluteFill,
   Img,
+  OffthreadVideo,
   staticFile,
   useCurrentFrame,
   useVideoConfig,
@@ -27,6 +28,7 @@ export interface PlateProps {
   scrimBottom?: boolean; // 자막 가독성
   grade?: string; // CSS filter, 예: "saturate(0.6)"
   live?: boolean; // 좌상단 LIVE 방송 버그(중계 느낌, PART2)
+  clip?: string; // Veo 영상 클립 경로(있으면 이미지 대신 재생), 예: "clips/S07.mp4"
 }
 
 export const Plate: React.FC<PlateProps> = ({
@@ -39,30 +41,41 @@ export const Plate: React.FC<PlateProps> = ({
   scrimBottom = true,
   grade,
   live = false,
+  clip,
 }) => {
   const frame = useCurrentFrame();
   const { durationInFrames } = useVideoConfig();
 
-  const scale = kenBurns
+  // 영상 클립이 있으면 자체 모션이 있으므로 켄번스 비활성
+  const useKenBurns = kenBurns && !clip;
+  const scale = useKenBurns
     ? interpolate(frame, [0, durationInFrames], [1.06, 1.14])
     : 1;
-  const drift = kenBurns
+  const drift = useKenBurns
     ? interpolate(frame, [0, durationInFrames], [-1.2, 1.2])
     : 0;
 
   return (
     <AbsoluteFill style={{ background: "#000" }}>
       <AbsoluteFill style={{ overflow: "hidden" }}>
-        <Img
-          src={staticFile(img)}
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            transform: `scale(${scale}) translateX(${drift}%)`,
-            filter: grade,
-          }}
-        />
+        {clip ? (
+          <OffthreadVideo
+            src={staticFile(clip)}
+            muted
+            style={{ width: "100%", height: "100%", objectFit: "cover", filter: grade }}
+          />
+        ) : (
+          <Img
+            src={staticFile(img)}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              transform: `scale(${scale}) translateX(${drift}%)`,
+              filter: grade,
+            }}
+          />
+        )}
       </AbsoluteFill>
 
       {scrimTop && (

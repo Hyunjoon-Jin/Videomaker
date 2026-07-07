@@ -21,11 +21,15 @@ export const Scene07Homerun: React.FC = () => {
   const shown = [...HITS].reverse().find((h) => frame >= h.at - 24) ?? HITS[0];
   const active = [...HITS].reverse().find((h) => frame >= h.at && frame < h.at + 130);
 
+  // 생성된 Veo 클립이 있는 이미지는 영상으로 재생
+  const CLIPS: Record<string, string> = { "scenes/S07.png": "clips/S07.mp4" };
+
   return (
     <AbsoluteFill>
       <Plate
         key={shown.img}
         img={shown.img}
+        clip={CLIPS[shown.img]}
         label="Scene 7"
         title="홈런 몽타주"
         seconds={20}

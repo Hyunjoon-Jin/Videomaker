@@ -2,6 +2,7 @@ import React from "react";
 import {
   AbsoluteFill,
   Img,
+  OffthreadVideo,
   staticFile,
   useCurrentFrame,
   useVideoConfig,
@@ -19,15 +20,16 @@ import { KR_FONT } from "../fonts";
  * 각 패널이 순차로 슬라이드 인 → 스코어바(만루) + LIVE + 중계 자막.
  */
 const RUNNERS = [
-  { img: "scenes/S12B1.png", base: "1루" },
-  { img: "scenes/S12B2.png", base: "2루" },
-  { img: "scenes/S12B3.png", base: "3루" },
+  { img: "scenes/S12B1.png", base: "1루", clip: undefined as string | undefined },
+  { img: "scenes/S12B2.png", base: "2루", clip: "clips/S12B2.mp4" },
+  { img: "scenes/S12B3.png", base: "3루", clip: undefined as string | undefined },
 ];
 
-const Panel: React.FC<{ img: string; base: string; index: number }> = ({
+const Panel: React.FC<{ img: string; base: string; index: number; clip?: string }> = ({
   img,
   base,
   index,
+  clip,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -50,6 +52,13 @@ const Panel: React.FC<{ img: string; base: string; index: number }> = ({
         borderLeft: index > 0 ? "3px solid rgba(255,255,255,0.9)" : "none",
       }}
     >
+      {clip ? (
+        <OffthreadVideo
+          src={staticFile(clip)}
+          muted
+          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+        />
+      ) : (
       <Img
         src={staticFile(img)}
         style={{
@@ -59,6 +68,7 @@ const Panel: React.FC<{ img: string; base: string; index: number }> = ({
           transform: `scale(${zoom})`,
         }}
       />
+      )}
       {/* 하단 스크림 + 베이스 라벨 */}
       <AbsoluteFill
         style={{
@@ -102,7 +112,7 @@ export const Scene12bBasesLoaded: React.FC = () => {
     <AbsoluteFill style={{ background: "#000" }}>
       <div style={{ display: "flex", width: "100%", height: "100%" }}>
         {RUNNERS.map((r, i) => (
-          <Panel key={r.base} img={r.img} base={r.base} index={i} />
+          <Panel key={r.base} img={r.img} base={r.base} index={i} clip={r.clip} />
         ))}
       </div>
 
