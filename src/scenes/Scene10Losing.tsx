@@ -30,8 +30,8 @@ export const Scene10Losing: React.FC = () => {
         />
       </AbsoluteFill>
       <Scoreboard
-        homeScore={3}
-        awayScore={5}
+        homeScore={4}
+        awayScore={7}
         inning="7회 초"
         count={{ balls: 0, strikes: 0, outs: 2 }}
         emphasize

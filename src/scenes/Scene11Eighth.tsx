@@ -39,8 +39,8 @@ export const Scene11Eighth: React.FC = () => {
             live
           />
           <Scoreboard
-            homeScore={3}
-            awayScore={5}
+            homeScore={4}
+            awayScore={7}
             inning="8회 말"
             bases={[true, false, false]}
             count={{ balls: 1, strikes: 1, outs: 1 }}

@@ -144,11 +144,11 @@ export const Scene12bBasesLoaded: React.FC = () => {
       </div>
 
       <Scoreboard
-        homeScore={3}
-        awayScore={5}
+        homeScore={4}
+        awayScore={7}
         inning="8회 말"
         bases={[true, true, true]}
-        count={{ balls: 0, strikes: 0, outs: 2 }}
+        count={{ balls: 3, strikes: 2, outs: 2 }}
       />
     </AbsoluteFill>
   );

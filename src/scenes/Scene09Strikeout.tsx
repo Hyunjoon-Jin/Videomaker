@@ -57,7 +57,7 @@ export const Scene09Strikeout: React.FC = () => {
       </div>
 
       <Scoreboard
-        homeScore={3}
+        homeScore={4}
         awayScore={0}
         inning="6회 말"
         count={{ balls: 1, strikes: 2, outs: 2 }}

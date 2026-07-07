@@ -23,11 +23,13 @@ NEG = "no text, no letters, no logos, no captions, no watermarks"
 
 # 유니폼 규칙: 홈=최상강남(KT 위즈 스타일, 실제 로고/글자는 no-logos로 배제),
 #            원정=그레이·네이비. 선수는 모두 한국인.
-HOME = ("Korean baseball players wearing a KT Wiz style uniform "
-        "(white jersey with bold red and black accents, black cap with red trim)")
-HOME_ONE = ("a Korean professional baseball player wearing a KT Wiz style uniform "
-            "(white jersey with bold red and black accents, black cap with red trim)")
-AWAY_ONE = "an opposing player in a grey and navy blue uniform"
+HOME = ("Korean baseball players wearing KT Wiz style uniforms (white jersey with thin "
+        "red pinstripes and red accents, solid BLACK cap and BLACK batting helmet with "
+        "red trim, matching real KT Wiz colors)")
+HOME_ONE = ("a Korean professional baseball player wearing a KT Wiz style uniform (white "
+            "jersey with thin red pinstripes and red accents, solid BLACK cap/helmet with "
+            "red trim, matching real KT Wiz colors)")
+AWAY_ONE = "an opposing player in a grey and navy blue uniform with a navy cap"
 
 # id: 프롬프트
 PROMPTS = {
@@ -55,13 +57,14 @@ PROMPTS = {
            f"outside the window with a soft blue glow, stars in deep space, warm desk lamp "
            f"lighting in foreground, cinematic, photorealistic, no people, {NEG}",
     # PART 2 — 한국인 선수 + KT 위즈 스타일 홈 유니폼
-    "S06": f"Epic aerial drone view of a packed baseball stadium at night, stadium "
-           f"floodlights blazing against dark sky, glowing green field below, crowd as a "
-           f"sea of lights, cinematic sports broadcast opening, anamorphic lens flares, {NEG}",
-    "S07": f"Slow motion medium close-up: {HOME_ONE}, a batter making powerful contact "
-           f"with the ball at night, perfect swing mechanics, bat blur, stadium lights "
-           f"flaring behind him, dust particles in the air, cinematic sports film, "
-           f"shallow depth of field, {NEG}",
+    "S06": f"Dynamic cinematic action shot at a packed night baseball stadium: {HOME_ONE} "
+           f"sprinting hard onto the brightly floodlit field with intensity as a huge "
+           f"crowd roars, motion blur and kicked-up dust, dramatic low angle, anamorphic "
+           f"lens flares, energetic sports broadcast opening, {NEG}",
+    "S07": f"Slow motion medium shot: {HOME_ONE}, a batter an instant after clean contact, "
+           f"the baseball already launched and flying forward well ahead of the bat, "
+           f"powerful follow-through, bat blur trailing behind, stadium lights flaring, "
+           f"dust particles in the air, cinematic sports film, shallow depth of field, {NEG}",
     "S08": f"Dramatic slow motion side angle at ground level: {HOME_ONE}, a runner diving "
            f"head-first into second base, dust cloud exploding, {AWAY_ONE} applying a late "
            f"tag, night stadium lights, cinematic sports photography, shallow depth of "
@@ -69,31 +72,34 @@ PROMPTS = {
     "S09": f"Slow motion close-up from behind the pitcher: {HOME_ONE}, a pitcher releasing "
            f"a blazing fastball, perfect pitching mechanics, arm blur, intense focused "
            f"eyes under cap brim, night stadium lights, cinematic sports film, {NEG}",
-    "S10": f"Static medium shot: tense baseball dugout at night, three {HOME} sitting with "
-           f"serious focused expressions, one gripping his helmet, dramatic low-key side "
-           f"lighting, quiet heavy atmosphere, muted color grade, cinematic sports "
-           f"documentary, {NEG}",
-    "S11": f"Slow motion low angle: {HOME} standing up from the dugout bench with quiet "
-           f"determination, adjusting helmets, jaws set, dramatic rim lighting from "
-           f"stadium lights behind them, rising heroic mood, cinematic, maximum three "
-           f"players in frame, {NEG}",
-    "S12": f"Extreme close-up: {HOME_ONE}, a pitcher's sweating face under his cap brim at "
-           f"night, single sweat drop rolling down his temple, intense eyes staring toward "
-           f"home plate, stadium lights creating a rim light on his cap, ultra shallow "
-           f"depth of field, cinematic thriller tension, {NEG}",
+    "S10": f"Static medium shot: tense baseball dugout at night, three {HOME} sitting on "
+           f"the bench wearing black team caps (NOT helmets) with serious focused "
+           f"expressions, dramatic low-key side lighting, quiet heavy atmosphere, muted "
+           f"color grade, cinematic sports documentary, {NEG}",
+    "S11": f"Slow motion low angle: {HOME} wearing black team caps (NOT helmets) standing "
+           f"up from the dugout bench with quiet determination, jaws set, dramatic rim "
+           f"lighting from stadium lights behind them, rising heroic mood, cinematic, "
+           f"maximum three players in frame, {NEG}",
+    "S12": f"Extreme close-up: an opposing RIVAL baseball pitcher in a grey and navy blue "
+           f"uniform with a navy cap, sweating face under his cap brim at night, single "
+           f"sweat drop rolling down his temple, intense eyes staring toward home plate, "
+           f"stadium lights creating a rim light on his cap, ultra shallow depth of "
+           f"field, cinematic thriller tension, {NEG}",
     # 만루 상황 — 1/2/3루 주자 분할화면용 3컷 (Scene 13 직전)
-    "S12B1": f"Medium close-up portrait: {HOME_ONE}, a base runner crouched low on first "
-             f"base at night, determined intense focused expression, eyes locked forward "
-             f"ready to sprint, stadium floodlights behind, shallow depth of field, "
-             f"vertical composition, cinematic sports, {NEG}",
-    "S12B2": f"Medium close-up portrait: {HOME_ONE}, a base runner leading off second base "
-             f"at night, fierce determined focused expression, gritted jaw, coiled and "
-             f"ready to run, stadium floodlights behind, shallow depth of field, vertical "
-             f"composition, cinematic sports, {NEG}",
-    "S12B3": f"Medium close-up portrait: {HOME_ONE}, a base runner on third base at night, "
-             f"tense determined expression staring toward home plate, coiled to charge "
-             f"home, stadium floodlights behind, shallow depth of field, vertical "
-             f"composition, cinematic sports, {NEG}",
+    # 세 주자 모두 검정 헬멧 착용, 뛰는 자세가 아니라 리드폭 잡는 자세.
+    "S12B1": f"Medium portrait: {HOME_ONE}, a base runner wearing a BLACK batting helmet "
+             f"taking a lead-off stance just off first base at night, weight balanced and "
+             f"leaning slightly, poised and ready to run but NOT running, determined "
+             f"intense focused expression, stadium floodlights, vertical composition, "
+             f"cinematic sports, {NEG}",
+    "S12B2": f"Medium portrait: {HOME_ONE}, a base runner wearing a BLACK batting helmet "
+             f"taking a lead-off stance just off second base at night, poised low and "
+             f"ready but NOT running, fierce determined focused expression, stadium "
+             f"floodlights, vertical composition, cinematic sports, {NEG}",
+    "S12B3": f"Medium portrait: {HOME_ONE}, a base runner wearing a BLACK batting helmet "
+             f"taking a lead-off stance just off third base at night, poised and ready to "
+             f"break for home but NOT running, tense determined expression, stadium "
+             f"floodlights, vertical composition, cinematic sports, {NEG}",
     # 타격의 순간 — 실제 스윙 컨택
     "S13": f"Dynamic slow motion: {HOME_ONE}, a batter mid-swing making explosive solid "
            f"contact with the ball at night, full body powerful follow-through, bat "
@@ -105,6 +111,39 @@ PROMPTS = {
             f"into the dark night sky between two blazing stadium light towers, the ball "
             f"a bright point against the stars, anamorphic lens flare, majestic and "
             f"hopeful mood, no players visible, cinematic, {NEG}",
+
+    # ── 추가 보강 장면 (PART2 야구, 이미지 8컷) ──
+    "S06C": f"A Korean baseball manager in his 50s wearing a KT Wiz style team jacket and "
+            f"cap, standing in the dugout at night with a focused authoritative "
+            f"expression signaling a play, players blurred behind, stadium lights, "
+            f"cinematic sports, {NEG}",
+    "S07C": f"Dramatic slow motion: {HOME_ONE}, a batter performing an epic bat flip "
+            f"(KBO ppa-dun) after a home run, tossing the bat high in the air with "
+            f"swagger while watching the ball fly, confident triumphant pose, night "
+            f"stadium lights, cinematic sports, {NEG}",
+    "S07B": f"Ecstatic Korean baseball fans in the stands at night cheering wildly, "
+            f"waving red and black thundersticks, crowd celebrating with raised arms, "
+            f"stadium floodlights, confetti in the air, dynamic energy, cinematic sports "
+            f"broadcast, {NEG}",
+    "S11B": f"Night baseball: a group of {HOME} gathered on the pitching mound for a "
+            f"tense strategy meeting, pitcher and infielders leaning in with heads "
+            f"together, focused serious faces, stadium lights, cinematic sports "
+            f"documentary, maximum five players, {NEG}",
+    "S08B": f"Dramatic slow motion: {HOME_ONE}, an outfielder making a spectacular "
+            f"full-stretch diving catch, body parallel to the ground, glove extended, "
+            f"grass and dust flying, night stadium lights, cinematic sports photography, "
+            f"shallow depth of field, {NEG}",
+    "S10B": f"An opposing baseball player in a grey and navy blue uniform sliding into "
+            f"home plate scoring a run at night, dust cloud, teammates celebrating in the "
+            f"background, tense disappointing mood, cinematic sports, {NEG}",
+    "S13B2": f"Dramatic slow motion low angle: {HOME_ONE}, a runner sliding into home "
+             f"plate in a huge dust cloud as the catcher reaches for a late tag, intense "
+             f"night stadium, cinematic sports photography, shallow depth of field, {NEG}",
+    "S13C": f"Euphoric team celebration: a group of Korean baseball players in KT Wiz "
+            f"style uniforms (white with red and black accents) piling together and "
+            f"jumping in joy at home plate, walk-off victory, confetti and dust in "
+            f"stadium floodlights, crowd exploding behind, cinematic sports, maximum six "
+            f"players, {NEG}",
 }
 
 OUT_DIR = "public/scenes"

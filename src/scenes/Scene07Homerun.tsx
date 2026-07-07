@@ -10,11 +10,12 @@ import { Subtitle } from "../components/Subtitle";
  * 오버레이: 실적 임팩트 자막 + 홈런마다 GANGNAM 스코어 +1.
  */
 
-// 수주 1건 = 약 5초 리듬(150f). 3건.
+// 수주 = 득점. 4건으로 최상강남 4점.
 const HITS = [
   { at: 20, main: "○○기관 42억 수주", sub: "비거리 140m 장외 홈런!" },
-  { at: 170, main: "△△그룹 68억 수주", sub: "우측 담장 훌쩍!" },
-  { at: 330, main: "□□공사 55억 수주", sub: "쐐기 만루포!" },
+  { at: 165, main: "△△그룹 68억 수주", sub: "우측 담장 훌쩍!" },
+  { at: 310, main: "◇◇전자 91억 수주", sub: "우중간 투런포!" },
+  { at: 455, main: "□□공사 55억 수주", sub: "쐐기 솔로포!" },
 ];
 
 export const Scene07Homerun: React.FC = () => {
