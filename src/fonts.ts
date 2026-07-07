@@ -13,7 +13,7 @@ const FAMILY = "Pretendard";
 // 렌더 전에 폰트 로딩 보장(데이터 URI라 즉시 resolve).
 if (typeof window !== "undefined" && typeof document !== "undefined") {
   const handle = delayRender("Loading Pretendard fonts", {
-    timeoutInMilliseconds: 60000,
+    timeoutInMilliseconds: 300000,
   });
   Promise.all(
     PRETENDARD_FACES.map(async ({ weight, dataUrl }) => {
