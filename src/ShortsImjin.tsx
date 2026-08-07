@@ -2,167 +2,240 @@ import React from "react";
 import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
 import { KoreaMap } from "./KoreaMap";
 import { MarchRoute } from "./MarchRoute";
-import { DIVISIONS, TOTAL_DAYS, eventAt, fallenAt } from "./data/imjin";
+import { BEATS, cameraAt, totalFrames } from "./camera";
+import { DIVISIONS, eventAt, fallenAt } from "./data/imjin";
 import { C, FPS } from "./theme";
 import { useFonts } from "./fonts";
 
-/** 45초 */
-export const IMJIN_DURATION = 45 * FPS;
+/** 훅이 끝나고 지도가 시작되는 프레임 */
+const MAP_START = Math.round(2.2 * FPS);
 
-const HOOK_END = 4 * FPS; // 0-4s   훅
-const MARCH_END = 37 * FPS; // 4-37s  진격
-// 37-45s 마무리
+export const IMJIN_DURATION = totalFrames(MAP_START) + 20;
 
-/** 함락지 주변으로 번지는 붉은 기운 — 거리 기반 감쇠 */
-const FALL_TINT = "#7F1D1D";
+const FALL_TINT = "#8B1A1A";
+
+/** 결정적 흔들림 — Math.random은 프레임마다 값이 바뀌어 못 쓴다. */
+function shake(frame: number, amp: number): [number, number] {
+  return [
+    Math.sin(frame * 2.7) * amp + Math.sin(frame * 5.1) * amp * 0.4,
+    Math.cos(frame * 3.3) * amp + Math.cos(frame * 6.7) * amp * 0.4,
+  ];
+}
 
 export const ShortsImjin: React.FC = () => {
   useFonts();
   const frame = useCurrentFrame();
 
-  const day = interpolate(frame, [HOOK_END, MARCH_END], [0, TOTAL_DAYS], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
+  const cam = cameraAt(frame, MAP_START);
+  const { day, impact } = cam;
 
-  const reveal = interpolate(frame, [10, HOOK_END + 15], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
+  // 현재 줌 배율 = 1000 / viewBox 너비
+  const zoom = 1000 / parseFloat(cam.viewBox.split(" ")[2]);
+  const inv = 1 / zoom;
 
   const fallen = fallenAt(day);
   const ev = eventAt(day);
+  const [sx, sy] = shake(frame, impact * 9);
 
-  const outro = interpolate(frame, [MARCH_END, MARCH_END + 20], [0, 1], {
+  // ── 훅 (0 ~ 2.2s) ─────────────────────────────
+  const hookOut = interpolate(frame, [MAP_START - 14, MAP_START], [1, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const hookIn = interpolate(frame, [0, 10], [0, 1], { extrapolateRight: "clamp" });
+  const hookPunch = interpolate(frame, [8, 26], [0.82, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
+  const mapIn = interpolate(frame, [MAP_START - 8, MAP_START + 14], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
   return (
     <AbsoluteFill style={{ backgroundColor: C.bg, fontFamily: "Pretendard" }}>
-      {/* ── 상단 ── */}
-      <div style={{ position: "absolute", top: 110, left: 64, right: 64 }}>
-        <div style={{ color: C.dim, fontSize: 32, fontWeight: 700, letterSpacing: 2 }}>
-          1592년 · 임진왜란
-        </div>
-        <div
-          style={{
-            color: C.text,
-            fontSize: 82,
-            fontWeight: 900,
-            lineHeight: 1.12,
-            marginTop: 10,
-          }}
-        >
-          부산에서 한양까지
-          <br />
-          단 20일
-        </div>
-      </div>
-
-      {/* ── 지도 + 진격로 ── */}
-      <div style={{ position: "absolute", top: 420, left: 30, right: 30, height: 1010 }}>
-        <KoreaMap
-          reveal={reveal}
-          colorOf={(r) => (fallen.has(r.code) ? FALL_TINT : C.flat)}
-        >
-          {DIVISIONS.map((d) => (
-            <MarchRoute key={d.id} division={d} day={day} />
-          ))}
-        </KoreaMap>
-      </div>
-
-      {/* ── 경과일 ── */}
-      <div
+      {/* ── 지도 (전체 화면) ── */}
+      <AbsoluteFill
         style={{
-          position: "absolute",
-          top: 436,
-          right: 60,
-          textAlign: "right",
-          opacity: reveal,
+          opacity: mapIn,
+          transform: `translate(${sx}px, ${sy}px) scale(${1 + impact * 0.02})`,
         }}
       >
-        <div
-          style={{
-            color: C.text,
-            fontSize: 132,
-            fontWeight: 900,
-            lineHeight: 1,
-            fontVariantNumeric: "tabular-nums",
-            textShadow: `0 0 40px ${C.bg}`,
-          }}
+        <KoreaMap
+          viewBox={cam.viewBox}
+          strokeScale={inv}
+          colorOf={(r) => (fallen.has(r.code) ? FALL_TINT : "#232B3A")}
         >
-          D+{Math.floor(day)}
-        </div>
-      </div>
+          {DIVISIONS.map((d) => (
+            <MarchRoute key={d.id} division={d} day={day} scale={inv} />
+          ))}
+        </KoreaMap>
+      </AbsoluteFill>
 
-      {/* ── 사건 카드 (날짜 병기) ── */}
-      {ev && (
-        <div style={{ position: "absolute", bottom: 296, left: 64, right: 64 }}>
+      {/* 충격 시 화면 전체가 붉게 번쩍 */}
+      <AbsoluteFill
+        style={{
+          background: `radial-gradient(circle at 50% 46%, rgba(220,38,38,${
+            impact * 0.42
+          }) 0%, rgba(220,38,38,0) 62%)`,
+          pointerEvents: "none",
+        }}
+      />
+
+      {/* 상하 그라데이션 — 지도 위 글자 가독성 확보 */}
+      <AbsoluteFill
+        style={{
+          background: `linear-gradient(180deg, ${C.bg} 0%, rgba(11,14,20,0.55) 16%, rgba(11,14,20,0) 34%, rgba(11,14,20,0) 52%, rgba(11,14,20,0.86) 70%, ${C.bg} 84%)`,
+          pointerEvents: "none",
+        }}
+      />
+
+      {/* ── 사건 카드 ── */}
+      {ev && mapIn > 0.5 && (
+        <div style={{ position: "absolute", bottom: 330, left: 60, right: 60 }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 14 }}>
-            <span style={{ color: C.warn, fontSize: 40, fontWeight: 900 }}>
+            <span style={{ color: C.warn, fontSize: 44, fontWeight: 900 }}>
+              D+{ev.day}
+            </span>
+            <span style={{ color: C.text, fontSize: 38, fontWeight: 700 }}>
               {ev.solar}
             </span>
-            <span style={{ color: C.dim, fontSize: 28, fontWeight: 700 }}>
+            <span style={{ color: C.dim, fontSize: 27, fontWeight: 500 }}>
               {ev.lunar}
             </span>
           </div>
           <div
             style={{
               color: C.text,
-              fontSize: 66,
+              fontSize: 92,
               fontWeight: 900,
-              marginTop: 4,
-              transform: `scale(${1 + outro * 0.08})`,
+              lineHeight: 1.08,
+              marginTop: 6,
+              transform: `scale(${1 + impact * 0.06})`,
               transformOrigin: "left bottom",
             }}
           >
             {ev.title}
           </div>
-          <div style={{ color: C.dim, fontSize: 34, fontWeight: 500, marginTop: 6 }}>
+          <div style={{ color: "#C7CEDB", fontSize: 40, fontWeight: 500, marginTop: 10 }}>
             {ev.detail}
           </div>
         </div>
       )}
 
-      {/* ── 3로 범례 ── */}
-      <div
-        style={{
-          position: "absolute",
-          bottom: 150,
-          left: 64,
-          display: "flex",
-          flexDirection: "column",
-          gap: 8,
-          opacity: reveal,
-        }}
-      >
-        {DIVISIONS.map((d) => (
-          <div key={d.id} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ width: 34, height: 6, borderRadius: 3, background: d.color }} />
-            <span style={{ color: C.dim, fontSize: 27, fontWeight: 700 }}>
-              {d.route} · {d.commander}
-            </span>
+      {/* ── 진행 바 (D+0 → D+20) ── */}
+      {mapIn > 0.5 && (
+        <div style={{ position: "absolute", bottom: 210, left: 60, right: 60 }}>
+          <div
+            style={{
+              height: 8,
+              borderRadius: 4,
+              background: "#222A38",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                width: `${(day / 20) * 100}%`,
+                height: "100%",
+                background: C.drop,
+              }}
+            />
           </div>
-        ))}
-      </div>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              color: C.dim,
+              fontSize: 24,
+              fontWeight: 700,
+              marginTop: 10,
+            }}
+          >
+            <span>부산 상륙</span>
+            <span>한양</span>
+          </div>
+        </div>
+      )}
 
-      {/* ── 출처 ── */}
-      <div
-        style={{
-          position: "absolute",
-          bottom: 68,
-          left: 64,
-          right: 64,
-          color: C.dim,
-          fontSize: 21,
-          lineHeight: 1.45,
-        }}
-      >
-        날짜 양력(음력 병기) · 경계는 현재 행정구역
-        <br />
-        진격로는 경유지를 이은 도식이며 실제 행군로가 아님
-      </div>
+      {/* ── 고지 ── */}
+      {mapIn > 0.5 && (
+        <div
+          style={{
+            position: "absolute",
+            bottom: 92,
+            left: 60,
+            right: 60,
+            color: "#5C6577",
+            fontSize: 20,
+            lineHeight: 1.5,
+          }}
+        >
+          날짜 양력(음력 병기) · 경계는 현재 행정구역
+          <br />
+          진격로는 경유지를 이은 도식이며 실제 행군로가 아님
+        </div>
+      )}
+
+      {/* ── 훅 ── */}
+      {hookOut > 0 && (
+        <AbsoluteFill
+          style={{
+            backgroundColor: C.bg,
+            opacity: hookOut,
+            justifyContent: "center",
+            alignItems: "center",
+            padding: 60,
+          }}
+        >
+          <div style={{ opacity: hookIn, textAlign: "center" }}>
+            <div style={{ color: C.dim, fontSize: 44, fontWeight: 700, letterSpacing: 3 }}>
+              1592년, 부산에서 한양까지
+            </div>
+            <div
+              style={{
+                color: C.drop,
+                fontSize: 400,
+                fontWeight: 900,
+                lineHeight: 0.92,
+                marginTop: 20,
+                transform: `scale(${hookPunch})`,
+              }}
+            >
+              20
+            </div>
+            <div style={{ color: C.text, fontSize: 120, fontWeight: 900, marginTop: -10 }}>
+              일
+            </div>
+          </div>
+        </AbsoluteFill>
+      )}
+
+      {/* 마지막 비트에서 3로 범례를 한 번만 보여준다 */}
+      {cam.beatIndex === BEATS.length - 1 && (
+        <div
+          style={{
+            position: "absolute",
+            top: 150,
+            left: 60,
+            display: "flex",
+            flexDirection: "column",
+            gap: 10,
+          }}
+        >
+          {DIVISIONS.map((d) => (
+            <div key={d.id} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div
+                style={{ width: 40, height: 7, borderRadius: 4, background: d.color }}
+              />
+              <span style={{ color: "#C7CEDB", fontSize: 30, fontWeight: 700 }}>
+                {d.route} · {d.commander}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
     </AbsoluteFill>
   );
 };

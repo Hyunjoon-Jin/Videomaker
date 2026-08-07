@@ -32,13 +32,15 @@ function pointsUpTo(div: Division, day: number): Array<{ x: number; y: number }>
 interface Props {
   division: Division;
   day: number;
+  /** 확대 시 선 굵기를 유지하기 위한 보정(= 1/zoom) */
+  scale?: number;
 }
 
 /**
  * 진격로 한 갈래. 지도와 같은 0..1000 좌표계 위에 그린다.
  * 선두에는 광점을 찍어 현재 위치를 보여준다.
  */
-export const MarchRoute: React.FC<Props> = ({ division, day }) => {
+export const MarchRoute: React.FC<Props> = ({ division, day, scale = 1 }) => {
   const pts = pointsUpTo(division, day);
   if (pts.length === 0) return null;
 
@@ -52,7 +54,7 @@ export const MarchRoute: React.FC<Props> = ({ division, day }) => {
         d={d}
         fill="none"
         stroke={division.color}
-        strokeWidth={9}
+        strokeWidth={9 * scale}
         strokeLinecap="round"
         strokeLinejoin="round"
         opacity={0.22}
@@ -61,14 +63,20 @@ export const MarchRoute: React.FC<Props> = ({ division, day }) => {
         d={d}
         fill="none"
         stroke={division.color}
-        strokeWidth={3.4}
+        strokeWidth={3.4 * scale}
         strokeLinecap="round"
         strokeLinejoin="round"
       />
       {pts.length > 1 && (
         <>
-          <circle cx={head.x} cy={head.y} r={13} fill={division.color} opacity={0.25} />
-          <circle cx={head.x} cy={head.y} r={5.5} fill="#fff" />
+          <circle
+            cx={head.x}
+            cy={head.y}
+            r={13 * scale}
+            fill={division.color}
+            opacity={0.25}
+          />
+          <circle cx={head.x} cy={head.y} r={5.5 * scale} fill="#fff" />
         </>
       )}
     </g>

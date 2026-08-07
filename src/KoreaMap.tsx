@@ -9,6 +9,10 @@ interface Props {
   reveal?: number;
   /** 지역별 외곽선 색(강조용). 없으면 배경색 */
   strokeOf?: (r: Region) => string;
+  /** 카메라. 없으면 전국 뷰 고정 */
+  viewBox?: string;
+  /** 확대 시 선이 같이 두꺼워지지 않도록 하는 보정 배율 */
+  strokeScale?: number;
   children?: React.ReactNode;
 }
 
@@ -20,9 +24,16 @@ interface Props {
  *
  * children은 지도와 같은 좌표계(0..1000) 위에 얹힌다 — 경로선·마커용.
  */
-export const KoreaMap: React.FC<Props> = ({ colorOf, reveal = 1, strokeOf, children }) => (
+export const KoreaMap: React.FC<Props> = ({
+  colorOf,
+  reveal = 1,
+  strokeOf,
+  viewBox,
+  strokeScale = 1,
+  children,
+}) => (
   <svg
-    viewBox={VIEW_BOX}
+    viewBox={viewBox ?? VIEW_BOX}
     style={{ width: "100%", height: "100%", display: "block", overflow: "visible" }}
   >
     {REGIONS.map((r) => {
@@ -36,7 +47,7 @@ export const KoreaMap: React.FC<Props> = ({ colorOf, reveal = 1, strokeOf, child
           d={r.d}
           fill={colorOf(r)}
           stroke={strokeOf ? strokeOf(r) : C.bg}
-          strokeWidth={0.7}
+          strokeWidth={0.7 * strokeScale}
           opacity={local}
         />
       );
