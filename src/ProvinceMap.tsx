@@ -2,7 +2,8 @@ import React from "react";
 import provinces from "./data/provinces.json";
 import { CITIES } from "./data/places";
 import { Battle, battlesUpTo } from "./data/battles";
-import { frontLine, frontPath, holePath } from "./front";
+import { frontLine, frontPath, holePath, smooth } from "./front";
+import { FORTS, FORT_FROM, FORT_TO, MILITIA, ROUTES, routeProgress } from "./data/detail";
 
 interface Province {
   id: string;
@@ -27,6 +28,8 @@ const COAST = "#3A4762";
 
 const JOSEON = "#60A5FA";
 const JAPAN = "#F87171";
+const MILITIA_C = "#34D399";
+const FORT_C = "#FCA5A5";
 
 /**
  * 전쟁 지도 — 점령권을 곡선으로 그린다.
@@ -105,6 +108,87 @@ export const WarMap: React.FC<Props> = ({ month, reveal = 1, children }) => {
             </text>
           </g>
         ))}
+
+        {/* 이동 경로 — 선조 파천 · 명군 남하 */}
+        {ROUTES.map((r) => {
+          const prog = routeProgress(r, month);
+          if (prog <= 0) return null;
+          const pts = smooth(r.pts.map((p) => [p.x, p.y] as [number, number]), 16);
+          const n = Math.max(2, Math.round(pts.length * prog));
+          const d = pts
+            .slice(0, n)
+            .map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)} ${y.toFixed(1)}`)
+            .join("");
+          const head = pts[n - 1];
+          return (
+            <g key={r.id}>
+              <path
+                d={d}
+                fill="none"
+                stroke={r.color}
+                strokeWidth={2.6}
+                strokeDasharray="9 7"
+                opacity={0.9}
+              />
+              <circle cx={head[0]} cy={head[1]} r={4.5} fill={r.color} />
+            </g>
+          );
+        })}
+
+        {/* 왜성 — 남해안 벨트. 교착기의 실체 */}
+        {month >= FORT_FROM && month < FORT_TO &&
+          FORTS.map((f) => (
+            <g key={f.name}>
+              <rect
+                x={f.x - 4}
+                y={f.y - 4}
+                width={8}
+                height={8}
+                fill="#0B0E14"
+                stroke={FORT_C}
+                strokeWidth={2.2}
+              />
+            </g>
+          ))}
+
+        {/* 의병 */}
+        {MILITIA.filter((m) => m.month <= month).map((m) => {
+          const fresh = Math.max(0, 1 - (month - m.month) / 1.2);
+          return (
+            <g key={m.leader}>
+              {fresh > 0 && (
+                <circle
+                  cx={m.x}
+                  cy={m.y}
+                  r={5 + fresh * 22}
+                  fill="none"
+                  stroke={MILITIA_C}
+                  strokeWidth={2.2}
+                  opacity={fresh * 0.8}
+                />
+              )}
+              <path
+                d={`M${m.x} ${m.y - 6}L${m.x + 5.5} ${m.y + 4}L${m.x - 5.5} ${m.y + 4}Z`}
+                fill={MILITIA_C}
+                stroke="#0B0E14"
+                strokeWidth={1.2}
+              />
+              {m.label && (
+                <text
+                  x={m.side === "left" ? m.x - 11 : m.x + 11}
+                  y={m.y + 5 + (m.dy ?? 0)}
+                  textAnchor={m.side === "left" ? "end" : "start"}
+                  fontSize={20}
+                  fontWeight={900}
+                  fill={MILITIA_C}
+                  style={{ paintOrder: "stroke", stroke: "#0B0E14", strokeWidth: 5 }}
+                >
+                  {m.leader}
+                </text>
+              )}
+            </g>
+          );
+        })}
 
         {/* 전투 */}
         {fought.map((b) => (

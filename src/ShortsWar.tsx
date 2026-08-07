@@ -175,6 +175,8 @@ export const ShortsWar: React.FC = () => {
             <Key color="#9B1C1C" label="일본군 점령" />
             <Key color="#60A5FA" label="조선 승전" />
             <Key color="#F87171" label="일본 승전" />
+            <Key color="#34D399" label="의병" />
+            <Key color="#FCA5A5" label="왜성" />
             <span style={{ color: C.dim, fontSize: 25, fontWeight: 700 }}>
               전투 {battlesUpTo(month).length}
             </span>
@@ -182,7 +184,7 @@ export const ShortsWar: React.FC = () => {
           <div style={{ color: "#5C6577", fontSize: 19, lineHeight: 1.5 }}>
 전선은 사료상 전황을 곡선으로 근사 · 전투는 개별 실좌표
             <br />
-            날짜는 음력 · 행정 경계와 무관한 개략선이며 실제 전선의 세부는 다름
+            날짜는 음력 · 의병 표시는 기병지이며 활동 범위가 아님
           </div>
         </div>
       )}

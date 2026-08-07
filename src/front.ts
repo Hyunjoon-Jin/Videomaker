@@ -54,7 +54,7 @@ function frontYs(month: number): number[] {
 }
 
 /** Catmull-Rom을 통과하는 부드러운 곡선 좌표열 */
-function smooth(pts: Array<[number, number]>, steps = 14): Array<[number, number]> {
+export function smooth(pts: Array<[number, number]>, steps = 14): Array<[number, number]> {
   const ext = [pts[0], ...pts, pts[pts.length - 1]];
   const out: Array<[number, number]> = [];
   for (let i = 1; i < ext.length - 2; i++) {

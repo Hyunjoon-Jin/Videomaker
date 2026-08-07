@@ -105,16 +105,16 @@ export interface WarEvent {
 }
 
 export const WAR_EVENTS: WarEvent[] = [
-  { month: 0, date: "1592년 4월", title: "부산 상륙", detail: "왜군 20만, 조선 침공", impact: 0.6 },
+  { month: 0, date: "1592년 4월", title: "부산 상륙", detail: "일본군 약 15만 8천, 조선 침공", impact: 0.6 },
   { month: 1, date: "1592년 5월", title: "한양 함락", detail: "상륙 20일 만에 수도 함락", impact: 0.9 },
   { month: 1.4, date: "1592년 5월", title: "옥포 해전", detail: "이순신 첫 승리", win: true, sea: "옥포", impact: 0.5 },
   { month: 2, date: "1592년 6월", title: "평양 함락", detail: "선조는 의주까지 피난", impact: 0.85 },
   { month: 3, date: "1592년 7월", title: "한산도 대첩", detail: "학익진 — 제해권 장악", win: true, sea: "한산도", impact: 1 },
   { month: 3.6, date: "1592년 7월", title: "이치 전투", detail: "전라도 방어선을 지켜내다", win: true, impact: 0.6 },
-  { month: 6, date: "1592년 10월", title: "진주대첩", detail: "김시민, 전라 진입을 막다", win: true, impact: 0.8 },
+  { month: 6, date: "1592년 10월", title: "1차 진주성", detail: "김시민 — 전라 진입을 막다", win: true, impact: 0.8 },
   { month: 9, date: "1593년 1월", title: "평양성 탈환", detail: "조명연합군 반격 개시", win: true, impact: 0.9 },
   { month: 10.5, date: "1593년 2월", title: "행주대첩", detail: "권율, 한양 코앞에서 대승", win: true, impact: 1 },
-  { month: 12, date: "1593년 4월", title: "한양 수복", detail: "왜군, 남해안 왜성으로 후퇴", win: true, impact: 0.7 },
+  { month: 12, date: "1593년 4월", title: "한양 수복", detail: "일본군, 남해안 왜성으로 후퇴", win: true, impact: 0.7 },
   { month: 30, date: "1594~1596", title: "강화 협상", detail: "3년간의 교착" },
   { month: 63, date: "1597년 7월", title: "칠천량 패전", detail: "조선 수군 궤멸 — 정유재란", impact: 0.9 },
   { month: 64, date: "1597년 8월", title: "남원 함락", detail: "지켜냈던 전라도가 뚫리다", impact: 1 },

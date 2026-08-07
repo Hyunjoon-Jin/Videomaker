@@ -45,7 +45,6 @@ export const CITIES: Array<Place & { from: number }> = [
   { ...P("평양", 125.75, 39.02, "left"), from: 2 },
   { ...P("의주", 124.50, 40.10, "right"), from: 2 },
   { ...P("회령", 129.75, 42.44, "left"), from: 3 },
-  { ...P("진주", 128.08, 35.18), from: 6 },
   { ...P("남원", 127.39, 35.42, "left"), from: 64 },
 ];
 
