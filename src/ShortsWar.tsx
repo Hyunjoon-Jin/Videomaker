@@ -2,9 +2,10 @@ import React from "react";
 import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
 import { ProvinceMap } from "./ProvinceMap";
 import {
+  ProvinceId,
   TOTAL_MONTHS,
   monthLabel,
-  occupiedAt,
+  occupationLevel,
   seaWinsUpTo,
   warEventAt,
 } from "./data/war";
@@ -52,7 +53,7 @@ export const ShortsWar: React.FC = () => {
   const frame = useCurrentFrame();
 
   const month = monthAt(frame);
-  const occupied = occupiedAt(month);
+
   const ev = warEventAt(month);
 
   // 사건 직후에만 충격이 실린다
@@ -86,21 +87,12 @@ export const ShortsWar: React.FC = () => {
           transform: `translate(${sx}px, ${sy}px)`,
         }}
       >
-        <ProvinceMap occupied={occupied} reveal={mapIn}>
-          {seaWinsUpTo(month).map((e, i) => (
-            <g key={i}>
-              <circle cx={e.sea!.x} cy={e.sea!.y} r={16} fill="#3B82F6" opacity={0.22} />
-              <circle
-                cx={e.sea!.x}
-                cy={e.sea!.y}
-                r={7}
-                fill="#0B0E14"
-                stroke="#60A5FA"
-                strokeWidth={3.4}
-              />
-            </g>
-          ))}
-        </ProvinceMap>
+        <ProvinceMap
+          levelOf={(id: ProvinceId) => occupationLevel(month, id)}
+          month={month}
+          reveal={mapIn}
+          seaShown={seaWinsUpTo(month).map((e) => e.sea as string)}
+        />
       </div>
 
       <AbsoluteFill
