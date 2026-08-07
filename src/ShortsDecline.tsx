@@ -3,7 +3,7 @@ import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
 import { KoreaMap } from "./KoreaMap";
 import { REGIONS } from "./data/regions";
 import { END_YEAR, IS_REAL_DATA, START_YEAR, changeRatio } from "./data/population";
-import { C, FPS } from "./theme";
+import { C, FPS, rampColor } from "./theme";
 import { useFonts } from "./fonts";
 
 /** 40초 = 1200프레임 */
@@ -74,7 +74,18 @@ export const ShortsDecline: React.FC = () => {
           height: 1000,
         }}
       >
-        <KoreaMap year={year} reveal={reveal} />
+        <KoreaMap
+          reveal={reveal}
+          colorOf={(r) => {
+            // 정수 연도 사이를 보간해 프레임마다 색이 튀지 않게 한다.
+            const y0 = Math.floor(year);
+            const y1 = Math.min(y0 + 1, END_YEAR);
+            const t = year - y0;
+            return rampColor(
+              changeRatio(y0, r.code) * (1 - t) + changeRatio(y1, r.code) * t
+            );
+          }}
+        />
       </div>
 
       {/* ── 연도 (지도 위 대형 표시) ── */}

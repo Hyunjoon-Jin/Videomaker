@@ -1,50 +1,46 @@
 import React from "react";
-import { REGIONS, VIEW_BOX } from "./data/regions";
-import { changeRatio } from "./data/population";
-import { C, rampColor } from "./theme";
+import { REGIONS, Region, VIEW_BOX } from "./data/regions";
+import { C } from "./theme";
 
 interface Props {
-  /** 표시 연도(정수가 아니어도 됨 — 보간해서 부드럽게 흐른다) */
-  year: number;
+  /** 지역 → 채움색. 시간축 해석은 호출부가 정한다(연도든 날짜든). */
+  colorOf: (r: Region) => string;
   /** 0..1, 지도 등장 진행도 */
   reveal?: number;
+  /** 지역별 외곽선 색(강조용). 없으면 배경색 */
+  strokeOf?: (r: Region) => string;
+  children?: React.ReactNode;
 }
 
 /**
- * 250개 시군구를 1975년 대비 인구 증감률로 칠한 대한민국 지도.
+ * 대한민국 250개 시군구 지도 — 범용 렌더러.
  *
- * 연도는 실수로 받아 두 정수 연도 사이를 선형 보간한다.
- * 그래서 프레임마다 색이 튀지 않고 연속적으로 흐른다.
+ * 이 컴포넌트는 시간을 모른다. 색칠 규칙만 받는다.
+ * 그래서 인구(연도축)든 전쟁 진격(날짜축)이든 같은 엔진으로 그린다.
+ *
+ * children은 지도와 같은 좌표계(0..1000) 위에 얹힌다 — 경로선·마커용.
  */
-export const KoreaMap: React.FC<Props> = ({ year, reveal = 1 }) => {
-  const y0 = Math.floor(year);
-  const y1 = Math.min(y0 + 1, 2025);
-  const t = year - y0;
+export const KoreaMap: React.FC<Props> = ({ colorOf, reveal = 1, strokeOf, children }) => (
+  <svg
+    viewBox={VIEW_BOX}
+    style={{ width: "100%", height: "100%", display: "block", overflow: "visible" }}
+  >
+    {REGIONS.map((r) => {
+      // 등장 연출: 화면 y 순서로 훑고 지나가듯 나타난다.
+      const local = Math.max(0, Math.min(1, (reveal - (r.cy / 1000) * 0.45) / 0.55));
+      if (local <= 0) return null;
 
-  return (
-    <svg
-      viewBox={VIEW_BOX}
-      style={{ width: "100%", height: "100%", display: "block", overflow: "visible" }}
-    >
-      {REGIONS.map((r, i) => {
-        // 등장 연출: 위도(=화면 y) 순서로 훑고 지나가듯 나타난다.
-        const order = r.cy / 1000;
-        const local = Math.max(0, Math.min(1, (reveal - order * 0.45) / 0.55));
-        if (local <= 0) return null;
-
-        const ratio = changeRatio(y0, r.code) * (1 - t) + changeRatio(y1, r.code) * t;
-
-        return (
-          <path
-            key={r.code}
-            d={r.d}
-            fill={rampColor(ratio)}
-            stroke={C.bg}
-            strokeWidth={0.7}
-            opacity={local}
-          />
-        );
-      })}
-    </svg>
-  );
-};
+      return (
+        <path
+          key={r.code}
+          d={r.d}
+          fill={colorOf(r)}
+          stroke={strokeOf ? strokeOf(r) : C.bg}
+          strokeWidth={0.7}
+          opacity={local}
+        />
+      );
+    })}
+    {children}
+  </svg>
+);
