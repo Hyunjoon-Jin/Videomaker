@@ -1,5 +1,6 @@
-node_modules/
-out/
-.remotion/
+__pycache__/
+*.pyc
+public/scenes/
+public/clips/
 *.log
 .DS_Store
