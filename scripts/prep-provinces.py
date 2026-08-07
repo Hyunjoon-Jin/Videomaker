@@ -9,7 +9,12 @@
 현재 행정구역(Natural Earth admin_1)을 조선 팔도로 묶는다.
 투영 bbox는 prep-peninsula.py와 동일하게 잡아 해전 마커 좌표가 어긋나지 않게 한다.
 
-출력: src/data/provinces.json  {viewBox, provinces:[{id,name,d,cx,cy}]}
+도 색칠만으로는 해상도가 9개뿐이라 지도가 성기다. 같은 투영으로 남한
+시군구 250개 경계도 함께 내보내 도 위에 얇게 얹는다(점령 판정은 도 단위,
+경계선은 시군구 단위 — 없는 데이터를 주장하지 않으면서 밀도만 올린다).
+
+출력: src/data/provinces.json
+      {viewBox, provinces:[{id,name,d,cx,cy}], sgg:[d]}
 사용:  python3 scripts/prep-provinces.py
 """
 import json
@@ -132,8 +137,22 @@ def main() -> None:
         out.append({"id": pid, "name": kname, "d": "".join(parts),
                     "cx": round(sx / n, 1), "cy": round(sy / n, 1)})
 
+    # 시군구 경계 — 같은 투영, 선만 쓰므로 path 문자열만 담는다
+    sgg = []
+    sg = json.load(open("data/skorea-municipalities.json", encoding="utf-8"))
+    for f in sg["features"]:
+        for r in rings(f["geometry"]):
+            if area(r) < 8e-5:
+                continue
+            t = dp(r, 0.0022)
+            if len(t) < 4:
+                continue
+            pts = [proj(x, y) for x, y in t]
+            sgg.append("M" + "L".join(f"{a} {b}" for a, b in pts) + "Z")
+    print(f"시군구 경계 {len(sgg)}개")
+
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
-    json.dump({"viewBox": f"0 0 {int(BOX)} {int(BOX)}", "provinces": out},
+    json.dump({"viewBox": f"0 0 {int(BOX)} {int(BOX)}", "provinces": out, "sgg": sgg},
               open(OUT, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
 
     print(f"팔도 {len(out)}개 · {os.path.getsize(OUT)//1024}KB")

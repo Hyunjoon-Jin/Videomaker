@@ -6,9 +6,9 @@ import {
   TOTAL_MONTHS,
   monthLabel,
   occupationLevel,
-  seaWinsUpTo,
   warEventAt,
 } from "./data/war";
+import { battlesUpTo } from "./data/battles";
 import { C, FPS } from "./theme";
 import { useFonts } from "./fonts";
 
@@ -91,7 +91,6 @@ export const ShortsWar: React.FC = () => {
           levelOf={(id: ProvinceId) => occupationLevel(month, id)}
           month={month}
           reveal={mapIn}
-          seaShown={seaWinsUpTo(month).map((e) => e.sea as string)}
         />
       </div>
 
@@ -182,12 +181,16 @@ export const ShortsWar: React.FC = () => {
       {/* ── 범례 · 고지 ── */}
       {mapIn > 0.5 && (
         <div style={{ position: "absolute", bottom: 78, left: 60, right: 60 }}>
-          <div style={{ display: "flex", gap: 26, marginBottom: 10 }}>
+          <div style={{ display: "flex", gap: 22, marginBottom: 10, flexWrap: "wrap" }}>
             <Key color="#9B1C1C" label="일본군 점령" />
-            <Key color="#60A5FA" label="조선 수군 승전" />
+            <Key color="#60A5FA" label="조선 승전" />
+            <Key color="#F87171" label="일본 승전" />
+            <span style={{ color: C.dim, fontSize: 25, fontWeight: 700 }}>
+              전투 {battlesUpTo(month).length}
+            </span>
           </div>
           <div style={{ color: "#5C6577", fontSize: 19, lineHeight: 1.5 }}>
-도 단위 점령 추이 · 조선 팔도를 현재 행정구역으로 환산
+점령 범위는 도 단위 근사 · 전투는 개별 실좌표 · 경계선은 시군구
             <br />
             날짜는 음력 · 도 내부의 국지적 교전은 반영하지 않음
           </div>
