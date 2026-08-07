@@ -99,16 +99,23 @@ export const ShortsDecline: React.FC = () => {
         <div style={{ color: C.dim, fontSize: 34, fontWeight: 700 }}>
           1975년보다 인구가 줄어든 지역
         </div>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 16, marginTop: 6 }}>
+        {/* 강조 스케일은 행 전체에 건다. 숫자에만 걸면 옆 라벨과 겹친다. */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "baseline",
+            gap: 16,
+            marginTop: 6,
+            transform: `scale(${1 + finalPush * 0.12})`,
+            transformOrigin: "left bottom",
+          }}
+        >
           <span
             style={{
               color: C.dropHot,
               fontSize: 150,
               fontWeight: 900,
               fontVariantNumeric: "tabular-nums",
-              transform: `scale(${1 + finalPush * 0.12})`,
-              transformOrigin: "left bottom",
-              display: "inline-block",
             }}
           >
             {declining}

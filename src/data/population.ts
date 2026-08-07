@@ -49,9 +49,17 @@ function synth(): PopulationSeries {
       const jitter = ((h % 1000) / 1000 - 0.5) * 0.5; // -0.25..0.25
 
       const base = 40_000 + (h % 260_000);
-      const growth = METRO.has(r.sido)
-        ? 1 + (1.1 + jitter) * t // 수도권·광역시: 증가
-        : 1 - (0.55 + jitter * 0.6) * t; // 그 외: 감소
+
+      let growth: number;
+      if (METRO.has(r.sido)) {
+        growth = 1 + (1.1 + jitter) * t; // 수도권·광역시: 계속 증가
+      } else {
+        // 지역마다 감소 전환 시점이 다르다. 일제히 꺾이면 카운터가 초반에
+        // 튀고 고정돼 포맷의 핵심(숫자가 차오르는 연출)이 죽는다.
+        const onset = ((h >> 7) % 30) / 50; // 0..0.58 (≈1975~2004)
+        const after = Math.max(0, t - onset) / Math.max(0.05, 1 - onset);
+        growth = 1 + 0.25 * Math.min(t, onset) - (0.7 + jitter * 0.6) * after;
+      }
 
       row[r.code] = Math.max(3_000, Math.round(base * growth));
     }
