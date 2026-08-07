@@ -112,6 +112,8 @@ export const WAR_EVENTS: WarEvent[] = [
   { month: 3, date: "1592년 7월", title: "한산도 대첩", detail: "학익진 — 제해권 장악", win: true, sea: "한산도", impact: 1 },
   { month: 3.6, date: "1592년 7월", title: "이치 전투", detail: "전라도 방어선을 지켜내다", win: true, impact: 0.6 },
   { month: 6, date: "1592년 10월", title: "1차 진주성", detail: "김시민 — 전라 진입을 막다", win: true, impact: 0.8 },
+  { month: 4.5, date: "1592년 8월", title: "연안성 방어", detail: "이정암 — 황해도 요충을 지키다", win: true, impact: 0.6 },
+  { month: 8.5, date: "1592년 12월", title: "북관대첩", detail: "정문부 — 함경도를 되찾다", win: true, impact: 0.9 },
   { month: 9, date: "1593년 1월", title: "평양성 탈환", detail: "조명연합군 반격 개시", win: true, impact: 0.9 },
   { month: 10.5, date: "1593년 2월", title: "행주대첩", detail: "권율, 한양 코앞에서 대승", win: true, impact: 1 },
   { month: 12, date: "1593년 4월", title: "한양 수복", detail: "일본군, 남해안 왜성으로 후퇴", win: true, impact: 0.7 },
