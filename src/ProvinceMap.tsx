@@ -1,8 +1,8 @@
 import React from "react";
 import provinces from "./data/provinces.json";
-import { ProvinceId } from "./data/war";
 import { CITIES } from "./data/places";
 import { Battle, battlesUpTo } from "./data/battles";
+import { frontLine, frontPath, holePath } from "./front";
 
 interface Province {
   id: string;
@@ -13,137 +13,117 @@ interface Province {
 }
 
 export const PROVINCES: Province[] = provinces.provinces;
-export const SGG: string[] = provinces.sgg;
 export const PROVINCE_VIEWBOX: string = provinces.viewBox;
 
 interface Props {
-  /** 도 → 점령도 0..1 */
-  levelOf: (id: ProvinceId) => number;
   month: number;
   reveal?: number;
   children?: React.ReactNode;
 }
 
-const FREE: number[] = [0x26, 0x30, 0x41];
-const HELD: number[] = [0x9b, 0x1c, 0x1c];
-const FREE_S = "#3A4762";
-const HELD_S = "#EF4444";
+const FREE = "#273143";
+const HELD = "#9B1C1C";
+const COAST = "#3A4762";
 
 const JOSEON = "#60A5FA";
 const JAPAN = "#F87171";
 
-const mix = (a: number[], b: number[], t: number) =>
-  `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * t)).join(",")})`;
-
 /**
- * 조선 팔도 지도 + 시군구 경계 + 개별 전투.
+ * 전쟁 지도 — 점령권을 곡선으로 그린다.
  *
- * 색칠은 도 단위(그 이상은 사료로 못 받친다), 경계선은 시군구 단위,
- * 전투는 개별 실좌표. 주장의 정밀도와 화면의 밀도를 분리한 것이다 —
- * 없는 데이터를 지어내지 않으면서 지도는 성기지 않게.
+ * 도 폴리곤을 칠하지 않는다. 행정 경계에 맞추면 도 하나가 통째로 켜졌다
+ * 꺼졌다 해서 끊겨 보이고, 실제 전선은 경계선과 무관하게 움직인다.
+ * 대신 육지 전체를 클립으로 잡고, 그 안에서 곡선 아래를 점령색으로 덮는다.
+ * 전라도 미점령분은 별도의 닫힌 곡선으로 도로 빼낸다.
  */
-export const ProvinceMap: React.FC<Props> = ({ levelOf, month, reveal = 1, children }) => {
+export const WarMap: React.FC<Props> = ({ month, reveal = 1, children }) => {
   const fought = battlesUpTo(month);
+  const hole = holePath(month);
 
   return (
     <svg
       viewBox={PROVINCE_VIEWBOX}
       style={{ width: "100%", height: "100%", display: "block", overflow: "visible" }}
     >
-      {/* 도 채움 */}
-      {PROVINCES.map((p) => {
-        const lv = levelOf(p.id as ProvinceId);
-        return (
-          <path
-            key={p.id}
-            d={p.d}
-            fill={mix(FREE, HELD, lv)}
-            stroke="none"
-            opacity={reveal}
-          />
-        );
-      })}
+      <defs>
+        {/* 육지 — 점령색이 바다로 새지 않게 잡아주는 마스크 */}
+        {/* 제주는 전 기간 미점령이므로 클립에서 제외한다.
+            빼지 않으면 전선 곡선 아래에 걸려 붉게 칠해진다. */}
+        <clipPath id="land">
+          {PROVINCES.filter((p) => p.id !== "jeju").map((p) => (
+            <path key={p.id} d={p.d} />
+          ))}
+        </clipPath>
+      </defs>
 
-      {/* 시군구 경계 — 밀도만 담당, 점령 판정과 무관 */}
-      <g opacity={reveal * 0.28}>
-        {SGG.map((d, i) => (
-          <path key={i} d={d} fill="none" stroke="#0B0E14" strokeWidth={0.9} />
+      <g opacity={reveal}>
+        {/* 바탕 */}
+        {PROVINCES.map((p) => (
+          <path key={p.id} d={p.d} fill={FREE} stroke="none" />
+        ))}
+
+        {/* 점령권 — 곡선 아래, 육지 안쪽만 */}
+        <g clipPath="url(#land)">
+          <path d={frontPath(month)} fill={HELD} />
+          {/* 전라도 미점령 — 점령색에서 도로 빼낸다 */}
+          {hole && <path d={hole} fill={FREE} />}
+        </g>
+
+        {/* 전선 */}
+        <g clipPath="url(#land)">
+          <path
+            d={frontLine(month)}
+            fill="none"
+            stroke="#F87171"
+            strokeWidth={3}
+            opacity={0.8}
+          />
+          {hole && (
+            <path d={hole} fill="none" stroke="#F87171" strokeWidth={2.6} opacity={0.55} />
+          )}
+        </g>
+
+        {/* 해안선 */}
+        {PROVINCES.map((p) => (
+          <path key={`c${p.id}`} d={p.d} fill="none" stroke={COAST} strokeWidth={1.4} />
+        ))}
+
+        {/* 지명 */}
+        {CITIES.filter((c) => c.from <= month).map((c) => (
+          <g key={c.name}>
+            <circle cx={c.x} cy={c.y} r={4} fill="#FBBF24" />
+            <text
+              x={c.side === "left" ? c.x - 11 : c.x + 11}
+              y={c.y + 6}
+              textAnchor={c.side === "left" ? "end" : "start"}
+              fontSize={23}
+              fontWeight={900}
+              fill="#FDE68A"
+              style={{ paintOrder: "stroke", stroke: "#0B0E14", strokeWidth: 5 }}
+            >
+              {c.name}
+            </text>
+          </g>
+        ))}
+
+        {/* 전투 */}
+        {fought.map((b) => (
+          <BattleMark key={b.name} b={b} month={month} />
         ))}
       </g>
-
-      {/* 도 경계 */}
-      {PROVINCES.map((p) => {
-        const lv = levelOf(p.id as ProvinceId);
-        return (
-          <path
-            key={`s${p.id}`}
-            d={p.d}
-            fill="none"
-            stroke={lv > 0.5 ? HELD_S : FREE_S}
-            strokeWidth={1.8}
-            opacity={reveal}
-          />
-        );
-      })}
-
-      {/* 도 이름 */}
-      {PROVINCES.map((p) => (
-        <text
-          key={`t${p.id}`}
-          x={p.cx}
-          y={p.cy}
-          textAnchor="middle"
-          fontSize={18}
-          fontWeight={700}
-          fill="#E6EAF2"
-          opacity={reveal * 0.5}
-          style={{ paintOrder: "stroke", stroke: "#0B0E14", strokeWidth: 4 }}
-        >
-          {p.name}
-        </text>
-      ))}
-
-      {/* 거점 */}
-      {CITIES.filter((c) => c.from <= month).map((c) => (
-        <g key={c.name} opacity={reveal * 0.9}>
-          <circle cx={c.x} cy={c.y} r={4} fill="#FBBF24" />
-          <text
-            x={c.side === "left" ? c.x - 11 : c.x + 11}
-            y={c.y + 6}
-            textAnchor={c.side === "left" ? "end" : "start"}
-            fontSize={22}
-            fontWeight={900}
-            fill="#FDE68A"
-            style={{ paintOrder: "stroke", stroke: "#0B0E14", strokeWidth: 5 }}
-          >
-            {c.name}
-          </text>
-        </g>
-      ))}
-
-      {/* 전투 */}
-      {fought.map((b) => (
-        <BattleMark key={b.name} b={b} month={month} reveal={reveal} />
-      ))}
 
       {children}
     </svg>
   );
 };
 
-/** 전투 하나. 막 벌어졌을 때 파문이 퍼지고, 이후에는 점으로 남는다. */
-const BattleMark: React.FC<{ b: Battle; month: number; reveal: number }> = ({
-  b,
-  month,
-  reveal,
-}) => {
-  const age = month - b.month;
-  const fresh = Math.max(0, 1 - age / 0.9);
+const BattleMark: React.FC<{ b: Battle; month: number }> = ({ b, month }) => {
+  const fresh = Math.max(0, 1 - (month - b.month) / 0.9);
   const color = b.won === "joseon" ? JOSEON : JAPAN;
   const r = b.major ? 6 : 4;
 
   return (
-    <g opacity={reveal}>
+    <g>
       {fresh > 0 && (
         <circle
           cx={b.x}
@@ -156,14 +136,7 @@ const BattleMark: React.FC<{ b: Battle; month: number; reveal: number }> = ({
         />
       )}
       {b.sea ? (
-        <circle
-          cx={b.x}
-          cy={b.y}
-          r={r}
-          fill="#0B0E14"
-          stroke={color}
-          strokeWidth={3}
-        />
+        <circle cx={b.x} cy={b.y} r={r} fill="#0B0E14" stroke={color} strokeWidth={3} />
       ) : (
         <rect
           x={b.x - r}

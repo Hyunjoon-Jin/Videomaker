@@ -1,13 +1,7 @@
 import React from "react";
 import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
-import { ProvinceMap } from "./ProvinceMap";
-import {
-  ProvinceId,
-  TOTAL_MONTHS,
-  monthLabel,
-  occupationLevel,
-  warEventAt,
-} from "./data/war";
+import { WarMap } from "./ProvinceMap";
+import { TOTAL_MONTHS, monthLabel, warEventAt } from "./data/war";
 import { battlesUpTo } from "./data/battles";
 import { C, FPS } from "./theme";
 import { useFonts } from "./fonts";
@@ -87,11 +81,7 @@ export const ShortsWar: React.FC = () => {
           transform: `translate(${sx}px, ${sy}px)`,
         }}
       >
-        <ProvinceMap
-          levelOf={(id: ProvinceId) => occupationLevel(month, id)}
-          month={month}
-          reveal={mapIn}
-        />
+        <WarMap month={month} reveal={mapIn} />
       </div>
 
       <AbsoluteFill
@@ -190,9 +180,9 @@ export const ShortsWar: React.FC = () => {
             </span>
           </div>
           <div style={{ color: "#5C6577", fontSize: 19, lineHeight: 1.5 }}>
-점령 범위는 도 단위 근사 · 전투는 개별 실좌표 · 경계선은 시군구
+전선은 사료상 전황을 곡선으로 근사 · 전투는 개별 실좌표
             <br />
-            날짜는 음력 · 도 내부의 국지적 교전은 반영하지 않음
+            날짜는 음력 · 행정 경계와 무관한 개략선이며 실제 전선의 세부는 다름
           </div>
         </div>
       )}
