@@ -9,6 +9,7 @@
  * 붙이고, 비트 사이는 빠르게 넘긴다. 영화 편집의 기본을 코드로 옮긴 것.
  */
 import { REGIONS } from "./data/regions";
+import { TOTAL_DAYS } from "./data/imjin";
 
 const CENTER = new Map(REGIONS.map((r) => [r.code, { x: r.cx, y: r.cy }]));
 
@@ -50,15 +51,38 @@ export interface CameraState {
   beatIndex: number;
 }
 
-/** 비트 시트를 프레임 구간으로 펼친다. */
+/**
+ * 홀드 중에도 군대가 나아가는 양(일).
+ * 0으로 두면 선이 완전히 멈춰 "정지 화면"처럼 보인다. 극적 완급은
+ * 속도를 늦춰서 만드는 것이지 세워서 만드는 게 아니다.
+ */
+const DWELL_DAYS = 0.4;
+
+/**
+ * 비트 시트를 프레임 구간으로 펼치되, 경과일도 같이 매긴다.
+ * day는 전 구간에서 단조 증가한다 — 어느 프레임에서도 뒤로 가거나 멈추지 않는다.
+ */
 function layout(startFrame: number) {
-  const spans: Array<{ t0: number; t1: number; h1: number; beat: Beat }> = [];
+  const spans: Array<{
+    t0: number; t1: number; h1: number;
+    dayIn: number; dayHit: number; dayOut: number;
+    beat: Beat;
+  }> = [];
+
   let f = startFrame;
+  let dayCursor = BEATS[0].day;
+
   for (const beat of BEATS) {
     const t0 = f; // 이동 시작
     const t1 = f + beat.travel; // 도착 = 홀드 시작
     const h1 = t1 + beat.hold; // 홀드 끝
-    spans.push({ t0, t1, h1, beat });
+
+    // 홀드 동안 기어갈 목적지. 마지막 비트는 종착이므로 더 가지 않는다.
+    const isLast = beat === BEATS[BEATS.length - 1];
+    const dayOut = isLast ? beat.day : Math.min(beat.day + DWELL_DAYS, TOTAL_DAYS);
+
+    spans.push({ t0, t1, h1, dayIn: dayCursor, dayHit: beat.day, dayOut, beat });
+    dayCursor = dayOut;
     f = h1;
   }
   return spans;
@@ -88,29 +112,30 @@ export function cameraAt(frame: number, startFrame: number): CameraState {
   }
 
   for (let i = 0; i < spans.length; i++) {
-    const { t0, t1, h1, beat } = spans[i];
+    const { t0, t1, h1, dayIn, dayHit, dayOut, beat } = spans[i];
     const prev = i === 0 ? beat : spans[i - 1].beat;
 
     if (frame <= t1) {
-      // 이동 중 — 이전 비트에서 현재 비트로
-      const k = easeInOut((frame - t0) / Math.max(1, t1 - t0));
+      // 이동 중 — 카메라는 이징, 경과일은 등속(군대가 갑자기 빨라지면 어색하다)
+      const raw = (frame - t0) / Math.max(1, t1 - t0);
+      const k = easeInOut(raw);
       const [ax, ay, as] = boxOf(prev.focus, prev.zoom);
       const [bx, by, bs] = boxOf(beat.focus, beat.zoom);
       return {
         viewBox: vb(ax + (bx - ax) * k, ay + (by - ay) * k, as + (bs - as) * k),
-        day: prev.day + (beat.day - prev.day) * k,
+        day: dayIn + (dayHit - dayIn) * raw,
         impact: 0,
         beatIndex: i,
       };
     }
 
     if (frame <= h1) {
-      // 홀드 중 — 시간 정지, 도착 직후 충격이 감쇠
+      // 홀드 중 — 카메라는 고정, 군대는 느리게 계속 전진
       const [cx, cy, s] = boxOf(beat.focus, beat.zoom);
       const since = (frame - t1) / Math.max(1, beat.hold);
       return {
         viewBox: vb(cx, cy, s),
-        day: beat.day,
+        day: dayHit + (dayOut - dayHit) * since,
         impact: (beat.impact ?? 0) * Math.max(0, 1 - since * 4),
         beatIndex: i,
       };

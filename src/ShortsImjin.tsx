@@ -3,7 +3,7 @@ import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
 import { KoreaMap } from "./KoreaMap";
 import { MarchRoute } from "./MarchRoute";
 import { BEATS, cameraAt, totalFrames } from "./camera";
-import { DIVISIONS, eventAt, fallenAt } from "./data/imjin";
+import { DIVISIONS, eventAt, fallenAt, lunarDate, solarDate } from "./data/imjin";
 import { C, FPS } from "./theme";
 import { useFonts } from "./fonts";
 
@@ -91,20 +91,36 @@ export const ShortsImjin: React.FC = () => {
         }}
       />
 
+      {/* ── 실시간 날짜 readout — 군대가 지금 며칠째 어디인지 ── */}
+      {mapIn > 0.5 && (
+        <div style={{ position: "absolute", top: 108, left: 60, right: 60 }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 18 }}>
+            <span
+              style={{
+                color: C.text,
+                fontSize: 108,
+                fontWeight: 900,
+                lineHeight: 1,
+                fontVariantNumeric: "tabular-nums",
+              }}
+            >
+              D+{Math.floor(day)}
+            </span>
+            <div>
+              <div style={{ color: C.warn, fontSize: 42, fontWeight: 900 }}>
+                {solarDate(day)}
+              </div>
+              <div style={{ color: C.dim, fontSize: 28, fontWeight: 600 }}>
+                {lunarDate(day)}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── 사건 카드 ── */}
       {ev && mapIn > 0.5 && (
         <div style={{ position: "absolute", bottom: 330, left: 60, right: 60 }}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 14 }}>
-            <span style={{ color: C.warn, fontSize: 44, fontWeight: 900 }}>
-              D+{ev.day}
-            </span>
-            <span style={{ color: C.text, fontSize: 38, fontWeight: 700 }}>
-              {ev.solar}
-            </span>
-            <span style={{ color: C.dim, fontSize: 27, fontWeight: 500 }}>
-              {ev.lunar}
-            </span>
-          </div>
           <div
             style={{
               color: C.text,
@@ -217,7 +233,7 @@ export const ShortsImjin: React.FC = () => {
         <div
           style={{
             position: "absolute",
-            top: 150,
+            top: 290,
             left: 60,
             display: "flex",
             flexDirection: "column",

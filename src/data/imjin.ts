@@ -147,6 +147,23 @@ export const EVENTS: Event[] = [
   },
 ];
 
+/**
+ * 경과일 → 날짜 문자열.
+ *
+ * 기준은 D+0 = 양력 5월 23일 = 음력 4월 13일.
+ * 1592년 음력 4월은 30일까지다 — EVENTS의 D+17=음 4/30, D+20=음 5/3에서
+ * 역산해 확인된다(13+17=30, 이후 5/1·5/2·5/3).
+ */
+export function solarDate(day: number): string {
+  const d = 23 + Math.floor(day); // 5월 23일 기준, 5월은 31일까지
+  return d <= 31 ? `5월 ${d}일` : `6월 ${d - 31}일`;
+}
+
+export function lunarDate(day: number): string {
+  const d = 13 + Math.floor(day); // 음 4월 13일 기준, 음 4월은 30일까지
+  return d <= 30 ? `음 4월 ${d}일` : `음 5월 ${d - 30}일`;
+}
+
 /** day 시점에 이미 지나간(=함락된) 지역 코드 집합 */
 export function fallenAt(day: number): Set<string> {
   const s = new Set<string>();
