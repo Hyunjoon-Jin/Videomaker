@@ -4,9 +4,7 @@ import { KoreaMap } from "./KoreaMap";
 import { REGIONS } from "./data/regions";
 import { END_YEAR, IS_REAL_DATA, START_YEAR, changeRatio } from "./data/population";
 import { C, FPS } from "./theme";
-import { loadFonts } from "./fonts";
-
-loadFonts();
+import { useFonts } from "./fonts";
 
 /** 40초 = 1200프레임 */
 export const SHORT_DURATION = 40 * FPS;
@@ -24,6 +22,7 @@ function decliningCount(year: number): number {
 }
 
 export const ShortsDecline: React.FC = () => {
+  useFonts();
   const frame = useCurrentFrame();
 
   // 연도 진행: 훅 구간은 1975 고정, 이후 2025까지 흐르고, 마무리 구간은 2025 고정
