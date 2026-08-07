@@ -1,10 +1,10 @@
 import React from "react";
 import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
-import { PeninsulaMap } from "./PeninsulaMap";
+import { ProvinceMap } from "./ProvinceMap";
 import {
   TOTAL_MONTHS,
-  frontAt,
   monthLabel,
+  occupiedAt,
   seaWinsUpTo,
   warEventAt,
 } from "./data/war";
@@ -52,7 +52,7 @@ export const ShortsWar: React.FC = () => {
   const frame = useCurrentFrame();
 
   const month = monthAt(frame);
-  const front = frontAt(month);
+  const occupied = occupiedAt(month);
   const ev = warEventAt(month);
 
   // 사건 직후에만 충격이 실린다
@@ -86,7 +86,7 @@ export const ShortsWar: React.FC = () => {
           transform: `translate(${sx}px, ${sy}px)`,
         }}
       >
-        <PeninsulaMap front={front} reveal={mapIn}>
+        <ProvinceMap occupied={occupied} reveal={mapIn}>
           {seaWinsUpTo(month).map((e, i) => (
             <g key={i}>
               <circle cx={e.sea!.x} cy={e.sea!.y} r={16} fill="#3B82F6" opacity={0.22} />
@@ -100,7 +100,7 @@ export const ShortsWar: React.FC = () => {
               />
             </g>
           ))}
-        </PeninsulaMap>
+        </ProvinceMap>
       </div>
 
       <AbsoluteFill
@@ -191,13 +191,13 @@ export const ShortsWar: React.FC = () => {
       {mapIn > 0.5 && (
         <div style={{ position: "absolute", bottom: 78, left: 60, right: 60 }}>
           <div style={{ display: "flex", gap: 26, marginBottom: 10 }}>
-            <Key color="#8E1C1C" label="일본군 진출권" />
+            <Key color="#9B1C1C" label="일본군 점령" />
             <Key color="#60A5FA" label="조선 수군 승전" />
           </div>
           <div style={{ color: "#5C6577", fontSize: 19, lineHeight: 1.5 }}>
-            붉은 영역은 일본군 최대 진출선 이남 · 시군구 단위 점령 기록 아님
+도 단위 점령 추이 · 조선 팔도를 현재 행정구역으로 환산
             <br />
-            날짜는 음력 · 현재 국경선 기준
+            날짜는 음력 · 도 내부의 국지적 교전은 반영하지 않음
           </div>
         </div>
       )}
