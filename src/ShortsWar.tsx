@@ -1,5 +1,5 @@
 import React from "react";
-import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
+import { AbsoluteFill, Audio, interpolate, staticFile, useCurrentFrame } from "remotion";
 import { WarMap } from "./ProvinceMap";
 import { TOTAL_MONTHS, monthLabel, warEventAt } from "./data/war";
 import { battlesUpTo } from "./data/battles";
@@ -69,6 +69,10 @@ export const ShortsWar: React.FC = () => {
 
   return (
     <AbsoluteFill style={{ backgroundColor: C.bg, fontFamily: "Pretendard" }}>
+      {/* BGM — scripts/make-bgm.py가 영상과 같은 구간 경계로 합성한다.
+          내레이션이 없으므로 볼륨을 크게 잡아도 가릴 것이 없다. */}
+      <Audio src={staticFile("bgm.wav")} volume={0.9} />
+
       {/* ── 지도 ── */}
       <div
         style={{

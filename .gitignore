@@ -7,3 +7,6 @@ out/
 # 원본 GeoJSON(18MB). scripts/prep-map.py로 재생성 가능하므로 커밋하지 않는다.
 # 선행 슬래시가 없으면 src/data/까지 잡히므로 루트 한정으로 둔다.
 /data/
+
+# BGM은 scripts/make-bgm.py로 재생성 가능한 7MB 산출물
+public/bgm.wav
