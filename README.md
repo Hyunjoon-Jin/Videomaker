@@ -1,56 +1,95 @@
-# Gemini API 생성 스크립트
+# Videomaker
 
-Google Gemini API로 씬별 이미지·영상을 생성하는 스크립트 모음.
-Python 표준 라이브러리 + `curl`만 사용하며, 별도 의존성 설치가 필요 없다.
+데이터 기반 지도 애니메이션 영상을 코드로 생성하는 프로젝트.
+Remotion(React)으로 렌더하고, 데이터는 스크립트로 받아 붙인다.
 
-| 스크립트 | 모델 | 입력 | 출력 |
-|---|---|---|---|
-| `scripts/generate-images.py` | Imagen (`imagen-4.0-generate-001`) | 내장 프롬프트 | `public/scenes/<ID>.png` (16:9) |
-| `scripts/generate-videos.py` | Veo (`veo-3.1-generate-preview`) | `public/scenes/<ID>.png` | `public/clips/<ID>.mp4` (8초) |
-
-씬 프롬프트는 각 스크립트 안에 딕셔너리로 들어있다 —
-`generate-images.py`의 `PROMPTS`, `generate-videos.py`의 `MOTION`.
-씬을 추가하려면 해당 딕셔너리에 `ID: 프롬프트` 항목을 넣으면 된다.
+현재 파일럿: **지방소멸 50년** — 1975→2025 시군구 인구 변화를 지도 위에 애니메이션.
 
 ---
 
-## 준비
+## 빠른 시작
 
 ```bash
-export GEMINI_API_KEY=xxxx    # generate-images.py는 GOOGLE_API_KEY도 허용
+npm install
+npm run studio                                  # 브라우저 프리뷰
+npx remotion render ShortsDecline out/short.mp4 # 렌더 (1080×1920 · 40초)
 ```
 
-## 이미지 생성 (Imagen)
+## 구조
 
-```bash
-python3 scripts/generate-images.py             # PROMPTS 전체
-python3 scripts/generate-images.py S07 S12     # 일부만
-python3 scripts/generate-images.py S07 --force # 이미 있어도 재생성
+```
+src/
+├─ index.ts              registerRoot
+├─ Root.tsx              컴포지션 등록
+├─ ShortsDecline.tsx     파일럿 쇼츠 (9:16 · 40초)
+├─ KoreaMap.tsx          ★ 지도 엔진 — 연도를 받아 250개 시군구를 색칠
+├─ theme.ts              색 토큰 + 증감률→색 램프
+├─ fonts.ts              Pretendard 로컬 로드
+└─ data/
+   ├─ regions.ts         지오메트리 로더 + 시도 코드표
+   ├─ korea-paths.json   ← prep-map.py 산출물 (1MB)
+   ├─ population.ts      인구 데이터 레이어 (실데이터/합성 자동 전환)
+   └─ population.json    ← fetch-population.py 산출물 (현재 비어 있음)
+
+scripts/
+├─ prep-map.py           GeoJSON 18MB → SVG path 1MB
+├─ fetch-population.py   KOSIS → population.json
+├─ generate-images.py    Imagen (씬 스틸)
+└─ generate-videos.py    Veo image-to-video
 ```
 
-이미 `public/scenes/<ID>.png`가 있으면 건너뛴다. `--force`로 덮어쓴다.
+### 지도 엔진
 
-## 영상 생성 (Veo image-to-video)
+`KoreaMap`은 **연도를 실수로 받는다.** 정수 연도 사이를 선형 보간하므로
+프레임마다 색이 튀지 않고 연속적으로 흐른다. 시간축만 바꾸면
+다른 주제(역사 사건의 날짜축 등)에도 그대로 쓸 수 있다.
 
-```bash
-python3 scripts/generate-videos.py             # MOTION 전체
-python3 scripts/generate-videos.py S06 S07     # 일부만
-```
-
-같은 ID의 이미지(`public/scenes/<ID>.png`)가 먼저 있어야 한다.
-롱러닝 오퍼레이션을 폴링해 완료되면 `public/clips/<ID>.mp4`로 내려받는다.
-
-## 모델 교체
-
-```bash
-IMAGEN_MODEL=imagen-4.0-generate-001    python3 scripts/generate-images.py
-VEO_MODEL=veo-3.1-generate-preview      python3 scripts/generate-videos.py
+```tsx
+<KoreaMap year={2004.7} reveal={1} />
 ```
 
 ---
 
-## 참고
+## 데이터
 
-- 전송을 `curl`에 위임하므로 프록시·CA 설정이 자동으로 적용된다.
-- 이 저장소에는 이전에 Remotion 애니매틱 프로젝트가 있었다.
-  전체 소스는 `claude/new-session-vwlav1` 브랜치(커밋 `370f35e`)에 그대로 남아있다.
+### 지도 경계 — 연결됨
+
+통계청 2018년 시군구 250개. 원본은
+[southkorea/southkorea-maps](https://github.com/southkorea/southkorea-maps)에서 받는다.
+
+```bash
+mkdir -p data && curl -sSL -o data/skorea-municipalities.json \
+  https://raw.githubusercontent.com/southkorea/southkorea-maps/master/kostat/2018/json/skorea-municipalities-2018-geo.json
+python3 scripts/prep-map.py     # → src/data/korea-paths.json (95% 감소)
+```
+
+### 인구 — 미연결
+
+`src/data/population.json`이 비어 있어 **합성 데이터로 동작 중**이다.
+이 상태에서는 화면에 `샘플 데이터 · 실제 통계 아님` 경고 배지가 강제로 표시된다.
+
+실데이터를 붙이려면 KOSIS 인증키(무료)가 필요하다.
+
+```bash
+# https://kosis.kr/openapi/ 에서 발급
+KOSIS_API_KEY=xxxx python3 scripts/fetch-population.py
+```
+
+`population.json`이 채워지면 영상은 자동으로 실데이터로 전환되고 배지가 사라진다.
+컴포넌트 코드는 손댈 필요 없다.
+
+> **미해결 과제** — 50년간 행정구역이 크게 바뀌었다(시군 통합, 구 신설, 세종시 출범).
+> 과거 인구를 2018년 경계에 매칭하는 코드 매핑이 필요하다.
+> `fetch-population.py`는 현재 경계에 없는 코드를 보고만 하고 넘긴다.
+
+---
+
+## AI 생성 소스 (선택)
+
+씬 스틸·클립이 필요할 때만 쓴다. 지도 영상에는 필요 없다.
+
+```bash
+export GEMINI_API_KEY=xxxx
+python3 scripts/generate-images.py S07        # Imagen → public/scenes/<ID>.png
+python3 scripts/generate-videos.py S07        # Veo    → public/clips/<ID>.mp4
+```
