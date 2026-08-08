@@ -7,10 +7,9 @@ import {
   useCurrentFrame,
 } from "remotion";
 import provinces from "./data/provinces.json";
-import { makeFront } from "./front";
+import { makePolyFront } from "./polyfront";
 import {
-  FRONT_KEYS,
-  FRONT_XS,
+  FRONT_TRACE,
   KWBattle,
   KW_CITIES,
   TOTAL_DAYS,
@@ -25,7 +24,7 @@ const PROVINCES: Array<{ id: string; d: string }> = provinces.provinces;
 const VIEWBOX: string = provinces.viewBox;
 
 /** 북에서 내려오므로 곡선 '위'가 점령이다 */
-const FRONT = makeFront(FRONT_XS, FRONT_KEYS, "north");
+const FRONT = makePolyFront(FRONT_TRACE, "north");
 
 const HOOK = Math.round(2.4 * FPS);
 
@@ -259,7 +258,7 @@ export const ShortsKoreanWar: React.FC = () => {
             <Key color={NORTH_C} label="북한군·중국군 승" />
           </div>
           <div style={{ color: "#5C6577", fontSize: 19, lineHeight: 1.5 }}>
-            전선은 사료상 전황을 곡선으로 근사 · 전투는 개별 실좌표
+            전선은 각 시점 전선이 지난 지명을 이은 궤적 · 전투는 개별 실좌표
             <br />
             국지 전투와 유격 활동은 반영하지 않음
           </div>
