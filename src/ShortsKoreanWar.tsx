@@ -64,10 +64,6 @@ const SOUTH_C = "#3B82F6";
 const FREE = "#273143";
 const HELD = "#8E1C1C";
 
-function shake(frame: number, amp: number): [number, number] {
-  return [Math.sin(frame * 2.7) * amp, Math.cos(frame * 3.3) * amp];
-}
-
 export const ShortsKoreanWar: React.FC = () => {
   useFonts();
   const frame = useCurrentFrame();
@@ -76,7 +72,6 @@ export const ShortsKoreanWar: React.FC = () => {
   const ev = kwEventAt(day);
   const near = ev ? Math.max(0, 1 - (day - ev.day) / 14) : 0;
   const impact = (ev?.impact ?? 0) * near;
-  const [sx, sy] = shake(frame, impact * 7);
 
   const hookOut = interpolate(frame, [HOOK - 14, HOOK], [1, 0], {
     extrapolateLeft: "clamp",
@@ -103,7 +98,6 @@ export const ShortsKoreanWar: React.FC = () => {
           right: 20,
           height: 1050,
           opacity: mapIn,
-          transform: `translate(${sx}px, ${sy}px)`,
         }}
       >
         <svg viewBox={VIEWBOX} style={{ width: "100%", height: "100%", display: "block" }}>
@@ -176,7 +170,7 @@ export const ShortsKoreanWar: React.FC = () => {
         style={{
           background: `radial-gradient(circle at 50% 44%, ${
             ev?.south ? "rgba(59,130,246," : "rgba(220,38,38,"
-          }${impact * 0.32}) 0%, rgba(0,0,0,0) 58%)`,
+          }${impact * 0.18}) 0%, rgba(0,0,0,0) 58%)`,
           pointerEvents: "none",
         }}
       />
@@ -214,7 +208,7 @@ export const ShortsKoreanWar: React.FC = () => {
               fontWeight: 900,
               lineHeight: 1.06,
               marginTop: 4,
-              transform: `scale(${1 + impact * 0.05})`,
+              transform: `scale(${1 + impact * 0.02})`,
               transformOrigin: "left bottom",
             }}
           >

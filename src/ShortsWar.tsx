@@ -38,10 +38,6 @@ function monthAt(frame: number): number {
   return TOTAL_MONTHS;
 }
 
-function shake(frame: number, amp: number): [number, number] {
-  return [Math.sin(frame * 2.7) * amp, Math.cos(frame * 3.3) * amp];
-}
-
 export const ShortsWar: React.FC = () => {
   useFonts();
   const frame = useCurrentFrame();
@@ -53,7 +49,6 @@ export const ShortsWar: React.FC = () => {
   // 사건 직후에만 충격이 실린다
   const near = ev ? Math.max(0, 1 - (month - ev.month) * 2.2) : 0;
   const impact = (ev?.impact ?? 0) * near;
-  const [sx, sy] = shake(frame, impact * 7);
 
   const hookOut = interpolate(frame, [HOOK - 14, HOOK], [1, 0], {
     extrapolateLeft: "clamp",
@@ -82,7 +77,6 @@ export const ShortsWar: React.FC = () => {
           right: 20,
           height: 1040,
           opacity: mapIn,
-          transform: `translate(${sx}px, ${sy}px)`,
         }}
       >
         <WarMap month={month} reveal={mapIn} />
@@ -92,7 +86,7 @@ export const ShortsWar: React.FC = () => {
         style={{
           background: `radial-gradient(circle at 50% 45%, ${
             ev?.win ? "rgba(59,130,246," : "rgba(220,38,38,"
-          }${impact * 0.34}) 0%, rgba(0,0,0,0) 60%)`,
+          }${impact * 0.18}) 0%, rgba(0,0,0,0) 60%)`,
           pointerEvents: "none",
         }}
       />
@@ -130,7 +124,7 @@ export const ShortsWar: React.FC = () => {
               fontWeight: 900,
               lineHeight: 1.08,
               marginTop: 4,
-              transform: `scale(${1 + impact * 0.05})`,
+              transform: `scale(${1 + impact * 0.02})`,
               transformOrigin: "left bottom",
             }}
           >
