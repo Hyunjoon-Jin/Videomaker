@@ -131,3 +131,61 @@ export function holePath(month: number): string {
   const c = smooth(loop);
   return c.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)} ${y.toFixed(1)}`).join("") + "Z";
 }
+
+/* ── 재사용 가능한 전선 생성기 ───────────────────────────
+ * 임진왜란은 남쪽에서 올라오므로 "곡선 아래"가 점령이지만,
+ * 6·25는 북쪽에서 내려오므로 "곡선 위"가 점령이다.
+ * 방향을 인자로 받아 두 경우를 같은 코드로 처리한다.
+ */
+
+export interface FrontModel {
+  /** t 시점의 점령 영역 path */
+  areaAt(t: number): string;
+  /** t 시점의 전선 자체 */
+  lineAt(t: number): string;
+}
+
+export function makeFront(
+  xs: number[],
+  keys: Array<[number, number[]]>,
+  /** 점령 방향 — "south"면 곡선 아래, "north"면 곡선 위 */
+  dir: "south" | "north" = "south"
+): FrontModel {
+  const ysAt = (t: number): number[] => {
+    if (t <= keys[0][0]) return keys[0][1];
+    for (let i = 1; i < keys.length; i++) {
+      const [t1, v1] = keys[i];
+      if (t <= t1) {
+        const [t0, v0] = keys[i - 1];
+        const p = (t - t0) / (t1 - t0);
+        const k = p * p * (3 - 2 * p);
+        return v0.map((v, j) => v + (v1[j] - v) * k);
+      }
+    }
+    return keys[keys.length - 1][1];
+  };
+
+  const curve = (t: number): Array<[number, number]> => {
+    const ys = ysAt(t);
+    const pts: Array<[number, number]> = xs.map((x, i) => [x, ys[i]]);
+    pts.unshift([-80, ys[0]]);
+    pts.push([1080, ys[ys.length - 1]]);
+    return smooth(pts);
+  };
+
+  const toD = (c: Array<[number, number]>) =>
+    c.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)} ${y.toFixed(1)}`).join("");
+
+  return {
+    areaAt(t) {
+      const d = toD(curve(t));
+      // 화면 밖까지 닫아 채운다. 방향에 따라 위/아래로 닫는다.
+      return dir === "south"
+        ? `${d}L1080 1120L-80 1120Z`
+        : `${d}L1080 -120L-80 -120Z`;
+    },
+    lineAt(t) {
+      return toD(curve(t));
+    },
+  };
+}

@@ -3,6 +3,7 @@ import { Composition } from "remotion";
 import { ShortsDecline, SHORT_DURATION } from "./ShortsDecline";
 import { ShortsImjin, IMJIN_DURATION } from "./ShortsImjin";
 import { ShortsWar, WAR_DURATION } from "./ShortsWar";
+import { ShortsKoreanWar, KW_DURATION } from "./ShortsKoreanWar";
 import { FPS, SHORT_H, SHORT_W } from "./theme";
 
 export const RemotionRoot: React.FC = () => (
@@ -30,6 +31,15 @@ export const RemotionRoot: React.FC = () => (
       id="ShortsWar"
       component={ShortsWar}
       durationInFrames={WAR_DURATION}
+      fps={FPS}
+      width={SHORT_W}
+      height={SHORT_H}
+    />
+    {/* 기획 2c — 6·25 전쟁 */}
+    <Composition
+      id="ShortsKoreanWar"
+      component={ShortsKoreanWar}
+      durationInFrames={KW_DURATION}
       fps={FPS}
       width={SHORT_W}
       height={SHORT_H}

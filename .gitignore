@@ -9,4 +9,4 @@ out/
 /data/
 
 # BGM은 scripts/make-bgm.py로 재생성 가능한 7MB 산출물
-public/bgm.wav
+public/bgm*.wav
