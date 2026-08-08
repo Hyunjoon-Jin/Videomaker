@@ -7,16 +7,18 @@ import {
   useCurrentFrame,
 } from "remotion";
 import provinces from "./data/provinces.json";
-import { makePolyFront } from "./polyfront";
+import { makePocket, makePolyFront } from "./polyfront";
 import {
   FRONT_TRACE,
   KWBattle,
+  KW_POCKETS,
   KW_CITIES,
   TOTAL_DAYS,
   dateLabel,
   kwBattlesUpTo,
   kwEventAt,
 } from "./data/korean-war";
+import { project } from "./data/places";
 import { C, FPS } from "./theme";
 import { useFonts } from "./fonts";
 
@@ -25,6 +27,12 @@ const VIEWBOX: string = provinces.viewBox;
 
 /** 북에서 내려오므로 곡선 '위'가 점령이다 */
 const FRONT = makePolyFront(FRONT_TRACE, "north");
+
+/** 교두보 — 전선 뒤에 고립된 아군 지역. 점령색에서 도로 빼낸다. */
+const POCKETS = KW_POCKETS.map((p) => ({
+  ...p,
+  model: makePocket(p.keys, p.from, p.to),
+}));
 
 const HOOK = Math.round(2.4 * FPS);
 
@@ -114,6 +122,13 @@ export const ShortsKoreanWar: React.FC = () => {
 
           <g clipPath="url(#kwLand)">
             <path d={FRONT.areaAt(day)} fill={HELD} />
+            {/* 교두보를 점령색에서 빼낸다 — 순서가 중요하다.
+                점령 채움 뒤, 전선 그리기 앞. */}
+            {POCKETS.map((p) => {
+              const a = p.model.alphaAt(day);
+              if (a <= 0) return null;
+              return <path key={p.id} d={p.model.pathAt(day)} fill={FREE} opacity={a} />;
+            })}
             <path
               d={FRONT.lineAt(day)}
               fill="none"
@@ -121,6 +136,21 @@ export const ShortsKoreanWar: React.FC = () => {
               strokeWidth={3}
               opacity={0.85}
             />
+            {POCKETS.map((p) => {
+              const a = p.model.alphaAt(day);
+              if (a <= 0) return null;
+              return (
+                <path
+                  key={`o${p.id}`}
+                  d={p.model.pathAt(day)}
+                  fill="none"
+                  stroke={SOUTH_C}
+                  strokeWidth={3.4}
+                  strokeDasharray="9 6"
+                  opacity={a}
+                />
+              );
+            })}
           </g>
 
           {PROVINCES.map((p) => (
@@ -158,6 +188,28 @@ export const ShortsKoreanWar: React.FC = () => {
               </text>
             </g>
           ))}
+
+          {/* 교두보 라벨은 육지 클립 밖에서 그린다. 안에서 그리면 잘린다. */}
+          {POCKETS.map((p) => {
+            const a = p.model.alphaAt(day);
+            if (a <= 0) return null;
+            const q = project(p.labelAt[0], p.labelAt[1]);
+            return (
+              <text
+                key={`l${p.id}`}
+                x={q.x}
+                y={q.y}
+                textAnchor={p.side === "left" ? "end" : "start"}
+                fontSize={21}
+                fontWeight={900}
+                fill={SOUTH_C}
+                opacity={a}
+                style={{ paintOrder: "stroke", stroke: "#0B0E14", strokeWidth: 5 }}
+              >
+                {p.label}
+              </text>
+            );
+          })}
 
           {kwBattlesUpTo(day).map((b) => (
             <Mark key={b.name} b={b} day={day} />
@@ -260,7 +312,7 @@ export const ShortsKoreanWar: React.FC = () => {
           <div style={{ color: "#5C6577", fontSize: 19, lineHeight: 1.5 }}>
             전선 궤적의 경유지와 전투는 실좌표 · 경유지 사이 잔굴곡은 생성한 것
             <br />
-            국지 전투와 유격 활동은 반영하지 않음
+            교두보(점선)는 전선 뒤에 고립된 아군 지역 · 국지 교전은 미반영
           </div>
         </div>
       )}

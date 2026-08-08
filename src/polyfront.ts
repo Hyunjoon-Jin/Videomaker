@@ -208,3 +208,65 @@ export function makePolyFront(
     },
   };
 }
+
+
+/* ── 포켓(교두보·포위) ──────────────────────────────────
+ * 전선을 선 하나로 그리면 '적진 속 아군 지역'을 표현할 수 없다.
+ * 흥남 철수 때 흥남은 중공군에 둘러싸인 채 유엔군이 지키던 교두보였고,
+ * 인천상륙 직후의 인천·서울도 낙동강 방어선과 떨어진 별개 지역이었다.
+ * 선만으로는 둘 다 적 영역으로 칠해진다.
+ *
+ * 그래서 닫힌 영역을 따로 두고 점령색에서 도로 빼낸다.
+ * 시점마다 모양이 바뀌므로 전선과 같은 재표본화 방식으로 보간한다.
+ */
+
+export interface PocketModel {
+  /** t 시점의 닫힌 영역 path. 없으면 빈 문자열 */
+  pathAt(t: number): string;
+  /** t 시점의 표시 강도 0..1 — 생기고 사라지는 구간을 부드럽게 */
+  alphaAt(t: number): number;
+}
+
+export function makePocket(
+  keys: Array<[number, LonLat[]]>,
+  /** 등장·소멸 시각. 이 밖에서는 그리지 않는다 */
+  from: number,
+  to: number,
+  /** 생성·소멸에 쓰는 시간 폭 */
+  fade = 4
+): PocketModel {
+  const M = 72;
+  const frames = keys.map(([t, pts]) => [t, resample(toXY(pts), M)] as [number, Pt[]]);
+
+  const at = (t: number): Pt[] => {
+    if (t <= frames[0][0]) return frames[0][1];
+    for (let i = 1; i < frames.length; i++) {
+      const [t1, b] = frames[i];
+      if (t <= t1) {
+        const [t0, a] = frames[i - 1];
+        const p = (t - t0) / (t1 - t0);
+        const k = p * p * (3 - 2 * p);
+        return a.map((v, j) => ({
+          x: v.x + (b[j].x - v.x) * k,
+          y: v.y + (b[j].y - v.y) * k,
+        }));
+      }
+    }
+    return frames[frames.length - 1][1];
+  };
+
+  return {
+    alphaAt(t) {
+      if (t <= from || t >= to) return 0;
+      return Math.min(1, Math.min(t - from, to - t) / fade);
+    },
+    pathAt(t) {
+      if (t <= from || t >= to) return "";
+      const pts = smoothPts(at(t), 3);
+      return (
+        pts.map((p, i) => `${i ? "L" : "M"}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join("") +
+        "Z"
+      );
+    },
+  };
+}
