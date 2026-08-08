@@ -12,6 +12,7 @@ import {
   FRONT_TRACE,
   KWBattle,
   KW_POCKETS,
+  KW_GUERRILLA,
   KW_CITIES,
   TOTAL_DAYS,
   dateLabel,
@@ -32,6 +33,12 @@ const FRONT = makePolyFront(FRONT_TRACE, "north");
 const POCKETS = KW_POCKETS.map((p) => ({
   ...p,
   model: makePocket(p.keys, p.from, p.to),
+}));
+
+/** 유격 지역 — 점령이 아니므로 채우지 않고 옅게만 표시한다. */
+const ZONES = KW_GUERRILLA.map((z) => ({
+  ...z,
+  model: makePocket(z.keys, z.from, z.to, 12),
 }));
 
 const HOOK = Math.round(2.4 * FPS);
@@ -153,6 +160,28 @@ export const ShortsKoreanWar: React.FC = () => {
             })}
           </g>
 
+          {/* 유격 지역 — 점령색으로 칠하지 않는다. 옅은 음영 + 점선. */}
+          <g clipPath="url(#kwLand)">
+            {ZONES.map((z) => {
+              const a = z.model.alphaAt(day);
+              if (a <= 0) return null;
+              const d = z.model.pathAt(day);
+              return (
+                <g key={z.id}>
+                  <path d={d} fill={NORTH_C} opacity={a * 0.28} />
+                  <path
+                    d={d}
+                    fill="none"
+                    stroke={NORTH_C}
+                    strokeWidth={2.4}
+                    strokeDasharray="5 5"
+                    opacity={a * 0.9}
+                  />
+                </g>
+              );
+            })}
+          </g>
+
           {PROVINCES.map((p) => (
             <path key={`c${p.id}`} d={p.d} fill="none" stroke="#3A4762" strokeWidth={1.4} />
           ))}
@@ -207,6 +236,27 @@ export const ShortsKoreanWar: React.FC = () => {
                 style={{ paintOrder: "stroke", stroke: "#0B0E14", strokeWidth: 5 }}
               >
                 {p.label}
+              </text>
+            );
+          })}
+
+          {ZONES.map((z) => {
+            const a = z.model.alphaAt(day);
+            if (a <= 0) return null;
+            const q = project(z.labelAt[0], z.labelAt[1]);
+            return (
+              <text
+                key={`z${z.id}`}
+                x={q.x}
+                y={q.y}
+                textAnchor={z.side === "left" ? "end" : "start"}
+                fontSize={20}
+                fontWeight={900}
+                fill="#FCA5A5"
+                opacity={a}
+                style={{ paintOrder: "stroke", stroke: "#0B0E14", strokeWidth: 5 }}
+              >
+                {z.label}
               </text>
             );
           })}
@@ -308,11 +358,12 @@ export const ShortsKoreanWar: React.FC = () => {
             <Key color={HELD} label="북한군·중국군" />
             <Key color={SOUTH_C} label="국군·유엔군 승" />
             <Key color={NORTH_C} label="북한군·중국군 승" />
+            <Key color="#FCA5A5" label="유격 지역" />
           </div>
           <div style={{ color: "#5C6577", fontSize: 19, lineHeight: 1.5 }}>
             전선 궤적의 경유지와 전투는 실좌표 · 경유지 사이 잔굴곡은 생성한 것
             <br />
-            교두보(점선)는 전선 뒤에 고립된 아군 지역 · 국지 교전은 미반영
+            교두보는 전선 뒤 고립 아군 지역 · 유격 지역은 점령이 아니라 활동 범위
           </div>
         </div>
       )}
