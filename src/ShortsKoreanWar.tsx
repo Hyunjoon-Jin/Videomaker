@@ -258,7 +258,7 @@ export const ShortsKoreanWar: React.FC = () => {
             <Key color={NORTH_C} label="북한군·중국군 승" />
           </div>
           <div style={{ color: "#5C6577", fontSize: 19, lineHeight: 1.5 }}>
-            전선은 각 시점 전선이 지난 지명을 이은 궤적 · 전투는 개별 실좌표
+            전선 궤적의 경유지와 전투는 실좌표 · 경유지 사이 잔굴곡은 생성한 것
             <br />
             국지 전투와 유격 활동은 반영하지 않음
           </div>

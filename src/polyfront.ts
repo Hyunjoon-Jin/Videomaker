@@ -21,8 +21,76 @@
  */
 import { project } from "./data/places";
 
-/** 재표본화 점 개수. 전선의 굴곡을 담기에 충분하고 렌더도 가볍다. */
-const N = 96;
+/**
+ * 재표본화 점 개수. 잔굴곡을 100회 가까이 담으려면 굴곡당 4점 이상이
+ * 필요해 넉넉히 잡는다.
+ */
+const N = 440;
+
+/**
+ * ── 잔굴곡에 대하여 ────────────────────────────────────
+ * 실제 전선은 매끈한 곡선이 아니라 지형을 따라 잘게 꺾인다. 매끈하게
+ * 그리면 '누가 그린 선'처럼 보이고 전선으로 읽히지 않는다.
+ *
+ * 다만 이 잔굴곡은 사료에서 나온 것이 아니라 생성한 것이다. 경유지
+ * (마산·왜관·철원 등)는 문헌 기반이지만 그 사이의 톱니는 지형을 흉내낸
+ * 장식이며, 개별 돌출부가 실제 돌출부에 대응하지 않는다. 화면에도 그렇게
+ * 밝힌다.
+ *
+ * 입력은 '선 위의 위치'다. 프레임마다 난수를 뽑으면 선이 떨리므로
+ * 결정적 함수여야 하고, 위치 기반이어야 전선이 이동해도 굴곡이 유지된다.
+ */
+const BEND_FREQ = 26;   // 기본 굴곡 수. 옥타브가 겹쳐 실제로는 100회 안팎
+const BEND_AMP = 9.5;   // 진폭(0..1000 좌표계). 반도 높이의 1% 정도
+
+function hash1(i: number): number {
+  const h = Math.sin(i * 127.1) * 43758.5453;
+  return h - Math.floor(h);
+}
+
+/** 1차원 값 노이즈 — 정수 격자 사이를 부드럽게 잇는다 */
+function vnoise(x: number): number {
+  const i = Math.floor(x);
+  const f = x - i;
+  const u = f * f * (3 - 2 * f);
+  return hash1(i) * (1 - u) + hash1(i + 1) * u;
+}
+
+/** 옥타브를 겹쳐 큰 굴곡 위에 잔굴곡을 얹는다 */
+function fbm(x: number, octaves = 4): number {
+  let amp = 0.5;
+  let freq = 1;
+  let sum = 0;
+  for (let o = 0; o < octaves; o++) {
+    sum += amp * (vnoise(x * freq) * 2 - 1);
+    freq *= 2.07; // 정수배를 피해야 옥타브가 겹쳐 보이지 않는다
+    amp *= 0.5;
+  }
+  return sum;
+}
+
+/**
+ * 폴리라인을 진행 방향의 법선으로 밀어 잔굴곡을 만든다.
+ * 양 끝은 진폭을 0으로 좁혀 해안에 붙은 채로 둔다.
+ */
+function roughen(pts: Pt[]): Pt[] {
+  const n = pts.length;
+  return pts.map((p, i) => {
+    const s = i / (n - 1);
+    // 끝에서 0, 가운데에서 1 — 해안 접점이 흔들리지 않게
+    const taper = Math.sin(Math.PI * s) ** 0.6;
+    const a = pts[Math.max(0, i - 1)];
+    const b = pts[Math.min(n - 1, i + 1)];
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const len = Math.hypot(dx, dy) || 1;
+    // 법선 = 진행 방향을 90도 돌린 것
+    const nx = -dy / len;
+    const ny = dx / len;
+    const off = fbm(s * BEND_FREQ) * BEND_AMP * taper;
+    return { x: p.x + nx * off, y: p.y + ny * off };
+  });
+}
 
 export type LonLat = [number, number];
 export interface Pt {
@@ -118,12 +186,16 @@ export function makePolyFront(
   const d = (pts: Pt[]) =>
     pts.map((p, i) => `${i ? "L" : "M"}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join("");
 
+  // 잔굴곡은 보간 '후'에 얹는다. 키프레임마다 따로 얹으면 시점 사이에서
+  // 굴곡이 서로 섞여 뭉개진다.
+  const shaped = (t: number) => smoothPts(roughen(at(t)), 2);
+
   return {
     lineAt(t) {
-      return d(smoothPts(at(t)));
+      return d(shaped(t));
     },
     areaAt(t) {
-      const pts = smoothPts(at(t));
+      const pts = shaped(t);
       const first = pts[0];
       const last = pts[pts.length - 1];
       // 양 끝을 화면 밖으로 빼고 위(또는 아래)로 닫는다.
