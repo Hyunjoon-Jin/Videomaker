@@ -2,7 +2,9 @@ import React from "react";
 import provinces from "./data/provinces.json";
 import { CITIES } from "./data/places";
 import { Battle, battlesUpTo } from "./data/battles";
-import { frontLine, frontPath, holePath, smooth } from "./front";
+import { smooth } from "./front";
+import { makePocket, makePolyFront } from "./polyfront";
+import { IMJIN_FRONT, JEOLLA_FROM, JEOLLA_POCKET, JEOLLA_TO } from "./data/imjin-front";
 import { FORTS, FORT_FROM, FORT_TO, MILITIA, ROUTES, routeProgress } from "./data/detail";
 
 interface Province {
@@ -30,6 +32,14 @@ const JOSEON = "#60A5FA";
 const JAPAN = "#F87171";
 const MILITIA_C = "#34D399";
 const FORT_C = "#FCA5A5";
+const JOSEON_C = "#60A5FA";
+
+/**
+ * 6·25 편과 같은 폴리라인 전선. 일본군은 남쪽에서 올라오므로 "아래"가 점령.
+ * 전라도는 흥남 교두보와 같은 구조라 포켓으로 둔다.
+ */
+const FRONT = makePolyFront(IMJIN_FRONT, "south");
+const JEOLLA = makePocket(JEOLLA_POCKET, JEOLLA_FROM, JEOLLA_TO, 2.5);
 
 /**
  * 전쟁 지도 — 점령권을 곡선으로 그린다.
@@ -41,7 +51,8 @@ const FORT_C = "#FCA5A5";
  */
 export const WarMap: React.FC<Props> = ({ month, reveal = 1, children }) => {
   const fought = battlesUpTo(month);
-  const hole = holePath(month);
+  const jeollaA = JEOLLA.alphaAt(month);
+  const jeollaD = jeollaA > 0 ? JEOLLA.pathAt(month) : "";
 
   return (
     <svg
@@ -65,24 +76,27 @@ export const WarMap: React.FC<Props> = ({ month, reveal = 1, children }) => {
           <path key={p.id} d={p.d} fill={FREE} stroke="none" />
         ))}
 
-        {/* 점령권 — 곡선 아래, 육지 안쪽만 */}
+        {/* 점령권 — 폴리라인 아래, 육지 안쪽만.
+            순서: 채움 → 전라도 빼내기 → 전선 → 전라도 테두리 */}
         <g clipPath="url(#land)">
-          <path d={frontPath(month)} fill={HELD} />
-          {/* 전라도 미점령 — 점령색에서 도로 빼낸다 */}
-          {hole && <path d={hole} fill={FREE} />}
-        </g>
-
-        {/* 전선 */}
-        <g clipPath="url(#land)">
+          <path d={FRONT.areaAt(month)} fill={HELD} />
+          {jeollaD && <path d={jeollaD} fill={FREE} opacity={jeollaA} />}
           <path
-            d={frontLine(month)}
+            d={FRONT.lineAt(month)}
             fill="none"
             stroke="#F87171"
             strokeWidth={3}
-            opacity={0.8}
+            opacity={0.85}
           />
-          {hole && (
-            <path d={hole} fill="none" stroke="#F87171" strokeWidth={2.6} opacity={0.55} />
+          {jeollaD && (
+            <path
+              d={jeollaD}
+              fill="none"
+              stroke={JOSEON_C}
+              strokeWidth={3.2}
+              strokeDasharray="9 6"
+              opacity={jeollaA}
+            />
           )}
         </g>
 
@@ -189,6 +203,22 @@ export const WarMap: React.FC<Props> = ({ month, reveal = 1, children }) => {
             </g>
           );
         })}
+
+        {/* 전라도 라벨 — 지켜낸 도라는 것이 읽혀야 한다 */}
+        {jeollaA > 0 && (
+          <text
+            x={352}
+            y={866}
+            textAnchor="end"
+            fontSize={21}
+            fontWeight={900}
+            fill={JOSEON_C}
+            opacity={jeollaA}
+            style={{ paintOrder: "stroke", stroke: "#0B0E14", strokeWidth: 5 }}
+          >
+            전라도 — 미점령
+          </text>
+        )}
 
         {/* 전투 */}
         {fought.map((b) => (
