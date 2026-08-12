@@ -4,6 +4,7 @@ import { ShortsDecline, SHORT_DURATION } from "./ShortsDecline";
 import { ShortsImjin, IMJIN_DURATION } from "./ShortsImjin";
 import { ShortsWar, WAR_DURATION } from "./ShortsWar";
 import { ShortsKoreanWar, KW_DURATION } from "./ShortsKoreanWar";
+import { ShortsTyphoon, TY_DURATION } from "./ShortsTyphoon";
 import { FPS, SHORT_H, SHORT_W } from "./theme";
 
 export const RemotionRoot: React.FC = () => (
@@ -40,6 +41,15 @@ export const RemotionRoot: React.FC = () => (
       id="ShortsKoreanWar"
       component={ShortsKoreanWar}
       durationInFrames={KW_DURATION}
+      fps={FPS}
+      width={SHORT_W}
+      height={SHORT_H}
+    />
+    {/* 기획 3 — 태풍 (전쟁이 아닌 소재) */}
+    <Composition
+      id="ShortsTyphoon"
+      component={ShortsTyphoon}
+      durationInFrames={TY_DURATION}
       fps={FPS}
       width={SHORT_W}
       height={SHORT_H}
