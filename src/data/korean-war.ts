@@ -241,19 +241,19 @@ const B = (
 ): KWBattle => ({ name, day, won, ...project(lon, lat), ...opt });
 
 export const KW_BATTLES: KWBattle[] = [
-  B("서울 함락", 3, "north", 126.98, 37.57, { major: true, side: "right", dy: -18 }),
+  B("서울 함락", 3, "north", 126.98, 37.57, { major: true, side: "right", dy: -32 }),
   B("오산 죽미령", 10, "north", 127.06, 37.13, { side: "left" }),
   B("대전", 25, "north", 127.38, 36.35, { side: "left" }),
   B("다부동", 48, "south", 128.45, 36.13, { major: true, side: "right" }),
   B("인천상륙", 82, "south", 126.63, 37.47, { sea: true, major: true, side: "left", dy: 20 }),
-  B("서울 수복", 95, "south", 126.98, 37.57, { major: true, side: "right", dy: 20 }),
+  B("서울 수복", 95, "south", 126.98, 37.57, { major: true, side: "right", dy: 34 }),
   B("평양 점령", 116, "south", 125.75, 39.02, { major: true, side: "left" }),
   B("초산", 123, "south", 125.80, 40.83, { major: true, side: "right" }),
   B("운산", 122, "north", 125.75, 40.10, { side: "left" }),
   B("장진호", 155, "north", 127.20, 40.45, { major: true, side: "right" }),
   B("흥남 철수", 182, "south", 127.62, 39.83, { sea: true, major: true, side: "right" }),
-  B("서울 재함락", 193, "north", 126.98, 37.57, { major: true, side: "right", dy: 58 }),
-  B("서울 재수복", 262, "south", 126.98, 37.57, { side: "right", dy: 96 }),
+  B("서울 재함락", 193, "north", 126.98, 37.57, { major: true, side: "right", dy: 72 }),
+  B("서울 재수복", 262, "south", 126.98, 37.57, { side: "right", dy: 110 }),
   B("설마리", 300, "south", 126.90, 37.95, { side: "left" }),
   B("백마고지", 855, "south", 127.10, 38.28, { major: true, side: "right" }),
 ];

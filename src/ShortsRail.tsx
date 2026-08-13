@@ -17,6 +17,7 @@ import {
   splitAt,
 } from "./data/rail";
 import { project } from "./data/places";
+import { Shot, cameraAt } from "./mapcam";
 import { C, FPS, INK } from "./theme";
 import { Grain } from "./Grain";
 import { Typed } from "./Typed";
@@ -77,6 +78,28 @@ function yearAt(frame: number): number {
   return LEGS[LEGS.length - 1].to;
 }
 
+/**
+ * 카메라 샷.
+ *
+ * 선이 놓이는 자리를 따라간다. 1945년에는 38선으로 바짝 붙어야
+ * '끊긴다'가 사건으로 읽힌다. 멀리서 보면 그냥 색이 바뀔 뿐이다.
+ */
+const SHOTS: Shot[] = [
+  { at: HOOK - 20, cx: 455, cy: 520, z: 1.5 },
+  { at: HOOK + 40, cx: 440, cy: 570, z: 3.0 },    // 경인선 — 서울과 인천
+  { at: HOOK + 130, cx: 500, cy: 690, z: 2.2 },   // 경부선 남하
+  { at: HOOK + 230, cx: 360, cy: 380, z: 2.1 },   // 경의선 북상
+  { at: HOOK + 330, cx: 470, cy: 560, z: 1.7 },   // 호남·경원
+  { at: HOOK + 430, cx: 520, cy: 260, z: 1.9 },   // 함경선
+  { at: HOOK + 560, cx: 470, cy: 640, z: 2.0 },   // 전라·중앙
+  { at: HOOK + 650, cx: 442, cy: 511, z: 3.3 },   // 1945 — 38선에 바짝
+  { at: HOOK + 760, cx: 470, cy: 620, z: 2.2 },   // 전쟁과 복구
+  { at: HOOK + 900, cx: 500, cy: 660, z: 2.4 },   // 남쪽 확장
+  { at: HOOK + 1010, cx: 438, cy: 520, z: 3.1 },  // 도라산
+  { at: HOOK + 1120, cx: 480, cy: 640, z: 1.9 },  // 고속선
+  { at: RAIL_DURATION, cx: 460, cy: 540, z: 1.7 },
+];
+
 const LANDF = "#26241D";
 const COAST = "#4A4638";
 /** 개통 후 살아 있는 선 */
@@ -113,6 +136,10 @@ export const ShortsRail: React.FC = () => {
     extrapolateRight: "clamp",
   });
 
+  const cam = cameraAt(SHOTS, frame);
+  /** 화면 픽셀 → 지도 단위. 확대해도 선과 글자가 굵어지지 않게 한다. */
+  const u = (px: number) => px / (1.08 * cam.z);
+
   const nq = project(north.lon, north.lat);
 
   return (
@@ -120,19 +147,14 @@ export const ShortsRail: React.FC = () => {
       <Audio src={staticFile("bgm-rail.wav")} volume={0.9} />
 
       {/* ── 지도 ── */}
-      <div
-        style={{
-          position: "absolute",
-          top: 330,
-          left: 20,
-          right: 20,
-          height: 1060,
-          opacity: mapIn,
-        }}
-      >
-        <svg viewBox={VIEWBOX} style={{ width: "100%", height: "100%", display: "block" }}>
+      <AbsoluteFill style={{ opacity: mapIn }}>
+        <svg
+          viewBox={cam.viewBox}
+          preserveAspectRatio="xMidYMid slice"
+          style={{ width: "100%", height: "100%", display: "block" }}
+        >
           {PROVINCES.map((p) => (
-            <path key={p.id} d={p.d} fill={LANDF} stroke={COAST} strokeWidth={1.4} />
+            <path key={p.id} d={p.d} fill={LANDF} stroke={COAST} strokeWidth={u(1.8)} />
           ))}
 
           {/* 38선 — 이 편의 사건은 전부 이 선 위에서 일어난다 */}
@@ -142,13 +164,13 @@ export const ShortsRail: React.FC = () => {
             x2={1000}
             y2={project(127, 38).y}
             stroke={cut ? INK.oxide : "#4A4638"}
-            strokeWidth={cut ? 2.2 : 1.4}
-            strokeDasharray="10 8"
+            strokeWidth={u(cut ? 3 : 1.8)}
+            strokeDasharray={`${u(12)} ${u(10)}`}
             opacity={cut ? 0.75 : 0.4}
           />
 
           {LINES.map((l) => (
-            <Line key={l.id} l={l} year={year} />
+            <Line key={l.id} l={l} year={year} u={u} />
           ))}
 
           {/* 서울에서 갈 수 있는 최북단 */}
@@ -156,26 +178,35 @@ export const ShortsRail: React.FC = () => {
             <circle
               cx={nq.x}
               cy={nq.y}
-              r={7}
+              r={u(9)}
               fill="none"
               stroke={INK.brass}
-              strokeWidth={3}
+              strokeWidth={u(4)}
             />
-            <circle cx={nq.x} cy={nq.y} r={2.5} fill={INK.brass} />
+            <circle cx={nq.x} cy={nq.y} r={u(3.4)} fill={INK.brass} />
             <text
-              x={nq.x + (north.name === "신의주" ? -13 : 13)}
-              y={nq.y + 6}
+              x={nq.x + u(north.name === "신의주" ? -17 : 17)}
+              y={nq.y + u(9)}
               textAnchor={north.name === "신의주" ? "end" : "start"}
-              fontSize={23}
+              fontSize={u(31)}
               fontWeight={900}
               fill={INK.brass}
-              style={{ paintOrder: "stroke", stroke: C.bg, strokeWidth: 5 }}
+              style={{ paintOrder: "stroke", stroke: C.bg, strokeWidth: u(6) }}
             >
               {north.name}
             </text>
           </g>
         </svg>
-      </div>
+      </AbsoluteFill>
+
+      {/* 글자 자리 어둠 — 지도가 전면이라 이게 없으면 글자가 지도에 묻힌다 */}
+      <AbsoluteFill
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(12,10,8,0.93) 0%, rgba(12,10,8,0.55) 12%, rgba(12,10,8,0) 22%, rgba(12,10,8,0) 60%, rgba(12,10,8,0.72) 75%, rgba(12,10,8,0.95) 88%)",
+          pointerEvents: "none",
+        }}
+      />
 
       {/* 끊기는 순간에만 붉은 기운이 돈다 */}
       <AbsoluteFill
@@ -265,35 +296,6 @@ export const ShortsRail: React.FC = () => {
         </div>
       )}
 
-      {/* ── 진행 바 ── */}
-      {mapIn > 0.5 && (
-        <div style={{ position: "absolute", bottom: 226, left: 60, right: 60 }}>
-          <div style={{ height: 7, background: "#2A241D" }}>
-            <div
-              style={{
-                width: `${((year - 1899) / (2026 - 1899)) * 100}%`,
-                height: "100%",
-                background: INK.brass,
-              }}
-            />
-          </div>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              color: C.dim,
-              fontSize: 23,
-              fontWeight: 700,
-              marginTop: 9,
-            }}
-          >
-            <span>1899</span>
-            <span>127년</span>
-            <span>2026</span>
-          </div>
-        </div>
-      )}
-
       {/* ── 범례와 고지 ── */}
       {mapIn > 0.5 && (
         <div style={{ position: "absolute", bottom: 62, left: 60, right: 60 }}>
@@ -302,7 +304,7 @@ export const ShortsRail: React.FC = () => {
             <Key color={FAST} label="고속선" />
             <Key color={DEAD} label="끊긴 구간" dashed />
           </div>
-          <div style={{ color: "#5E5648", fontSize: 20 }}>
+          <div style={{ color: "#8A8070", fontSize: 20 }}>
             연도는 전 구간 개통 기준 · 선형은 근사 (자세한 설명은 고정댓글)
           </div>
         </div>
@@ -379,7 +381,11 @@ export const ShortsRail: React.FC = () => {
  * 38선을 넘는 노선은 1945년에 이북 구간만 회색 점선으로 바뀐다.
  * 지우지 않는 이유는 선로가 사라진 게 아니라 못 가게 된 것이기 때문이다.
  */
-const Line: React.FC<{ l: RailLine; year: number }> = ({ l, year }) => {
+const Line: React.FC<{
+  l: RailLine;
+  year: number;
+  u: (px: number) => number;
+}> = ({ l, year, u }) => {
   if (year < l.year) return null;
   const p = Math.min(1, (year - l.year) / DRAW_YEARS);
   const d = partialPath(l.pts, p);
@@ -397,7 +403,7 @@ const Line: React.FC<{ l: RailLine; year: number }> = ({ l, year }) => {
         d={d}
         fill="none"
         stroke={color}
-        strokeWidth={l.fast ? 9 : 7}
+        strokeWidth={u(l.fast ? 12 : 9)}
         strokeLinecap="round"
         strokeLinejoin="round"
         opacity={0.16}
@@ -408,7 +414,7 @@ const Line: React.FC<{ l: RailLine; year: number }> = ({ l, year }) => {
             d={parts.south}
             fill="none"
             stroke={color}
-            strokeWidth={2.8}
+            strokeWidth={u(3.6)}
             strokeLinecap="round"
             strokeLinejoin="round"
           />
@@ -417,8 +423,8 @@ const Line: React.FC<{ l: RailLine; year: number }> = ({ l, year }) => {
             d={parts.north}
             fill="none"
             stroke={DEAD}
-            strokeWidth={2.6}
-            strokeDasharray="7 8"
+            strokeWidth={u(3.4)}
+            strokeDasharray={`${u(9)} ${u(10)}`}
             strokeLinecap="round"
             opacity={0.9}
           />
@@ -428,7 +434,7 @@ const Line: React.FC<{ l: RailLine; year: number }> = ({ l, year }) => {
           d={d}
           fill="none"
           stroke={color}
-          strokeWidth={l.fast ? 3.6 : 2.8}
+          strokeWidth={u(l.fast ? 4.6 : 3.6)}
           strokeLinecap="round"
           strokeLinejoin="round"
         />

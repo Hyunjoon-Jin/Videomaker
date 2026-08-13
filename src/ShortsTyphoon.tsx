@@ -52,7 +52,7 @@ const OUTRO = Math.round(8.5 * FPS);
 export const TY_DURATION = HOOK + BODY + OUTRO;
 
 /** 경로를 구간의 앞 몇 할에 걸쳐 그릴지 — 나머지는 결과를 보는 시간 */
-const DRAW = 0.72;
+const DRAW = 0.84;
 
 const SEA = "#101519";
 const LAND = "#26251F";
@@ -107,6 +107,41 @@ export const ShortsTyphoon: React.FC = () => {
     extrapolateRight: "clamp",
   });
 
+  /*
+   * 카메라 — 태풍을 따라간다.
+   *
+   * 지금까지는 동아시아 전체를 고정으로 놓고 그 안에서 작은 점이
+   * 움직이는 화면이었다. 태풍은 움직이는 물체라 카메라가 따라붙는 게
+   * 당연한데 그러지 않고 있었다.
+   *
+   * 완전히 중심에 물리면 지도가 같이 흘러서 어디인지 알 수 없다.
+   * 폭풍과 지도 중심을 섞어서, 따라가되 육지를 놓치지 않게 한다.
+   */
+  const camZ = inOutro
+    ? 1.06
+    : interpolate(prog, [0, 0.4, 0.78, 1], [1.14, 1.45, 2.1, 1.5], {
+        extrapolateLeft: "clamp",
+        extrapolateRight: "clamp",
+      });
+  /*
+   * 경로를 다 그린 뒤에도 폭풍을 계속 따라가면 소멸 지점인 빈 바다를
+   * 보게 된다. 뒤쪽에서는 상륙 지점으로 시선을 옮겨 결과를 보여준다.
+   */
+  const landQ = eaProject(cur.landAt[0], cur.landAt[1]);
+  const settle = interpolate(prog, [0.72, 1], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const fx = now.x * (1 - settle) + landQ.x * settle;
+  const fy = now.y * (1 - settle) + landQ.y * settle;
+  const camX = inOutro ? 500 : fx * 0.7 + 500 * 0.3;
+  const camY = inOutro ? 760 : fy * 0.82 + 820 * 0.18;
+  const camW = 1000 / camZ;
+  const camH = (camW * 1920) / 1080;
+  const viewBox = `${(camX - camW / 2).toFixed(1)} ${(camY - camH / 2).toFixed(1)} ${camW.toFixed(1)} ${camH.toFixed(1)}`;
+  /** 화면 픽셀 → 지도 단위. 확대해도 선과 글자가 굵어지지 않게 한다. */
+  const u = (px: number) => px / (1.08 * camZ);
+
   return (
     <AbsoluteFill style={{ backgroundColor: SEA, fontFamily: "Pretendard" }}>
       <Audio src={staticFile("bgm-ty.wav")} volume={0.9} />
@@ -114,7 +149,7 @@ export const ShortsTyphoon: React.FC = () => {
       {/* ── 지도 ── */}
       <AbsoluteFill style={{ opacity: mapIn }}>
         <svg
-          viewBox={EA_VIEWBOX}
+          viewBox={viewBox}
           preserveAspectRatio="xMidYMid slice"
           style={{ width: "100%", height: "100%", display: "block" }}
         >
@@ -127,15 +162,15 @@ export const ShortsTyphoon: React.FC = () => {
               patternUnits="userSpaceOnUse"
               patternTransform="rotate(45)"
             >
-              <line x1={0} y1={0} x2={0} y2={12} stroke={WARN} strokeWidth={3.4} />
+              <line x1={0} y1={0} x2={0} y2={12} stroke={WARN} strokeWidth={u(4.4)} />
             </pattern>
           </defs>
 
           {EA_LANDS.map((l, i) => (
-            <path key={i} d={l.d} fill={LAND} stroke={LAND_S} strokeWidth={1.2} />
+            <path key={i} d={l.d} fill={LAND} stroke={LAND_S} strokeWidth={u(1.6)} />
           ))}
           {EA_KOREA.map((d, i) => (
-            <path key={`k${i}`} d={d} fill={KOREA_F} stroke={KOREA_S} strokeWidth={2} />
+            <path key={`k${i}`} d={d} fill={KOREA_F} stroke={KOREA_S} strokeWidth={u(2.6)} />
           ))}
 
           {/* 울릉도·독도 — 축척상 폴리곤으로는 안 보여 점으로 찍는다 */}
@@ -143,14 +178,14 @@ export const ShortsTyphoon: React.FC = () => {
             const q = eaProject(is.lon, is.lat);
             return (
               <g key={is.name}>
-                <circle cx={q.x} cy={q.y} r={4} fill={KOREA_F} stroke={KOREA_S} strokeWidth={2} />
+                <circle cx={q.x} cy={q.y} r={u(5)} fill={KOREA_F} stroke={KOREA_S} strokeWidth={u(2.6)} />
                 <text
-                  x={q.x + is.dx}
-                  y={q.y + is.dy}
-                  fontSize={17}
+                  x={q.x + u(is.dx)}
+                  y={q.y + u(is.dy)}
+                  fontSize={u(23)}
                   fontWeight={700}
                   fill="#7E7666"
-                  style={{ paintOrder: "stroke", stroke: SEA, strokeWidth: 4 }}
+                  style={{ paintOrder: "stroke", stroke: SEA, strokeWidth: u(5) }}
                 >
                   {is.name}
                 </text>
@@ -160,9 +195,9 @@ export const ShortsTyphoon: React.FC = () => {
 
           {/* 지나간 태풍은 옅게 남겨 누적을 보여준다 */}
           {TYPHOONS.map((t, i) => {
-            if (inOutro) return <Track key={t.id} t={t} p={1} dim={1} frame={frame} />;
-            if (i < idx) return <Track key={t.id} t={t} p={1} dim={0.3} frame={frame} />;
-            if (i === idx) return <Track key={t.id} t={t} p={prog} dim={1} frame={frame} />;
+            if (inOutro) return <Track key={t.id} t={t} p={1} dim={1} frame={frame} u={u} />;
+            if (i < idx) return <Track key={t.id} t={t} p={1} dim={0.3} frame={frame} u={u} />;
+            if (i === idx) return <Track key={t.id} t={t} p={prog} dim={1} frame={frame} u={u} />;
             return null;
           })}
         </svg>
@@ -486,12 +521,13 @@ function spiralArm(cx: number, cy: number, r: number, rot: number, turns = 1.1):
  * 발달해 정점을 찍고 북상하며 약해진다. 중심기압으로 반경·나선 팔의
  * 밝기·회전 속도를 전부 구동해 그 일생이 보이게 한다.
  */
-const Track: React.FC<{ t: Typhoon; p: number; dim: number; frame: number }> = ({
-  t,
-  p,
-  dim,
-  frame,
-}) => {
+const Track: React.FC<{
+  t: Typhoon;
+  p: number;
+  dim: number;
+  frame: number;
+  u: (px: number) => number;
+}> = ({ t, p, dim, frame, u }) => {
   const d = trackPathTo(t, p);
   if (!d) return null;
   const head = trackPointAt(t, p);
@@ -523,8 +559,8 @@ const Track: React.FC<{ t: Typhoon; p: number; dim: number; frame: number }> = (
             d={arc}
             fill="none"
             stroke={WARN}
-            strokeWidth={2}
-            strokeDasharray="7 6"
+            strokeWidth={u(2.6)}
+            strokeDasharray={`${u(9)} ${u(8)}`}
             opacity={0.42}
           />
           {/* 위험반원에 들어간 땅을 빗금으로 덮는다 — 어디가 위험한지가 요점 */}
@@ -546,7 +582,7 @@ const Track: React.FC<{ t: Typhoon; p: number; dim: number; frame: number }> = (
         d={d}
         fill="none"
         stroke={t.color}
-        strokeWidth={12}
+        strokeWidth={u(15)}
         strokeLinecap="round"
         strokeLinejoin="round"
         opacity={0.14}
@@ -555,7 +591,7 @@ const Track: React.FC<{ t: Typhoon; p: number; dim: number; frame: number }> = (
         d={d}
         fill="none"
         stroke={t.color}
-        strokeWidth={4}
+        strokeWidth={u(5)}
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -566,20 +602,20 @@ const Track: React.FC<{ t: Typhoon; p: number; dim: number; frame: number }> = (
           <circle
             cx={peak.x}
             cy={peak.y}
-            r={9}
+            r={u(12)}
             fill="none"
             stroke={t.color}
-            strokeWidth={2}
-            strokeDasharray="3 3"
+            strokeWidth={u(2.6)}
+            strokeDasharray={`${u(4)} ${u(4)}`}
           />
           <text
-            x={peak.x + (t.peakDx ?? 14)}
-            y={peak.y + (t.peakDy ?? 6)}
+            x={peak.x + u(t.peakDx ?? 14)}
+            y={peak.y + u(t.peakDy ?? 6)}
             textAnchor={t.peakAnchor ?? "start"}
-            fontSize={18}
+            fontSize={u(24)}
             fontWeight={900}
             fill={t.color}
-            style={{ paintOrder: "stroke", stroke: SEA, strokeWidth: 5 }}
+            style={{ paintOrder: "stroke", stroke: SEA, strokeWidth: u(6) }}
           >
             최저 {peak.hpa}hPa
           </text>
@@ -589,8 +625,8 @@ const Track: React.FC<{ t: Typhoon; p: number; dim: number; frame: number }> = (
       {/* 상륙 지점 */}
       {p > 0.62 && (
         <>
-          <circle cx={land.x} cy={land.y} r={13} fill="none" stroke={t.color} strokeWidth={3} />
-          <circle cx={land.x} cy={land.y} r={4} fill={t.color} />
+          <circle cx={land.x} cy={land.y} r={u(17)} fill="none" stroke={t.color} strokeWidth={u(4)} />
+          <circle cx={land.x} cy={land.y} r={u(5)} fill={t.color} />
         </>
       )}
 
@@ -611,7 +647,7 @@ const Track: React.FC<{ t: Typhoon; p: number; dim: number; frame: number }> = (
               d={spiralArm(head.x, head.y, r * 0.92, rot + (i * Math.PI * 2) / 3)}
               fill="none"
               stroke={t.color}
-              strokeWidth={2 + k * 2.6}
+              strokeWidth={u(2.6 + k * 3.4)}
               strokeLinecap="round"
               opacity={0.32 + k * 0.44}
             />
@@ -623,7 +659,7 @@ const Track: React.FC<{ t: Typhoon; p: number; dim: number; frame: number }> = (
             r={Math.max(4, r * (0.14 - k * 0.05))}
             fill={SEA}
             stroke={t.color}
-            strokeWidth={2.5 + k * 2}
+            strokeWidth={u(3.2 + k * 2.6)}
           />
         </g>
       )}

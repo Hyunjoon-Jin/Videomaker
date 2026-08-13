@@ -20,6 +20,7 @@ import {
   kwEventAt,
 } from "./data/korean-war";
 import { project } from "./data/places";
+import { Shot, cameraAt } from "./mapcam";
 import { C, FPS } from "./theme";
 import { Grain } from "./Grain";
 import { Typed } from "./Typed";
@@ -88,6 +89,29 @@ function dayAt(frame: number): number {
   return TOTAL_DAYS;
 }
 
+/**
+ * 카메라 샷.
+ *
+ * 전선이 뒤집히는 네 순간을 각각 다른 거리에서 본다. 낙동강까지 밀릴
+ * 때는 부산 쪽으로 조이고, 압록강에 닿을 때는 확 빠져서 그 거리를
+ * 보여준다. 좌표는 지도 좌표계(0..1000)이고 project()로 확인했다.
+ *
+ * 배율 1.75면 반도 전체가 세로로 꽉 찬다. 지금까지는 지도를 상자에
+ * 넣어 화면의 4분의 1만 쓰고 있었다.
+ */
+const SHOTS: Shot[] = [
+  { at: HOOK - 20, cx: 460, cy: 500, z: 1.55 },
+  { at: HOOK + 40, cx: 462, cy: 530, z: 2.15 },   // 38선 남침
+  { at: 375, cx: 596, cy: 742, z: 3.05 },         // 낙동강 방어선
+  { at: 521, cx: 436, cy: 566, z: 3.35 },         // 인천상륙
+  { at: 600, cx: 452, cy: 548, z: 3.0 },          // 서울 수복
+  { at: 729, cx: 386, cy: 268, z: 2.35 },         // 압록강
+  { at: 908, cx: 486, cy: 342, z: 2.95 },         // 흥남 철수
+  { at: 990, cx: 458, cy: 556, z: 2.3 },          // 1·4후퇴
+  { at: 1140, cx: 460, cy: 505, z: 1.72 },        // 고지전 — 빠진다
+  { at: 1305, cx: 460, cy: 512, z: 1.66 },
+];
+
 const NORTH_C = "#B33A2B";
 const SOUTH_C = "#4C7A9B";
 const FREE = "#2C2B24";
@@ -112,24 +136,28 @@ export const ShortsKoreanWar: React.FC = () => {
     extrapolateRight: "clamp",
   });
 
+  const cam = cameraAt(SHOTS, frame);
+  /**
+   * 화면 픽셀 → 지도 단위.
+   * 확대하면 지도 단위 하나가 더 많은 픽셀을 차지하므로, 선 굵기와
+   * 글자 크기를 그대로 두면 줌인할 때 크레용으로 그린 것처럼 굵어진다.
+   * 원하는 화면 크기를 넣으면 지금 배율에 맞는 지도 단위를 돌려준다.
+   */
+  const u = (px: number) => px / (1.08 * cam.z);
+
   const accent = ev?.south ? SOUTH_C : NORTH_C;
 
   return (
     <AbsoluteFill style={{ backgroundColor: C.bg, fontFamily: "Pretendard" }}>
       <Audio src={staticFile("bgm-kw.wav")} volume={0.9} />
 
-      {/* ── 지도 ── */}
-      <div
-        style={{
-          position: "absolute",
-          top: 350,
-          left: 20,
-          right: 20,
-          height: 1050,
-          opacity: mapIn,
-        }}
-      >
-        <svg viewBox={VIEWBOX} style={{ width: "100%", height: "100%", display: "block" }}>
+      {/* ── 지도 ── 화면 전체를 쓴다. 상자에 넣으면 반도가 손톱만 해진다 */}
+      <AbsoluteFill style={{ opacity: mapIn }}>
+        <svg
+          viewBox={cam.viewBox}
+          preserveAspectRatio="xMidYMid slice"
+          style={{ width: "100%", height: "100%", display: "block" }}
+        >
           <defs>
             <clipPath id="kwLand">
               {PROVINCES.filter((p) => p.id !== "jeju").map((p) => (
@@ -277,10 +305,19 @@ export const ShortsKoreanWar: React.FC = () => {
           })}
 
           {kwBattlesUpTo(day).map((b) => (
-            <Mark key={b.name} b={b} day={day} />
+            <Mark key={b.name} b={b} day={day} u={u} />
           ))}
         </svg>
-      </div>
+      </AbsoluteFill>
+
+      {/* 글자 자리 어둠 — 지도가 전면이라 이게 없으면 글자가 지도에 묻힌다 */}
+      <AbsoluteFill
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(12,10,8,0.93) 0%, rgba(12,10,8,0.55) 12%, rgba(12,10,8,0) 22%, rgba(12,10,8,0) 62%, rgba(12,10,8,0.7) 76%, rgba(12,10,8,0.94) 88%)",
+          pointerEvents: "none",
+        }}
+      />
 
       <AbsoluteFill
         style={{
@@ -347,35 +384,6 @@ export const ShortsKoreanWar: React.FC = () => {
         </div>
       )}
 
-      {/* ── 진행 바 ── */}
-      {mapIn > 0.5 && (
-        <div style={{ position: "absolute", bottom: 226, left: 60, right: 60 }}>
-          <div style={{ height: 7, background: "#2A241D" }}>
-            <div
-              style={{
-                width: `${(day / TOTAL_DAYS) * 100}%`,
-                height: "100%",
-                background: NORTH_C,
-              }}
-            />
-          </div>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              color: C.dim,
-              fontSize: 23,
-              fontWeight: 700,
-              marginTop: 9,
-            }}
-          >
-            <span>1950</span>
-            <span>3년 1개월</span>
-            <span>1953</span>
-          </div>
-        </div>
-      )}
-
       {/* ── 범례 · 고지 ── */}
       {mapIn > 0.5 && (
         <div style={{ position: "absolute", bottom: 62, left: 60, right: 60 }}>
@@ -385,12 +393,8 @@ export const ShortsKoreanWar: React.FC = () => {
             <Key color={NORTH_C} label="북한군·중국군 승" />
             <Key color="#C08A7A" label="유격 지역" />
           </div>
-          <div style={{ color: "#5E5648", fontSize: 19, lineHeight: 1.5 }}>
-            전선 궤적의 경유지와 전투는 실좌표, 그 사이 잔굴곡은 생성한 것
-            <br />
-            교두보는 전선 뒤에 고립된 아군 지역이다
-            <br />
-            유격 지역은 점령한 땅이 아니라 활동 범위다
+          <div style={{ color: "#8A8070", fontSize: 20 }}>
+            좌표는 실측값, 그 사이는 추정 (자세한 설명은 고정댓글)
           </div>
         </div>
       )}
@@ -455,25 +459,29 @@ export const ShortsKoreanWar: React.FC = () => {
   );
 };
 
-const Mark: React.FC<{ b: KWBattle; day: number }> = ({ b, day }) => {
+const Mark: React.FC<{ b: KWBattle; day: number; u: (px: number) => number }> = ({
+  b,
+  day,
+  u,
+}) => {
   const fresh = Math.max(0, 1 - (day - b.day) / 12);
   const color = b.won === "south" ? SOUTH_C : NORTH_C;
-  const r = b.major ? 6 : 4;
+  const r = u(b.major ? 8 : 5);
   return (
     <g>
       {fresh > 0 && (
         <circle
           cx={b.x}
           cy={b.y}
-          r={r + fresh * 26}
+          r={r + fresh * u(34)}
           fill="none"
           stroke={color}
-          strokeWidth={2.4}
+          strokeWidth={u(3)}
           opacity={fresh * 0.75}
         />
       )}
       {b.sea ? (
-        <circle cx={b.x} cy={b.y} r={r} fill="#151310" stroke={color} strokeWidth={3} />
+        <circle cx={b.x} cy={b.y} r={r} fill="#151310" stroke={color} strokeWidth={u(4)} />
       ) : (
         <rect
           x={b.x - r}
@@ -482,19 +490,19 @@ const Mark: React.FC<{ b: KWBattle; day: number }> = ({ b, day }) => {
           height={r * 2}
           fill={color}
           stroke="#151310"
-          strokeWidth={1.4}
+          strokeWidth={u(1.8)}
           transform={`rotate(45 ${b.x} ${b.y})`}
         />
       )}
       {b.major && (
         <text
-          x={b.side === "left" ? b.x - 13 : b.x + 13}
-          y={b.y + 6 + (b.dy ?? 0)}
+          x={b.side === "left" ? b.x - u(17) : b.x + u(17)}
+          y={b.y + u(8) + u(b.dy ?? 0)}
           textAnchor={b.side === "left" ? "end" : "start"}
-          fontSize={21}
+          fontSize={u(28)}
           fontWeight={900}
           fill={color}
-          style={{ paintOrder: "stroke", stroke: "#151310", strokeWidth: 5 }}
+          style={{ paintOrder: "stroke", stroke: "#151310", strokeWidth: u(6) }}
         >
           {b.name}
         </text>

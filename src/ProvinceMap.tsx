@@ -21,6 +21,14 @@ export const PROVINCE_VIEWBOX: string = provinces.viewBox;
 interface Props {
   month: number;
   reveal?: number;
+  /** 카메라가 만든 viewBox. 없으면 지도 전체를 본다. */
+  viewBox?: string;
+  /**
+   * 화면 픽셀 → 지도 단위 변환기.
+   * 확대하면 지도 단위 하나가 더 많은 화면 픽셀을 먹는다. 선 굵기와
+   * 글자 크기를 그대로 두면 줌인할 때 크레용으로 그린 것처럼 굵어진다.
+   */
+  u?: (px: number) => number;
   children?: React.ReactNode;
 }
 
@@ -49,15 +57,22 @@ const JEOLLA = makePocket(JEOLLA_POCKET, JEOLLA_FROM, JEOLLA_TO, 2.5);
  * 대신 육지 전체를 클립으로 잡고, 그 안에서 곡선 아래를 점령색으로 덮는다.
  * 전라도 미점령분은 별도의 닫힌 곡선으로 도로 빼낸다.
  */
-export const WarMap: React.FC<Props> = ({ month, reveal = 1, children }) => {
+export const WarMap: React.FC<Props> = ({
+  month,
+  reveal = 1,
+  viewBox,
+  u = (px: number) => px,
+  children,
+}) => {
   const fought = battlesUpTo(month);
   const jeollaA = JEOLLA.alphaAt(month);
   const jeollaD = jeollaA > 0 ? JEOLLA.pathAt(month) : "";
 
   return (
     <svg
-      viewBox={PROVINCE_VIEWBOX}
-      style={{ width: "100%", height: "100%", display: "block", overflow: "visible" }}
+      viewBox={viewBox ?? PROVINCE_VIEWBOX}
+      preserveAspectRatio="xMidYMid slice"
+      style={{ width: "100%", height: "100%", display: "block" }}
     >
       <defs>
         {/* 육지 — 점령색이 바다로 새지 않게 잡아주는 마스크 */}
@@ -85,7 +100,7 @@ export const WarMap: React.FC<Props> = ({ month, reveal = 1, children }) => {
             d={FRONT.lineAt(month)}
             fill="none"
             stroke="#D4694F"
-            strokeWidth={3}
+            strokeWidth={u(4)}
             opacity={0.85}
           />
           {jeollaD && (
@@ -94,7 +109,7 @@ export const WarMap: React.FC<Props> = ({ month, reveal = 1, children }) => {
               fill="none"
               stroke={JOSEON_C}
               strokeWidth={3.2}
-              strokeDasharray="9 6"
+              strokeDasharray={`${u(11)} ${u(8)}`}
               opacity={jeollaA}
             />
           )}
@@ -102,21 +117,21 @@ export const WarMap: React.FC<Props> = ({ month, reveal = 1, children }) => {
 
         {/* 해안선 */}
         {PROVINCES.map((p) => (
-          <path key={`c${p.id}`} d={p.d} fill="none" stroke={COAST} strokeWidth={1.4} />
+          <path key={`c${p.id}`} d={p.d} fill="none" stroke={COAST} strokeWidth={u(1.8)} />
         ))}
 
         {/* 지명 */}
         {CITIES.filter((c) => c.from <= month).map((c) => (
           <g key={c.name}>
-            <circle cx={c.x} cy={c.y} r={4} fill="#C09240" />
+            <circle cx={c.x} cy={c.y} r={u(5)} fill="#C09240" />
             <text
               x={c.side === "left" ? c.x - 11 : c.x + 11}
               y={c.y + 6}
               textAnchor={c.side === "left" ? "end" : "start"}
-              fontSize={23}
+              fontSize={u(31)}
               fontWeight={900}
               fill="#DCC48C"
-              style={{ paintOrder: "stroke", stroke: "#151310", strokeWidth: 5 }}
+              style={{ paintOrder: "stroke", stroke: "#151310", strokeWidth: u(6) }}
             >
               {c.name}
             </text>
@@ -140,7 +155,7 @@ export const WarMap: React.FC<Props> = ({ month, reveal = 1, children }) => {
                 d={d}
                 fill="none"
                 stroke={r.color}
-                strokeWidth={2.6}
+                strokeWidth={u(3.3)}
                 strokeDasharray="9 7"
                 opacity={0.9}
               />
@@ -185,17 +200,17 @@ export const WarMap: React.FC<Props> = ({ month, reveal = 1, children }) => {
                 d={`M${m.x} ${m.y - 6}L${m.x + 5.5} ${m.y + 4}L${m.x - 5.5} ${m.y + 4}Z`}
                 fill={MILITIA_C}
                 stroke="#151310"
-                strokeWidth={1.2}
+                strokeWidth={u(1.6)}
               />
               {m.label && (
                 <text
                   x={m.side === "left" ? m.x - 11 : m.x + 11}
                   y={m.y + 5 + (m.dy ?? 0)}
                   textAnchor={m.side === "left" ? "end" : "start"}
-                  fontSize={20}
+                  fontSize={u(27)}
                   fontWeight={900}
                   fill={MILITIA_C}
-                  style={{ paintOrder: "stroke", stroke: "#151310", strokeWidth: 5 }}
+                  style={{ paintOrder: "stroke", stroke: "#151310", strokeWidth: u(6) }}
                 >
                   {m.leader}
                 </text>
@@ -210,11 +225,11 @@ export const WarMap: React.FC<Props> = ({ month, reveal = 1, children }) => {
             x={352}
             y={866}
             textAnchor="end"
-            fontSize={21}
+            fontSize={u(28)}
             fontWeight={900}
             fill={JOSEON_C}
             opacity={jeollaA}
-            style={{ paintOrder: "stroke", stroke: "#151310", strokeWidth: 5 }}
+            style={{ paintOrder: "stroke", stroke: "#151310", strokeWidth: u(6) }}
           >
             전라도 미점령
           </text>
@@ -222,7 +237,7 @@ export const WarMap: React.FC<Props> = ({ month, reveal = 1, children }) => {
 
         {/* 전투 */}
         {fought.map((b) => (
-          <BattleMark key={b.name} b={b} month={month} />
+          <BattleMark key={b.name} b={b} month={month} u={u} />
         ))}
       </g>
 
@@ -231,10 +246,14 @@ export const WarMap: React.FC<Props> = ({ month, reveal = 1, children }) => {
   );
 };
 
-const BattleMark: React.FC<{ b: Battle; month: number }> = ({ b, month }) => {
+const BattleMark: React.FC<{
+  b: Battle;
+  month: number;
+  u: (px: number) => number;
+}> = ({ b, month, u }) => {
   const fresh = Math.max(0, 1 - (month - b.month) / 0.9);
   const color = b.won === "joseon" ? JOSEON : JAPAN;
-  const r = b.major ? 6 : 4;
+  const r = u(b.major ? 8 : 5);
 
   return (
     <g>
@@ -242,15 +261,15 @@ const BattleMark: React.FC<{ b: Battle; month: number }> = ({ b, month }) => {
         <circle
           cx={b.x}
           cy={b.y}
-          r={r + fresh * 26}
+          r={r + fresh * u(34)}
           fill="none"
           stroke={color}
-          strokeWidth={2.4}
+          strokeWidth={u(3)}
           opacity={fresh * 0.75}
         />
       )}
       {b.sea ? (
-        <circle cx={b.x} cy={b.y} r={r} fill="#151310" stroke={color} strokeWidth={3} />
+        <circle cx={b.x} cy={b.y} r={r} fill="#151310" stroke={color} strokeWidth={u(4)} />
       ) : (
         <rect
           x={b.x - r}
@@ -259,19 +278,19 @@ const BattleMark: React.FC<{ b: Battle; month: number }> = ({ b, month }) => {
           height={r * 2}
           fill={color}
           stroke="#151310"
-          strokeWidth={1.4}
+          strokeWidth={u(1.8)}
           transform={`rotate(45 ${b.x} ${b.y})`}
         />
       )}
       {b.major && (
         <text
-          x={b.side === "left" ? b.x - 13 : b.x + 13}
-          y={b.y + 6 + (b.dy ?? 0)}
+          x={b.side === "left" ? b.x - u(17) : b.x + u(17)}
+          y={b.y + u(8) + u(b.dy ?? 0)}
           textAnchor={b.side === "left" ? "end" : "start"}
-          fontSize={21}
+          fontSize={u(28)}
           fontWeight={900}
           fill={color}
-          style={{ paintOrder: "stroke", stroke: "#151310", strokeWidth: 5 }}
+          style={{ paintOrder: "stroke", stroke: "#151310", strokeWidth: u(6) }}
         >
           {b.name}
         </text>

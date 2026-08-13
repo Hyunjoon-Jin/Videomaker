@@ -3,6 +3,7 @@ import { AbsoluteFill, Audio, interpolate, staticFile, useCurrentFrame } from "r
 import { WarMap } from "./ProvinceMap";
 import { TOTAL_MONTHS, monthLabel, warEventAt } from "./data/war";
 import { battlesUpTo } from "./data/battles";
+import { Shot, cameraAt } from "./mapcam";
 import { C, FPS } from "./theme";
 import { Grain } from "./Grain";
 import { Typed } from "./Typed";
@@ -53,6 +54,26 @@ function monthAt(frame: number): number {
   return TOTAL_MONTHS;
 }
 
+/**
+ * 카메라 샷.
+ *
+ * 부산에 상륙할 때는 부산으로, 한산도에서 이길 때는 남해로, 의주까지
+ * 밀릴 때는 압록강 쪽으로 붙는다. 좌표는 지도 좌표계(0..1000)다.
+ * LEGS가 프레임을 정하므로 at 값은 그 경계에서 가져왔다.
+ */
+const SHOTS: Shot[] = [
+  { at: HOOK - 20, cx: 455, cy: 500, z: 1.5 },
+  { at: HOOK + 34, cx: 600, cy: 790, z: 3.2 },    // 부산 상륙
+  { at: HOOK + 110, cx: 470, cy: 600, z: 2.5 },   // 북상
+  { at: HOOK + 180, cx: 500, cy: 800, z: 3.0 },   // 한산도
+  { at: HOOK + 250, cx: 380, cy: 330, z: 2.3 },   // 평양·의주
+  { at: HOOK + 400, cx: 440, cy: 520, z: 1.9 },   // 반격
+  { at: HOOK + 560, cx: 430, cy: 700, z: 2.4 },   // 소강 — 남해안 왜성
+  { at: HOOK + 700, cx: 380, cy: 700, z: 2.9 },   // 정유재란·명량
+  { at: HOOK + 830, cx: 470, cy: 760, z: 2.6 },   // 노량
+  { at: HOOK + 960, cx: 455, cy: 520, z: 1.7 },
+];
+
 export const ShortsWar: React.FC = () => {
   useFonts();
   const frame = useCurrentFrame();
@@ -75,6 +96,10 @@ export const ShortsWar: React.FC = () => {
   });
   const hookIn = interpolate(frame, [0, 12], [0, 1], { extrapolateRight: "clamp" });
 
+  const cam = cameraAt(SHOTS, frame);
+  /** 화면 픽셀 → 지도 단위. 확대해도 선과 글자가 굵어지지 않게 한다. */
+  const u = (px: number) => px / (1.08 * cam.z);
+
   const accent = ev?.win ? "#4C7A9B" : C.drop;
 
   return (
@@ -84,18 +109,18 @@ export const ShortsWar: React.FC = () => {
       <Audio src={staticFile("bgm.wav")} volume={0.9} />
 
       {/* ── 지도 ── */}
-      <div
+      <AbsoluteFill style={{ opacity: mapIn }}>
+        <WarMap month={month} reveal={mapIn} viewBox={cam.viewBox} u={u} />
+      </AbsoluteFill>
+
+      {/* 글자 자리 어둠 — 지도가 전면이라 이게 없으면 글자가 지도에 묻힌다 */}
+      <AbsoluteFill
         style={{
-          position: "absolute",
-          top: 360,
-          left: 20,
-          right: 20,
-          height: 1040,
-          opacity: mapIn,
+          background:
+            "linear-gradient(180deg, rgba(12,10,8,0.93) 0%, rgba(12,10,8,0.55) 12%, rgba(12,10,8,0) 22%, rgba(12,10,8,0) 62%, rgba(12,10,8,0.7) 76%, rgba(12,10,8,0.94) 88%)",
+          pointerEvents: "none",
         }}
-      >
-        <WarMap month={month} reveal={mapIn} />
-      </div>
+      />
 
       <AbsoluteFill
         style={{
@@ -164,35 +189,6 @@ export const ShortsWar: React.FC = () => {
         </div>
       )}
 
-      {/* ── 진행 바 (7년) ── */}
-      {mapIn > 0.5 && (
-        <div style={{ position: "absolute", bottom: 226, left: 60, right: 60 }}>
-          <div style={{ height: 7, background: "#2A241D" }}>
-            <div
-              style={{
-                width: `${(month / TOTAL_MONTHS) * 100}%`,
-                height: "100%",
-                background: C.drop,
-              }}
-            />
-          </div>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              color: C.dim,
-              fontSize: 23,
-              fontWeight: 700,
-              marginTop: 9,
-            }}
-          >
-            <span>1592</span>
-            <span>7년</span>
-            <span>1598</span>
-          </div>
-        </div>
-      )}
-
       {/* ── 범례 · 고지 ── */}
       {mapIn > 0.5 && (
         <div style={{ position: "absolute", bottom: 62, left: 60, right: 60 }}>
@@ -206,12 +202,8 @@ export const ShortsWar: React.FC = () => {
               전투 {battlesUpTo(month).length}
             </span>
           </div>
-          <div style={{ color: "#5E5648", fontSize: 19, lineHeight: 1.5 }}>
-전선 궤적의 경유지와 전투는 실좌표, 그 사이 잔굴곡은 생성한 것
-            <br />
-            날짜는 음력이다. 점선으로 두른 전라도는 1차 침공 때 지켜낸 도다
-            <br />
-            의병은 점령 지역이 아니라 기병지를 찍은 것이다
+          <div style={{ color: "#8A8070", fontSize: 20 }}>
+            날짜는 음력 · 좌표는 실측값, 그 사이는 추정 (자세한 설명은 고정댓글)
           </div>
         </div>
       )}
