@@ -62,6 +62,19 @@ const LEGS: Array<{ from: number; to: number; secs: number }> = [
 const LEG_FRAMES = LEGS.map((l) => Math.round(l.secs * FPS));
 export const KW_DURATION = HOOK + LEG_FRAMES.reduce((a, b) => a + b, 0) + 30;
 
+/** 일 → 프레임. 사건이 화면에 뜬 시점을 알아야 글자를 그때부터 쓴다. */
+function frameOfDay(d: number): number {
+  let f = HOOK;
+  for (let i = 0; i < LEGS.length; i++) {
+    if (d <= LEGS[i].to) {
+      const t = (d - LEGS[i].from) / (LEGS[i].to - LEGS[i].from);
+      return f + Math.max(0, Math.min(1, t)) * LEG_FRAMES[i];
+    }
+    f += LEG_FRAMES[i];
+  }
+  return f;
+}
+
 function dayAt(frame: number): number {
   let f = frame - HOOK;
   if (f <= 0) return 0;
@@ -304,8 +317,12 @@ export const ShortsKoreanWar: React.FC = () => {
           <div style={{ color: accent, fontSize: 34, fontWeight: 900 }}>
             {ev.south ? "국군·유엔군" : "북한군·중국군"}
           </div>
-          <div
+          <Typed
+            text={ev.title}
+            start={frameOfDay(ev.day)}
+            cps={14}
             style={{
+              display: "block",
               color: C.text,
               fontSize: 96,
               fontWeight: 900,
@@ -314,12 +331,19 @@ export const ShortsKoreanWar: React.FC = () => {
               transform: `scale(${1 + impact * 0.02})`,
               transformOrigin: "left bottom",
             }}
-          >
-            {ev.title}
-          </div>
-          <div style={{ color: "#BDB3A0", fontSize: 38, fontWeight: 500, marginTop: 8 }}>
-            {ev.detail}
-          </div>
+          />
+          <Typed
+            text={ev.detail}
+            start={frameOfDay(ev.day) + Math.ceil((ev.title.length * 30) / 14) + 5}
+            cps={26}
+            style={{
+              display: "block",
+              color: "#BDB3A0",
+              fontSize: 38,
+              fontWeight: 500,
+              marginTop: 8,
+            }}
+          />
         </div>
       )}
 

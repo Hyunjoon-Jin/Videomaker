@@ -27,6 +27,19 @@ const LEG_FRAMES = LEGS.map((l) => Math.round(l.secs * FPS));
 export const WAR_DURATION = HOOK + LEG_FRAMES.reduce((a, b) => a + b, 0) + 30;
 
 /** 프레임 → 개월. 구간별 속도가 다르지만 전체적으로는 단조 증가. */
+/** 개월 → 프레임. 사건이 화면에 뜬 시점을 알아야 글자를 그때부터 쓴다. */
+function frameOfMonth(m: number): number {
+  let f = HOOK;
+  for (let i = 0; i < LEGS.length; i++) {
+    if (m <= LEGS[i].to) {
+      const t = (m - LEGS[i].from) / (LEGS[i].to - LEGS[i].from);
+      return f + Math.max(0, Math.min(1, t)) * LEG_FRAMES[i];
+    }
+    f += LEG_FRAMES[i];
+  }
+  return f;
+}
+
 function monthAt(frame: number): number {
   let f = frame - HOOK;
   if (f <= 0) return 0;
@@ -119,8 +132,14 @@ export const ShortsWar: React.FC = () => {
           <div style={{ color: accent, fontSize: 34, fontWeight: 900 }}>
             {ev.win ? "조선 승전" : ev.date}
           </div>
-          <div
+          {/* 사건 이름도 한 글자씩 쓴다. 통째로 나타났다 사라지면 눈이
+              한 번에 훑고 끝나서 아무것도 안 남는다. */}
+          <Typed
+            text={ev.title}
+            start={frameOfMonth(ev.month)}
+            cps={14}
             style={{
+              display: "block",
               color: C.text,
               fontSize: 94,
               fontWeight: 900,
@@ -129,12 +148,19 @@ export const ShortsWar: React.FC = () => {
               transform: `scale(${1 + impact * 0.02})`,
               transformOrigin: "left bottom",
             }}
-          >
-            {ev.title}
-          </div>
-          <div style={{ color: "#BDB3A0", fontSize: 38, fontWeight: 500, marginTop: 8 }}>
-            {ev.detail}
-          </div>
+          />
+          <Typed
+            text={ev.detail}
+            start={frameOfMonth(ev.month) + Math.ceil((ev.title.length * 30) / 14) + 5}
+            cps={26}
+            style={{
+              display: "block",
+              color: "#BDB3A0",
+              fontSize: 38,
+              fontWeight: 500,
+              marginTop: 8,
+            }}
+          />
         </div>
       )}
 

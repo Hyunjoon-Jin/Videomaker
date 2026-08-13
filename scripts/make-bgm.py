@@ -177,7 +177,10 @@ def taiko(at: float, gain=1.0, pitch=58.0, dur=0.6) -> None:
     k = np.arange(i1 - i0) / SR
     # 피치 드롭이 있어야 '북'으로 들린다. 고정 주파수면 그냥 삐 소리다.
     f = pitch * np.exp(-3.2 * k)
-    body = np.sin(2 * np.pi * np.cumsum(f) / SR)
+    ph = 2 * np.pi * np.cumsum(f) / SR
+    # 휴대폰 스피커는 150Hz 아래를 거의 못 낸다. 기음만 쓰면 어택의 '탁'
+    # 소리만 남고 몸통이 통째로 사라진다. 배음을 얹어야 북으로 들린다.
+    body = 0.7 * np.sin(ph) + 0.85 * np.sin(ph * 2) + 0.5 * np.sin(ph * 3.2)
     seg = np.zeros(n)
     seg[i0:i1] = body
     # 어택 순간의 짧은 노이즈가 타격감을 만든다
@@ -185,7 +188,7 @@ def taiko(at: float, gain=1.0, pitch=58.0, dur=0.6) -> None:
     noise = np.zeros(n)
     ln = min(n - i0, int(0.02 * SR))
     noise[i0:i0 + ln] = rng.standard_normal(ln) * np.linspace(1, 0, ln)
-    mix[:] += (seg * e * 0.9 + noise * 0.25) * gain
+    mix[:] += (seg * e * 0.55 + noise * 0.10) * gain
 
 
 def hit(at: float, gain=1.0, dur=1.6) -> None:
@@ -200,6 +203,88 @@ def hit(at: float, gain=1.0, dur=1.6) -> None:
         w = 24
         seg[i0:i1] = np.convolve(seg[i0:i1], np.ones(w) / w, mode="same")
     mix[:] += seg * e * gain * 1.4
+
+
+def semi(root: float, n: float) -> float:
+    """반음 n칸 위 주파수"""
+    return root * (2.0 ** (n / 12.0))
+
+
+def pluck(at: float, f: float, gain=0.5, dur=1.1) -> None:
+    """
+    뜯는 소리.
+
+    이 곡들이 휴대폰에서 '탕탕' 소리로만 들리던 원인이 여기 있었다.
+    화성을 전부 32~65Hz 드론에 담아뒀는데 휴대폰 스피커는 그 대역을
+    재생하지 못한다. 남는 것은 타악기의 어택뿐이다.
+    그래서 실제로 들리는 200~2000Hz에 음을 놓는 층을 따로 만든다.
+
+    배음마다 감쇠 속도를 다르게 준다. 고배음이 먼저 죽어야 뜯는 소리가
+    되고, 다 같이 죽으면 오르간처럼 들린다.
+    """
+    i0, i1 = int(at * SR), min(n, int((at + dur) * SR))
+    if i1 <= i0:
+        return
+    k = np.arange(i1 - i0) / SR
+    v = np.zeros(i1 - i0)
+    for h, amp, dec in [(1, 1.0, 1.0), (2, 0.52, 0.60), (3, 0.30, 0.40),
+                        (4.02, 0.17, 0.28), (5.97, 0.09, 0.20)]:
+        v += amp * np.sin(2 * np.pi * f * h * k) * np.exp(-k / (dur * dec))
+    # 어택의 짧은 잡음이 손끝이 줄에 닿는 소리를 만든다
+    ln = min(len(v), int(0.004 * SR))
+    rng = np.random.default_rng((int(at * 911) + 5) & 0xFFFF)
+    v[:ln] += rng.standard_normal(ln) * 0.45
+    mix[i0:i1] += v * gain * 0.33
+
+
+def pad(a: float, b: float, root: float, gain=0.15) -> None:
+    """
+    지속 화음.
+
+    드론과 같은 근음을 쓰되 실체는 옥타브 위에 둔다. 근음·단3도·5도를
+    쌓아 조성을 잡아준다. 아주 느린 흔들림이 없으면 신호음처럼 들린다.
+    """
+    i0, i1 = int(a * SR), min(n, int(b * SR))
+    if i1 <= i0:
+        return
+    k = np.arange(i1 - i0) / SR
+    fade = np.minimum(np.minimum(k / 1.2, 1.0), np.clip((k[-1] - k) / 1.6, 0, 1))
+    v = np.zeros(i1 - i0)
+    for mult, amp in [(2.0, 0.50), (2.0 * 2 ** (3 / 12), 0.26),
+                      (3.0, 0.34), (4.0, 0.18), (6.0, 0.10)]:
+        drift = 1.0 + 0.0014 * np.sin(2 * np.pi * 0.06 * k + mult)
+        v += amp * np.sin(2 * np.pi * root * mult * np.cumsum(drift) / SR)
+    mix[i0:i1] += v * fade * gain
+
+
+# 단5음 음형 — 어느 편이든 이 안에서만 논다. 조성이 흔들리지 않는다.
+FIGURE = [0, 3, 7, 5, 3, 10, 7, 3]
+
+
+def ostinato(a: float, b: float, bpm0: float, bpm1: float,
+             root: float, gain=1.0) -> None:
+    """
+    반복 음형. 이 층이 곡을 곡으로 만든다.
+
+    드론과 같은 음이되 여섯 배 위에서 연주한다. 화성은 그대로 두고
+    실체만 휴대폰이 낼 수 있는 자리로 옮기는 것이다.
+    """
+    rng = np.random.default_rng((int(a * 613) + 41) & 0xFFFF)
+    now, i = a, 0
+    while now < b:
+        prog = (now - a) / max(1e-6, b - a)
+        bpm = bpm0 + (bpm1 - bpm0) * prog
+        step = 60.0 / bpm / 2.0            # 8분음표
+        deg = FIGURE[i % len(FIGURE)]
+        # 세 바퀴에 한 번은 옥타브 위로 올려 같은 음형이 지겹지 않게
+        if (i // len(FIGURE)) % 3 == 2:
+            deg += 12
+        f = semi(root * 6.0, deg)
+        strong = (i % 4) == 0
+        g = (0.55 if strong else 0.32) * (1.0 + rng.normal(0, 0.12))
+        pluck(now + rng.normal(0, 0.007), f, gain * g, 0.95)
+        now += step
+        i += 1
 
 
 def drone(a: float, b: float, base: float, gain: float, detune=1.008) -> None:
@@ -257,7 +342,7 @@ def pulse_train(a: float, b: float, bpm0: float, bpm1: float, gain=0.7) -> None:
         jitter = rng.normal(0, 0.008 if strong else 0.018)
         vel = 1.0 + rng.normal(0, 0.10)
         taiko(max(a, now + jitter), gain * (1.0 if strong else 0.45) * vel,
-              pitch=58 if strong else 72, dur=0.55 if strong else 0.3)
+              pitch=76 if strong else 96, dur=0.55 if strong else 0.3)
         now += beat
         i += 1
 
@@ -305,20 +390,27 @@ def typing(spec) -> None:
 
 # ── 구성 ────────────────────────────────────────────
 # 훅: 큰 타격 하나 + 라이저로 지도 등장까지 끌고 간다
-hit(0.15, 1.1, 2.2)
-taiko(0.15, 1.2, 52, 1.1)
+hit(0.15, 0.5, 1.8)
+taiko(0.15, 1.2, 70, 1.1)
 riser(0.5, HOOK, 0.55)
 drone(0.0, HOOK + 0.6, 41.2, 0.16)
 
-# 섹션 — bpm이 None인 구간은 드론만 남긴다
+# 섹션 — 층이 셋이다. 저역 드론(있는 기기에서만 들린다), 중역 화음,
+# 그리고 실제로 선율로 들리는 음형. 북은 그 위에 얹는 것이지 혼자
+# 남으면 안 된다.
 for (a, b, base, bpm0, bpm1) in SECTIONS:
-    drone(a, b + 0.5, base, 0.22 if bpm0 is None else 0.19)
-    if bpm0 is not None:
-        pulse_train(a, b, bpm0, bpm1, 0.75)
+    drone(a, b + 0.5, base, 0.07)
+    pad(a, b + 0.6, base, 0.42 if bpm0 is None else 0.26)
+    if bpm0 is None:
+        # 멈춘 구간에도 소리는 있어야 한다. 음형을 아주 느리게만 남긴다.
+        ostinato(a, b, 40, 34, base, 1.25)
+    else:
+        ostinato(a, b, bpm0, bpm1, base, 1.6)
+        pulse_train(a, b, bpm0, bpm1, 0.42)
 
 # 종결 — 마지막 타격 후 여운
-taiko(END - 1.4, 1.2, 48, 1.8)
-hit(END - 1.4, 0.9, 2.8)
+taiko(END - 1.4, 1.2, 66, 1.8)
+hit(END - 1.4, 0.4, 2.4)
 
 # 훅 타이핑 — 글자가 뜨는 프레임에 맞춘다
 if P.get("typing"):
@@ -326,12 +418,28 @@ if P.get("typing"):
 
 # 주요 사건 강조 — 영상의 impact 지점과 맞춘 초
 for at, g in P["accents"]:
-    taiko(at, g, 54, 0.8)
-    hit(at, g * 0.5, 1.2)
+    taiko(at, g * 0.8, 72, 0.8)
+    hit(at, g * 0.18, 0.9)
 
 # ── 마스터링 ────────────────────────────────────────
+def highpass(x: np.ndarray, fc: float) -> np.ndarray:
+    """
+    박스 평활 두 번으로 저역을 뽑아 빼는 방식의 하이패스.
+
+    휴대폰 스피커는 100Hz 아래를 사실상 못 낸다. 그런데 그 대역이
+    피크를 만들어 정규화 단계에서 나머지를 전부 끌어내린다. 들리지도
+    않는 소리가 들리는 소리의 음량을 깎고 있는 셈이다. 잘라낸다.
+    """
+    w = max(2, int(SR / fc))
+    k = np.ones(w) / w
+    lo = np.convolve(x, k, mode="same")
+    lo = np.convolve(lo, k, mode="same")
+    return x - lo
+
+
+mix = highpass(mix, 95.0)
 # 소프트 클리핑 — 하드 클립하면 지직거린다
-mix = np.tanh(mix * 0.9)
+mix = np.tanh(mix * 1.15)
 peak = float(np.max(np.abs(mix))) or 1.0
 mix = mix / peak * 0.89
 

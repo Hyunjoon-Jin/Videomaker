@@ -207,7 +207,7 @@ export const ShortsRail: React.FC = () => {
 
       {/* ── 지표와 사건 ── */}
       {mapIn > 0.5 && ev && (
-        <div style={{ position: "absolute", bottom: 306, left: 60, right: 60 }}>
+        <div style={{ position: "absolute", bottom: 300, left: 60, right: 60 }}>
           <div style={{ height: 1, background: "#3B342A", marginBottom: 14 }} />
           <div style={{ color: C.dim, fontSize: 27, fontWeight: 700 }}>
             서울에서 기차로 갈 수 있는 가장 북쪽
@@ -235,21 +235,33 @@ export const ShortsRail: React.FC = () => {
             </span>
           </div>
 
-          <div
+          <Typed
+            text={ev.title}
+            start={frameOfYear(ev.year)}
+            cps={14}
             style={{
+              display: "block",
               color: ev.cut ? INK.oxideHot : C.text,
-              fontSize: 52,
+              fontSize: 76,
               fontWeight: 900,
+              lineHeight: 1.08,
               marginTop: 12,
               transform: `scale(${1 + impact * 0.02})`,
               transformOrigin: "left bottom",
             }}
-          >
-            {ev.title}
-          </div>
-          <div style={{ color: "#BDB3A0", fontSize: 34, fontWeight: 500, marginTop: 4 }}>
-            {ev.detail}
-          </div>
+          />
+          <Typed
+            text={ev.detail}
+            start={frameOfYear(ev.year) + Math.ceil((ev.title.length * 30) / 14) + 5}
+            cps={26}
+            style={{
+              display: "block",
+              color: "#BDB3A0",
+              fontSize: 36,
+              fontWeight: 500,
+              marginTop: 6,
+            }}
+          />
         </div>
       )}
 
@@ -290,12 +302,8 @@ export const ShortsRail: React.FC = () => {
             <Key color={FAST} label="고속선" />
             <Key color={DEAD} label="끊긴 구간" dashed />
           </div>
-          <div style={{ color: "#5E5648", fontSize: 19, lineHeight: 1.55 }}>
-            연도는 전 구간 개통 기준이며 부분 개통은 그보다 이르다
-            <br />
-            선형은 주요 정차역 실좌표를 이은 근사로 실제 궤도보다 곧다
-            <br />
-            북측 구간은 현재도 노선이 존재하나 남북 간 운행은 없다
+          <div style={{ color: "#5E5648", fontSize: 20 }}>
+            연도는 전 구간 개통 기준 · 선형은 근사 (자세한 설명은 고정댓글)
           </div>
         </div>
       )}

@@ -184,11 +184,12 @@ export const ShortsTyphoon: React.FC = () => {
               {cur.period}
             </div>
             <div style={{ display: "flex", alignItems: "baseline", gap: 18, marginTop: 4 }}>
-              <span
+              <Typed
+                text={cur.name}
+                start={HOOK + STARTS[idx] + 2}
+                cps={7}
                 style={{ color: cur.color, fontSize: 126, fontWeight: 900, lineHeight: 1 }}
-              >
-                {cur.name}
-              </span>
+              />
               <span style={{ color: C.text, fontSize: 52, fontWeight: 700 }}>
                 {cur.year}
               </span>
@@ -388,12 +389,8 @@ export const ShortsTyphoon: React.FC = () => {
               </span>
             </div>
           </div>
-          <div style={{ color: "#5E5648", fontSize: 19, lineHeight: 1.55 }}>
-            상륙 지점과 중심기압은 기록값, 경로는 알려진 진로의 근사
-            <br />
-            점 사이는 보간이므로 시각별 정확한 위치가 아니다
-            <br />
-            위험반원 범위는 개념도이며 실제 강풍 반경이 아니다
+          <div style={{ color: "#5E5648", fontSize: 20 }}>
+            상륙값은 기록, 경로와 위험반원은 근사 (자세한 설명은 고정댓글)
           </div>
         </div>
       )}
