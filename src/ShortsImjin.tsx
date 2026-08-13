@@ -76,9 +76,9 @@ export const ShortsImjin: React.FC = () => {
       {/* 충격 시 화면 전체가 붉게 번쩍 */}
       <AbsoluteFill
         style={{
-          background: `radial-gradient(circle at 50% 46%, rgba(220,38,38,${
+          background: `radial-gradient(circle at 50% 46%, rgba(179,58,43,${
             impact * 0.42
-          }) 0%, rgba(220,38,38,0) 62%)`,
+          }) 0%, rgba(179,58,43,0) 62%)`,
           pointerEvents: "none",
         }}
       />
@@ -134,7 +134,7 @@ export const ShortsImjin: React.FC = () => {
           >
             {ev.title}
           </div>
-          <div style={{ color: "#C7CEDB", fontSize: 40, fontWeight: 500, marginTop: 10 }}>
+          <div style={{ color: "#BDB3A0", fontSize: 40, fontWeight: 500, marginTop: 10 }}>
             {ev.detail}
           </div>
         </div>
@@ -147,7 +147,7 @@ export const ShortsImjin: React.FC = () => {
             style={{
               height: 8,
               borderRadius: 4,
-              background: "#222A38",
+              background: "#2A241D",
               overflow: "hidden",
             }}
           >
@@ -183,7 +183,7 @@ export const ShortsImjin: React.FC = () => {
             bottom: 92,
             left: 60,
             right: 60,
-            color: "#5C6577",
+            color: "#5E5648",
             fontSize: 20,
             lineHeight: 1.5,
           }}
@@ -245,7 +245,7 @@ export const ShortsImjin: React.FC = () => {
               <div
                 style={{ width: 40, height: 7, borderRadius: 4, background: d.color }}
               />
-              <span style={{ color: "#C7CEDB", fontSize: 30, fontWeight: 700 }}>
+              <span style={{ color: "#BDB3A0", fontSize: 30, fontWeight: 700 }}>
                 {d.route} · {d.commander}
               </span>
             </div>

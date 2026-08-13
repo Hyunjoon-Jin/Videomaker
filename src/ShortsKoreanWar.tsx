@@ -21,6 +21,7 @@ import {
 } from "./data/korean-war";
 import { project } from "./data/places";
 import { C, FPS } from "./theme";
+import { Grain } from "./Grain";
 import { useFonts } from "./fonts";
 
 const PROVINCES: Array<{ id: string; d: string }> = provinces.provinces;
@@ -73,10 +74,10 @@ function dayAt(frame: number): number {
   return TOTAL_DAYS;
 }
 
-const NORTH_C = "#DC2626";
-const SOUTH_C = "#3B82F6";
-const FREE = "#273143";
-const HELD = "#8E1C1C";
+const NORTH_C = "#B33A2B";
+const SOUTH_C = "#4C7A9B";
+const FREE = "#2C2B24";
+const HELD = "#7A2A20";
 
 export const ShortsKoreanWar: React.FC = () => {
   useFonts();
@@ -139,7 +140,7 @@ export const ShortsKoreanWar: React.FC = () => {
             <path
               d={FRONT.lineAt(day)}
               fill="none"
-              stroke="#EF4444"
+              stroke="#D4694F"
               strokeWidth={3}
               opacity={0.85}
             />
@@ -183,7 +184,7 @@ export const ShortsKoreanWar: React.FC = () => {
           </g>
 
           {PROVINCES.map((p) => (
-            <path key={`c${p.id}`} d={p.d} fill="none" stroke="#3A4762" strokeWidth={1.4} />
+            <path key={`c${p.id}`} d={p.d} fill="none" stroke="#4A4638" strokeWidth={1.4} />
           ))}
 
           {/* 38선 — 시작이자 끝. 기준선으로 계속 보여준다. */}
@@ -192,26 +193,26 @@ export const ShortsKoreanWar: React.FC = () => {
             y1={511}
             x2={1000}
             y2={511}
-            stroke="#94A3B8"
+            stroke="#8E8474"
             strokeWidth={1.6}
             strokeDasharray="10 8"
             opacity={0.5}
           />
-          <text x={905} y={505} fontSize={18} fontWeight={700} fill="#94A3B8" opacity={0.75}>
+          <text x={905} y={505} fontSize={18} fontWeight={700} fill="#8E8474" opacity={0.75}>
             38°
           </text>
 
           {KW_CITIES.filter((c) => c.from <= day).map((c) => (
             <g key={c.name}>
-              <circle cx={c.x} cy={c.y} r={4} fill="#FBBF24" />
+              <circle cx={c.x} cy={c.y} r={4} fill="#C09240" />
               <text
                 x={c.side === "left" ? c.x - 11 : c.x + 11}
                 y={c.y + 6}
                 textAnchor={c.side === "left" ? "end" : "start"}
                 fontSize={23}
                 fontWeight={900}
-                fill="#FDE68A"
-                style={{ paintOrder: "stroke", stroke: "#0B0E14", strokeWidth: 5 }}
+                fill="#DCC48C"
+                style={{ paintOrder: "stroke", stroke: "#151310", strokeWidth: 5 }}
               >
                 {c.name}
               </text>
@@ -233,7 +234,7 @@ export const ShortsKoreanWar: React.FC = () => {
                 fontWeight={900}
                 fill={SOUTH_C}
                 opacity={a}
-                style={{ paintOrder: "stroke", stroke: "#0B0E14", strokeWidth: 5 }}
+                style={{ paintOrder: "stroke", stroke: "#151310", strokeWidth: 5 }}
               >
                 {p.label}
               </text>
@@ -252,9 +253,9 @@ export const ShortsKoreanWar: React.FC = () => {
                 textAnchor={z.side === "left" ? "end" : "start"}
                 fontSize={20}
                 fontWeight={900}
-                fill="#FCA5A5"
+                fill="#C08A7A"
                 opacity={a}
-                style={{ paintOrder: "stroke", stroke: "#0B0E14", strokeWidth: 5 }}
+                style={{ paintOrder: "stroke", stroke: "#151310", strokeWidth: 5 }}
               >
                 {z.label}
               </text>
@@ -270,7 +271,7 @@ export const ShortsKoreanWar: React.FC = () => {
       <AbsoluteFill
         style={{
           background: `radial-gradient(circle at 50% 44%, ${
-            ev?.south ? "rgba(59,130,246," : "rgba(220,38,38,"
+            ev?.south ? "rgba(76,122,155," : "rgba(179,58,43,"
           }${impact * 0.18}) 0%, rgba(0,0,0,0) 58%)`,
           pointerEvents: "none",
         }}
@@ -298,7 +299,7 @@ export const ShortsKoreanWar: React.FC = () => {
 
       {/* ── 사건 ── */}
       {ev && mapIn > 0.5 && (
-        <div style={{ position: "absolute", bottom: 292, left: 60, right: 60 }}>
+        <div style={{ position: "absolute", bottom: 306, left: 60, right: 60 }}>
           <div style={{ color: accent, fontSize: 34, fontWeight: 900 }}>
             {ev.south ? "국군·유엔군" : "북한군·중국군"}
           </div>
@@ -315,7 +316,7 @@ export const ShortsKoreanWar: React.FC = () => {
           >
             {ev.title}
           </div>
-          <div style={{ color: "#C7CEDB", fontSize: 38, fontWeight: 500, marginTop: 8 }}>
+          <div style={{ color: "#BDB3A0", fontSize: 38, fontWeight: 500, marginTop: 8 }}>
             {ev.detail}
           </div>
         </div>
@@ -323,13 +324,12 @@ export const ShortsKoreanWar: React.FC = () => {
 
       {/* ── 진행 바 ── */}
       {mapIn > 0.5 && (
-        <div style={{ position: "absolute", bottom: 190, left: 60, right: 60 }}>
-          <div style={{ height: 8, borderRadius: 4, background: "#222A38" }}>
+        <div style={{ position: "absolute", bottom: 226, left: 60, right: 60 }}>
+          <div style={{ height: 7, background: "#2A241D" }}>
             <div
               style={{
                 width: `${(day / TOTAL_DAYS) * 100}%`,
                 height: "100%",
-                borderRadius: 4,
                 background: NORTH_C,
               }}
             />
@@ -353,17 +353,19 @@ export const ShortsKoreanWar: React.FC = () => {
 
       {/* ── 범례 · 고지 ── */}
       {mapIn > 0.5 && (
-        <div style={{ position: "absolute", bottom: 74, left: 60, right: 60 }}>
+        <div style={{ position: "absolute", bottom: 62, left: 60, right: 60 }}>
           <div style={{ display: "flex", gap: 24, marginBottom: 10, flexWrap: "wrap" }}>
             <Key color={HELD} label="북한군·중국군" />
             <Key color={SOUTH_C} label="국군·유엔군 승" />
             <Key color={NORTH_C} label="북한군·중국군 승" />
-            <Key color="#FCA5A5" label="유격 지역" />
+            <Key color="#C08A7A" label="유격 지역" />
           </div>
-          <div style={{ color: "#5C6577", fontSize: 19, lineHeight: 1.5 }}>
-            전선 궤적의 경유지와 전투는 실좌표 · 경유지 사이 잔굴곡은 생성한 것
+          <div style={{ color: "#5E5648", fontSize: 19, lineHeight: 1.5 }}>
+            전선 궤적의 경유지와 전투는 실좌표, 그 사이 잔굴곡은 생성한 것
             <br />
-            교두보는 전선 뒤 고립 아군 지역 · 유격 지역은 점령이 아니라 활동 범위
+            교두보는 전선 뒤에 고립된 아군 지역이다
+            <br />
+            유격 지역은 점령한 땅이 아니라 활동 범위다
           </div>
         </div>
       )}
@@ -399,6 +401,7 @@ export const ShortsKoreanWar: React.FC = () => {
           </div>
         </AbsoluteFill>
       )}
+      <Grain />
     </AbsoluteFill>
   );
 };
@@ -421,7 +424,7 @@ const Mark: React.FC<{ b: KWBattle; day: number }> = ({ b, day }) => {
         />
       )}
       {b.sea ? (
-        <circle cx={b.x} cy={b.y} r={r} fill="#0B0E14" stroke={color} strokeWidth={3} />
+        <circle cx={b.x} cy={b.y} r={r} fill="#151310" stroke={color} strokeWidth={3} />
       ) : (
         <rect
           x={b.x - r}
@@ -429,7 +432,7 @@ const Mark: React.FC<{ b: KWBattle; day: number }> = ({ b, day }) => {
           width={r * 2}
           height={r * 2}
           fill={color}
-          stroke="#0B0E14"
+          stroke="#151310"
           strokeWidth={1.4}
           transform={`rotate(45 ${b.x} ${b.y})`}
         />
@@ -442,7 +445,7 @@ const Mark: React.FC<{ b: KWBattle; day: number }> = ({ b, day }) => {
           fontSize={21}
           fontWeight={900}
           fill={color}
-          style={{ paintOrder: "stroke", stroke: "#0B0E14", strokeWidth: 5 }}
+          style={{ paintOrder: "stroke", stroke: "#151310", strokeWidth: 5 }}
         >
           {b.name}
         </text>
@@ -453,7 +456,7 @@ const Mark: React.FC<{ b: KWBattle; day: number }> = ({ b, day }) => {
 
 const Key: React.FC<{ color: string; label: string }> = ({ color, label }) => (
   <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-    <div style={{ width: 24, height: 24, borderRadius: 6, background: color }} />
-    <span style={{ color: "#C7CEDB", fontSize: 24, fontWeight: 700 }}>{label}</span>
+    <div style={{ width: 24, height: 24, background: color }} />
+    <span style={{ color: "#BDB3A0", fontSize: 24, fontWeight: 700 }}>{label}</span>
   </div>
 );

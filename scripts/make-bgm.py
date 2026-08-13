@@ -15,7 +15,7 @@ BGM 합성 — 임진왜란 7년 영상용.
   23.4~31.4 1597      다시 조여듦, 가장 빠름
   31.4~38.4 종결      큰 타격 후 감쇠
 
-사용:  pip install numpy && python3 scripts/make-bgm.py [imjin|kw]
+사용:  pip install numpy && python3 scripts/make-bgm.py [imjin|kw|ty]
 출력:  public/bgm.wav (48kHz 16bit 스테레오)
 """
 import math
@@ -74,19 +74,21 @@ PRESETS = {
     },
     "ty": {
         "out": "public/bgm-ty.wav",
-        "dur": 38.0,
-        "hook": 3.0,
+        "dur": 53.0,
+        "hook": 3.5,
         # 태풍은 전투가 아니라 접근이다. 북을 몰아치지 않고 드론을 조이며
         # 각 태풍이 상륙할 때만 크게 때린다.
+        # 구간 길이가 태풍마다 다르다(9.5/11.5/9.5/10.5초).
+        # ShortsTyphoon.tsx의 SECS와 같은 값이어야 타격이 상륙에 맞는다.
         "sections": [
-            (3.0, 10.0, 38.9, 70, 82),     # 사라
-            (10.0, 17.0, 41.2, 78, 90),    # 루사
-            (17.0, 24.0, 36.7, 86, 98),    # 매미
-            (24.0, 31.0, 32.7, 94, 110),   # 힌남노 — 가장 낮고 빠르게
-            (31.0, 37.0, 41.2, None, None),  # 마무리 — 북이 빠지고 여운
+            (3.5, 13.0, 38.9, 68, 80),     # 사라
+            (13.0, 24.5, 41.2, 76, 88),    # 루사
+            (24.5, 34.0, 36.7, 84, 96),    # 매미
+            (34.0, 44.5, 32.7, 92, 108),   # 힌남노 — 가장 낮고 빠르게
+            (44.5, 52.0, 41.2, None, None),  # 마무리 — 북이 빠지고 여운
         ],
-        # 각 태풍의 상륙 시점(구간의 75%)에 타격
-        "accents": [(8.2, 1.0), (15.2, 1.0), (22.2, 1.0), (29.2, 1.0), (32.0, 0.9)],
+        # 각 태풍의 상륙 시점(구간의 72%)에 타격
+        "accents": [(10.3, 1.0), (21.3, 1.0), (31.3, 1.0), (41.6, 1.0), (45.0, 0.9)],
     },
 }
 
@@ -159,9 +161,12 @@ def drone(a: float, b: float, base: float, gain: float, detune=1.008) -> None:
         return
     k = np.arange(i1 - i0) / SR
     fade = np.minimum(np.minimum(k / 0.8, 1.0), np.clip((k[-1] - k) / 1.2, 0, 1))
-    v = (np.sin(2 * np.pi * base * k)
-         + 0.7 * np.sin(2 * np.pi * base * detune * k)
-         + 0.35 * np.sin(2 * np.pi * base * 2 * k))
+    # 주파수가 딱 고정되면 신호음처럼 들린다. 아주 느리게 흔들어 준다.
+    drift = 1.0 + 0.0016 * np.sin(2 * np.pi * 0.09 * k + base)
+    ph = 2 * np.pi * base * np.cumsum(drift) / SR
+    v = (np.sin(ph)
+         + 0.7 * np.sin(ph * detune)
+         + 0.35 * np.sin(ph * 2))
     mix[i0:i1] += v * fade * gain
 
 
@@ -184,16 +189,26 @@ def riser(a: float, b: float, gain=0.5) -> None:
 
 
 def pulse_train(a: float, b: float, bpm0: float, bpm1: float, gain=0.7) -> None:
-    """일정 구간을 북으로 채운다. bpm이 선형으로 변해 가속·감속이 들린다."""
+    """
+    일정 구간을 북으로 채운다. bpm이 선형으로 변해 가속·감속이 들린다.
+
+    박을 정확히 격자에 놓으면 사람이 친 것으로 안 들린다. 클릭 트랙이다.
+    실제 연주자는 매번 몇 십 ms씩 앞뒤로 밀리고 세기도 고르지 않다.
+    난수는 시작 시각에서 파생시켜 결정적으로 만든다 — 매번 다르게
+    렌더되면 영상과 음악이 어긋난다.
+    """
+    rng = np.random.default_rng((int(a * 733) + 31) & 0xFFFF)
     now = a
     i = 0
     while now < b:
         prog = (now - a) / max(1e-6, b - a)
         bpm = bpm0 + (bpm1 - bpm0) * prog
         beat = 60.0 / bpm
-        # 4박에 한 번 강박
-        strong = (i % 4) == 0
-        taiko(now, gain * (1.0 if strong else 0.45),
+        strong = (i % 4) == 0            # 4박에 한 번 강박
+        # 강박은 덜 흔들리고 약박은 더 흔들린다. 사람이 그렇게 친다.
+        jitter = rng.normal(0, 0.008 if strong else 0.018)
+        vel = 1.0 + rng.normal(0, 0.10)
+        taiko(max(a, now + jitter), gain * (1.0 if strong else 0.45) * vel,
               pitch=58 if strong else 72, dur=0.55 if strong else 0.3)
         now += beat
         i += 1

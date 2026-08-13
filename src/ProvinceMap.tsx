@@ -24,15 +24,15 @@ interface Props {
   children?: React.ReactNode;
 }
 
-const FREE = "#273143";
-const HELD = "#9B1C1C";
-const COAST = "#3A4762";
+const FREE = "#2C2B24";
+const HELD = "#7A2A20";
+const COAST = "#4A4638";
 
-const JOSEON = "#60A5FA";
-const JAPAN = "#F87171";
-const MILITIA_C = "#34D399";
-const FORT_C = "#FCA5A5";
-const JOSEON_C = "#60A5FA";
+const JOSEON = "#7FA8C4";
+const JAPAN = "#D4694F";
+const MILITIA_C = "#7C8B52";
+const FORT_C = "#C08A7A";
+const JOSEON_C = "#7FA8C4";
 
 /**
  * 6·25 편과 같은 폴리라인 전선. 일본군은 남쪽에서 올라오므로 "아래"가 점령.
@@ -84,7 +84,7 @@ export const WarMap: React.FC<Props> = ({ month, reveal = 1, children }) => {
           <path
             d={FRONT.lineAt(month)}
             fill="none"
-            stroke="#F87171"
+            stroke="#D4694F"
             strokeWidth={3}
             opacity={0.85}
           />
@@ -108,15 +108,15 @@ export const WarMap: React.FC<Props> = ({ month, reveal = 1, children }) => {
         {/* 지명 */}
         {CITIES.filter((c) => c.from <= month).map((c) => (
           <g key={c.name}>
-            <circle cx={c.x} cy={c.y} r={4} fill="#FBBF24" />
+            <circle cx={c.x} cy={c.y} r={4} fill="#C09240" />
             <text
               x={c.side === "left" ? c.x - 11 : c.x + 11}
               y={c.y + 6}
               textAnchor={c.side === "left" ? "end" : "start"}
               fontSize={23}
               fontWeight={900}
-              fill="#FDE68A"
-              style={{ paintOrder: "stroke", stroke: "#0B0E14", strokeWidth: 5 }}
+              fill="#DCC48C"
+              style={{ paintOrder: "stroke", stroke: "#151310", strokeWidth: 5 }}
             >
               {c.name}
             </text>
@@ -158,7 +158,7 @@ export const WarMap: React.FC<Props> = ({ month, reveal = 1, children }) => {
                 y={f.y - 4}
                 width={8}
                 height={8}
-                fill="#0B0E14"
+                fill="#151310"
                 stroke={FORT_C}
                 strokeWidth={2.2}
               />
@@ -184,7 +184,7 @@ export const WarMap: React.FC<Props> = ({ month, reveal = 1, children }) => {
               <path
                 d={`M${m.x} ${m.y - 6}L${m.x + 5.5} ${m.y + 4}L${m.x - 5.5} ${m.y + 4}Z`}
                 fill={MILITIA_C}
-                stroke="#0B0E14"
+                stroke="#151310"
                 strokeWidth={1.2}
               />
               {m.label && (
@@ -195,7 +195,7 @@ export const WarMap: React.FC<Props> = ({ month, reveal = 1, children }) => {
                   fontSize={20}
                   fontWeight={900}
                   fill={MILITIA_C}
-                  style={{ paintOrder: "stroke", stroke: "#0B0E14", strokeWidth: 5 }}
+                  style={{ paintOrder: "stroke", stroke: "#151310", strokeWidth: 5 }}
                 >
                   {m.leader}
                 </text>
@@ -214,9 +214,9 @@ export const WarMap: React.FC<Props> = ({ month, reveal = 1, children }) => {
             fontWeight={900}
             fill={JOSEON_C}
             opacity={jeollaA}
-            style={{ paintOrder: "stroke", stroke: "#0B0E14", strokeWidth: 5 }}
+            style={{ paintOrder: "stroke", stroke: "#151310", strokeWidth: 5 }}
           >
-            전라도 — 미점령
+            전라도 미점령
           </text>
         )}
 
@@ -250,7 +250,7 @@ const BattleMark: React.FC<{ b: Battle; month: number }> = ({ b, month }) => {
         />
       )}
       {b.sea ? (
-        <circle cx={b.x} cy={b.y} r={r} fill="#0B0E14" stroke={color} strokeWidth={3} />
+        <circle cx={b.x} cy={b.y} r={r} fill="#151310" stroke={color} strokeWidth={3} />
       ) : (
         <rect
           x={b.x - r}
@@ -258,7 +258,7 @@ const BattleMark: React.FC<{ b: Battle; month: number }> = ({ b, month }) => {
           width={r * 2}
           height={r * 2}
           fill={color}
-          stroke="#0B0E14"
+          stroke="#151310"
           strokeWidth={1.4}
           transform={`rotate(45 ${b.x} ${b.y})`}
         />
@@ -271,7 +271,7 @@ const BattleMark: React.FC<{ b: Battle; month: number }> = ({ b, month }) => {
           fontSize={21}
           fontWeight={900}
           fill={color}
-          style={{ paintOrder: "stroke", stroke: "#0B0E14", strokeWidth: 5 }}
+          style={{ paintOrder: "stroke", stroke: "#151310", strokeWidth: 5 }}
         >
           {b.name}
         </text>

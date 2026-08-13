@@ -4,6 +4,7 @@ import { WarMap } from "./ProvinceMap";
 import { TOTAL_MONTHS, monthLabel, warEventAt } from "./data/war";
 import { battlesUpTo } from "./data/battles";
 import { C, FPS } from "./theme";
+import { Grain } from "./Grain";
 import { useFonts } from "./fonts";
 
 const HOOK = Math.round(2.4 * FPS);
@@ -60,7 +61,7 @@ export const ShortsWar: React.FC = () => {
   });
   const hookIn = interpolate(frame, [0, 12], [0, 1], { extrapolateRight: "clamp" });
 
-  const accent = ev?.win ? "#3B82F6" : C.drop;
+  const accent = ev?.win ? "#4C7A9B" : C.drop;
 
   return (
     <AbsoluteFill style={{ backgroundColor: C.bg, fontFamily: "Pretendard" }}>
@@ -85,7 +86,7 @@ export const ShortsWar: React.FC = () => {
       <AbsoluteFill
         style={{
           background: `radial-gradient(circle at 50% 45%, ${
-            ev?.win ? "rgba(59,130,246," : "rgba(220,38,38,"
+            ev?.win ? "rgba(76,122,155," : "rgba(179,58,43,"
           }${impact * 0.18}) 0%, rgba(0,0,0,0) 60%)`,
           pointerEvents: "none",
         }}
@@ -95,7 +96,7 @@ export const ShortsWar: React.FC = () => {
       {mapIn > 0.5 && (
         <div style={{ position: "absolute", top: 108, left: 60, right: 60 }}>
           <div style={{ color: C.dim, fontSize: 30, fontWeight: 700, letterSpacing: 2 }}>
-            임진왜란 · 정유재란
+            임진왜란과 정유재란
           </div>
           <div
             style={{
@@ -113,7 +114,7 @@ export const ShortsWar: React.FC = () => {
 
       {/* ── 사건 ── */}
       {ev && mapIn > 0.5 && (
-        <div style={{ position: "absolute", bottom: 300, left: 60, right: 60 }}>
+        <div style={{ position: "absolute", bottom: 306, left: 60, right: 60 }}>
           <div style={{ color: accent, fontSize: 34, fontWeight: 900 }}>
             {ev.win ? "조선 승전" : ev.date}
           </div>
@@ -130,7 +131,7 @@ export const ShortsWar: React.FC = () => {
           >
             {ev.title}
           </div>
-          <div style={{ color: "#C7CEDB", fontSize: 38, fontWeight: 500, marginTop: 8 }}>
+          <div style={{ color: "#BDB3A0", fontSize: 38, fontWeight: 500, marginTop: 8 }}>
             {ev.detail}
           </div>
         </div>
@@ -138,13 +139,12 @@ export const ShortsWar: React.FC = () => {
 
       {/* ── 진행 바 (7년) ── */}
       {mapIn > 0.5 && (
-        <div style={{ position: "absolute", bottom: 196, left: 60, right: 60 }}>
-          <div style={{ height: 8, borderRadius: 4, background: "#222A38" }}>
+        <div style={{ position: "absolute", bottom: 226, left: 60, right: 60 }}>
+          <div style={{ height: 7, background: "#2A241D" }}>
             <div
               style={{
                 width: `${(month / TOTAL_MONTHS) * 100}%`,
                 height: "100%",
-                borderRadius: 4,
                 background: C.drop,
               }}
             />
@@ -168,21 +168,23 @@ export const ShortsWar: React.FC = () => {
 
       {/* ── 범례 · 고지 ── */}
       {mapIn > 0.5 && (
-        <div style={{ position: "absolute", bottom: 78, left: 60, right: 60 }}>
+        <div style={{ position: "absolute", bottom: 62, left: 60, right: 60 }}>
           <div style={{ display: "flex", gap: 22, marginBottom: 10, flexWrap: "wrap" }}>
-            <Key color="#9B1C1C" label="일본군 점령" />
-            <Key color="#60A5FA" label="조선 승전" />
-            <Key color="#F87171" label="일본 승전" />
-            <Key color="#34D399" label="의병" />
-            <Key color="#FCA5A5" label="왜성" />
+            <Key color="#7A2A20" label="일본군 점령" />
+            <Key color="#7FA8C4" label="조선 승전" />
+            <Key color="#D4694F" label="일본 승전" />
+            <Key color="#7C8B52" label="의병" />
+            <Key color="#C08A7A" label="왜성" />
             <span style={{ color: C.dim, fontSize: 25, fontWeight: 700 }}>
               전투 {battlesUpTo(month).length}
             </span>
           </div>
-          <div style={{ color: "#5C6577", fontSize: 19, lineHeight: 1.5 }}>
-전선 궤적의 경유지와 전투는 실좌표 · 경유지 사이 잔굴곡은 생성한 것
+          <div style={{ color: "#5E5648", fontSize: 19, lineHeight: 1.5 }}>
+전선 궤적의 경유지와 전투는 실좌표, 그 사이 잔굴곡은 생성한 것
             <br />
-            날짜는 음력 · 전라도(점선)는 1차 침공에서 지켜낸 도 · 의병은 기병지 표시
+            날짜는 음력이다. 점선으로 두른 전라도는 1차 침공 때 지켜낸 도다
+            <br />
+            의병은 점령 지역이 아니라 기병지를 찍은 것이다
           </div>
         </div>
       )}
@@ -198,8 +200,8 @@ export const ShortsWar: React.FC = () => {
           }}
         >
           <div style={{ opacity: hookIn, textAlign: "center" }}>
-            <div style={{ color: C.dim, fontSize: 46, fontWeight: 700, letterSpacing: 3 }}>
-              조선을 삼키려던
+            <div style={{ color: C.dim, fontSize: 44, fontWeight: 700 }}>
+              부산에 상륙해서 물러가기까지
             </div>
             <div
               style={{
@@ -212,19 +214,20 @@ export const ShortsWar: React.FC = () => {
             >
               7년
             </div>
-            <div style={{ color: C.text, fontSize: 52, fontWeight: 700, marginTop: 8 }}>
-              1592 — 1598
+            <div style={{ color: C.text, fontSize: 46, fontWeight: 700, marginTop: 10 }}>
+              1592년 4월 ~ 1598년 11월
             </div>
           </div>
         </AbsoluteFill>
       )}
+      <Grain />
     </AbsoluteFill>
   );
 };
 
 const Key: React.FC<{ color: string; label: string }> = ({ color, label }) => (
   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-    <div style={{ width: 26, height: 26, borderRadius: 6, background: color }} />
-    <span style={{ color: "#C7CEDB", fontSize: 25, fontWeight: 700 }}>{label}</span>
+    <div style={{ width: 24, height: 24, background: color }} />
+    <span style={{ color: "#BDB3A0", fontSize: 25, fontWeight: 700 }}>{label}</span>
   </div>
 );

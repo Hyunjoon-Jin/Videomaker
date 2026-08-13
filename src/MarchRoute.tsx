@@ -68,7 +68,7 @@ export const MarchRoute: React.FC<Props> = ({
           cx={m.x}
           cy={m.y}
           r={2.4 * scale}
-          fill="#0B0E14"
+          fill="#151310"
           stroke={division.color}
           strokeWidth={1.6 * scale}
         />

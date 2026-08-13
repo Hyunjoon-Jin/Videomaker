@@ -288,7 +288,7 @@ export const KW_EVENTS: KWEvent[] = [
   { day: 82, title: "인천상륙작전", detail: "전세를 단번에 뒤집다", south: true, impact: 1 },
   { day: 95, title: "서울 수복", detail: "3개월 만에 수도를 되찾다", south: true, impact: 0.9 },
   { day: 116, title: "평양 점령", detail: "국군·유엔군 북진", south: true, impact: 0.8 },
-  { day: 123, title: "압록강 도달", detail: "초산 — 전쟁의 최북단", south: true, impact: 1 },
+  { day: 123, title: "압록강 도달", detail: "초산, 전쟁의 최북단", south: true, impact: 1 },
   { day: 145, title: "중국군 참전", detail: "20만 대군, 전선이 다시 뒤집히다", impact: 1 },
   { day: 155, title: "장진호", detail: "영하 30도의 철수전", impact: 0.9 },
   { day: 182, title: "흥남 철수", detail: "피난민 9만여 명을 배에 태우다", south: true, impact: 0.9 },
@@ -296,7 +296,7 @@ export const KW_EVENTS: KWEvent[] = [
   { day: 262, title: "서울 재수복", detail: "전선이 38선으로 돌아오다", south: true, impact: 0.8 },
   { day: 380, title: "휴전 회담", detail: "2년간의 고지전이 시작되다" },
   { day: 855, title: "백마고지", detail: "열흘간 주인이 스물네 번 바뀌다", south: true, impact: 0.9 },
-  { day: 1128, title: "정전협정", detail: "3년 1개월 — 전선은 제자리로", impact: 1 },
+  { day: 1128, title: "정전협정", detail: "3년 1개월 만에 전선은 제자리로", impact: 1 },
 ];
 
 export function kwEventAt(day: number): KWEvent | null {
