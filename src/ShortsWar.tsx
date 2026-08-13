@@ -8,7 +8,7 @@ import { Grain } from "./Grain";
 import { Typed } from "./Typed";
 import { useFonts } from "./fonts";
 
-const HOOK = Math.round(4 * FPS);
+const HOOK = Math.round(4.5 * FPS);
 
 /**
  * 7년을 어떻게 배분하는가.
@@ -202,7 +202,7 @@ export const ShortsWar: React.FC = () => {
         >
           <div style={{ opacity: hookIn }}>
             <Typed
-              text="1592년 5월 3일, 한양 함락"
+              text="1592년 5월 3일, 일본군 한양 입성"
               start={4}
               cps={30}
               style={{
@@ -215,36 +215,35 @@ export const ShortsWar: React.FC = () => {
             <div style={{ display: "flex", alignItems: "baseline", marginTop: 2 }}>
               <Typed
                 text="11"
-                start={26}
+                start={42}
                 cps={8}
                 style={{
                   color: C.dropHot,
-                  fontSize: 280,
+                  fontSize: 275,
                   fontWeight: 900,
                   lineHeight: 1,
                 }}
               />
               <Typed
                 text="개월"
-                start={34}
+                start={50}
                 cps={8}
-                style={{ color: C.text, fontSize: 94, fontWeight: 800 }}
+                style={{ color: C.text, fontSize: 92, fontWeight: 800 }}
               />
             </div>
             <Typed
-              text="뒤 일본군은 한양에서 물러났다"
-              start={60}
+              text="일본군이 한양을 차지하고 있던 기간"
+              start={72}
               cps={22}
               style={{
                 display: "block",
                 color: C.text,
-                fontSize: 52,
+                fontSize: 50,
                 fontWeight: 700,
                 marginTop: 10,
               }}
             />
-          </div>
-        </AbsoluteFill>
+          </div>        </AbsoluteFill>
       )}
       <Grain />
     </AbsoluteFill>

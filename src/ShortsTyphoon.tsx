@@ -28,7 +28,7 @@ import { Grain } from "./Grain";
 import { Typed } from "./Typed";
 import { useFonts } from "./fonts";
 
-const HOOK = Math.round(4 * FPS);
+const HOOK = Math.round(4.5 * FPS);
 
 /**
  * 태풍마다 다른 시간을 준다.
@@ -350,9 +350,9 @@ export const ShortsTyphoon: React.FC = () => {
               marginTop: 14,
             }}
           >
-            여름 내내 데워진 바다가
+            매미는 사라만큼 강했지만
             <br />
-            가을 태풍에 힘을 준다
+            죽은 사람은 6분의 1이었다
           </div>
         </AbsoluteFill>
       )}
@@ -410,7 +410,7 @@ export const ShortsTyphoon: React.FC = () => {
         >
           <div style={{ opacity: hookIn }}>
             <Typed
-              text="2002년 8월 31일, 강릉"
+              text="1959년 추석날, 남해안"
               start={4}
               cps={30}
               style={{
@@ -420,17 +420,11 @@ export const ShortsTyphoon: React.FC = () => {
                 fontWeight: 700,
               }}
             />
-            <div
-              style={{
-                display: "flex",
-                alignItems: "baseline",
-                marginTop: 2,
-              }}
-            >
+            <div style={{ display: "flex", alignItems: "baseline", marginTop: 2 }}>
               <Typed
-                text="870.5"
-                start={24}
-                cps={9}
+                text="849"
+                start={32}
+                cps={8}
                 style={{
                   color: INK.oxideHot,
                   fontSize: 270,
@@ -439,20 +433,20 @@ export const ShortsTyphoon: React.FC = () => {
                 }}
               />
               <Typed
-                text="mm"
-                start={41}
-                cps={9}
+                text="명"
+                start={44}
+                cps={8}
                 style={{ color: C.text, fontSize: 92, fontWeight: 800 }}
               />
             </div>
             <Typed
-              text="하루 동안 내린 비다"
+              text="아직 깨지지 않은 태풍 인명피해 1위"
               start={62}
               cps={22}
               style={{
                 display: "block",
                 color: C.text,
-                fontSize: 52,
+                fontSize: 50,
                 fontWeight: 700,
                 marginTop: 10,
               }}

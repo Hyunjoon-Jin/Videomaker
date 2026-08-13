@@ -43,7 +43,7 @@ const ZONES = KW_GUERRILLA.map((z) => ({
   model: makePocket(z.keys, z.from, z.to, 12),
 }));
 
-const HOOK = Math.round(4 * FPS);
+const HOOK = Math.round(4.5 * FPS);
 
 /**
  * 3년 1개월을 어떻게 배분하는가.
@@ -396,7 +396,7 @@ export const ShortsKoreanWar: React.FC = () => {
             <div style={{ display: "flex", alignItems: "baseline", marginTop: 2 }}>
               <Typed
                 text="40"
-                start={26}
+                start={40}
                 cps={8}
                 style={{
                   color: "#D4694F",
@@ -407,25 +407,24 @@ export const ShortsKoreanWar: React.FC = () => {
               />
               <Typed
                 text="일"
-                start={34}
+                start={48}
                 cps={8}
-                style={{ color: C.text, fontSize: 94, fontWeight: 800 }}
+                style={{ color: C.text, fontSize: 92, fontWeight: 800 }}
               />
             </div>
             <Typed
-              text="만에 낙동강까지 밀렸다"
-              start={58}
+              text="낙동강까지 밀리는 데 걸린 시간"
+              start={66}
               cps={22}
               style={{
                 display: "block",
                 color: C.text,
-                fontSize: 52,
+                fontSize: 50,
                 fontWeight: 700,
                 marginTop: 10,
               }}
             />
-          </div>
-        </AbsoluteFill>
+          </div>        </AbsoluteFill>
       )}
       <Grain />
     </AbsoluteFill>
