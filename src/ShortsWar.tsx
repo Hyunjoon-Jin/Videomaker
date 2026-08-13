@@ -196,26 +196,45 @@ export const ShortsWar: React.FC = () => {
             backgroundColor: C.bg,
             opacity: hookOut,
             justifyContent: "center",
-            alignItems: "center",
+            padding: "0 70px",
           }}
         >
-          <div style={{ opacity: hookIn, textAlign: "center" }}>
-            <div style={{ color: C.dim, fontSize: 44, fontWeight: 700 }}>
-              부산에 상륙해서 물러가기까지
+          <div style={{ opacity: hookIn }}>
+            <div style={{ color: C.dim, fontSize: 40, fontWeight: 700 }}>
+              1592년 4월 13일, 부산
             </div>
             <div
               style={{
-                color: C.drop,
-                fontSize: 380,
-                fontWeight: 900,
-                lineHeight: 1,
-                marginTop: 16,
+                display: "flex",
+                alignItems: "baseline",
+                gap: 8,
+                marginTop: 2,
               }}
             >
-              7년
+              <span
+                style={{
+                  color: C.dropHot,
+                  fontSize: 290,
+                  fontWeight: 900,
+                  lineHeight: 1,
+                }}
+              >
+                20
+              </span>
+              <span style={{ color: C.text, fontSize: 96, fontWeight: 800 }}>일</span>
             </div>
-            <div style={{ color: C.text, fontSize: 46, fontWeight: 700, marginTop: 10 }}>
-              1592년 4월 ~ 1598년 11월
+            <div
+              style={{
+                color: C.text,
+                fontSize: 52,
+                fontWeight: 700,
+                lineHeight: 1.4,
+                marginTop: 10,
+              }}
+            >
+              만에 한양이 무너졌다
+              <br />
+              전쟁은 거기서 7년을 더 갔다
             </div>
           </div>
         </AbsoluteFill>

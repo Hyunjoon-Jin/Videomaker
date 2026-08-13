@@ -377,26 +377,34 @@ export const ShortsKoreanWar: React.FC = () => {
             backgroundColor: C.bg,
             opacity: hookOut,
             justifyContent: "center",
-            alignItems: "center",
+            padding: "0 70px",
           }}
         >
-          <div style={{ opacity: hookIn, textAlign: "center" }}>
-            <div style={{ color: C.dim, fontSize: 44, fontWeight: 700, letterSpacing: 3 }}>
-              6·25, 전선은
+          <div style={{ opacity: hookIn }}>
+            <div style={{ color: C.dim, fontSize: 40, fontWeight: 700 }}>
+              1950년 6월부터 1953년 7월까지
             </div>
             <div
               style={{
-                color: NORTH_C,
-                fontSize: 400,
+                color: "#D4694F",
+                fontSize: 250,
                 fontWeight: 900,
-                lineHeight: 1,
+                lineHeight: 1.08,
+                marginTop: 2,
+              }}
+            >
+              네 번
+            </div>
+            <div
+              style={{
+                color: C.text,
+                fontSize: 52,
+                fontWeight: 700,
+                lineHeight: 1.4,
                 marginTop: 10,
               }}
             >
-              4
-            </div>
-            <div style={{ color: C.text, fontSize: 96, fontWeight: 900, marginTop: -8 }}>
-              번 뒤집혔다
+              서울의 주인이 바뀌었다
             </div>
           </div>
         </AbsoluteFill>

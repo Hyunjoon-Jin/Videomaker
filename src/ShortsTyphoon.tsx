@@ -408,41 +408,41 @@ export const ShortsTyphoon: React.FC = () => {
           }}
         >
           <div style={{ opacity: hookIn }}>
-            <div style={{ color: C.dim, fontSize: 42, fontWeight: 700 }}>
-              한국을 때린 최악의 태풍 넷
+            <div style={{ color: C.dim, fontSize: 40, fontWeight: 700 }}>
+              1959년 추석날 태풍이 올라왔다
             </div>
             <div
               style={{
                 display: "flex",
                 alignItems: "baseline",
-                gap: 6,
-                marginTop: 6,
+                gap: 8,
+                marginTop: 2,
               }}
             >
               <span
                 style={{
                   color: INK.oxideHot,
-                  fontSize: 300,
+                  fontSize: 280,
                   fontWeight: 900,
                   lineHeight: 1,
                 }}
               >
-                18
+                849
               </span>
-              <span style={{ color: C.text, fontSize: 110, fontWeight: 800 }}>일</span>
+              <span style={{ color: C.text, fontSize: 92, fontWeight: 800 }}>명이</span>
             </div>
             <div
               style={{
                 color: C.text,
-                fontSize: 54,
+                fontSize: 52,
                 fontWeight: 700,
-                lineHeight: 1.36,
-                marginTop: 16,
+                lineHeight: 1.4,
+                marginTop: 10,
               }}
             >
-              63년에 걸쳐 왔는데
+              죽거나 사라졌다
               <br />
-              달력 위에서는 이 안에 다 들어온다
+              이런 게 세 번 더 있었다
             </div>
           </div>
         </AbsoluteFill>
