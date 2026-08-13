@@ -440,7 +440,7 @@ export const ShortsTyphoon: React.FC = () => {
               />
             </div>
             <Typed
-              text="아직 깨지지 않은 태풍 인명피해 1위"
+              text="광복 이후 가장 많은 태풍 사망·실종자"
               start={62}
               cps={22}
               style={{

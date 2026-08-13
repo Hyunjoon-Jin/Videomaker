@@ -202,7 +202,7 @@ export const ShortsWar: React.FC = () => {
         >
           <div style={{ opacity: hookIn }}>
             <Typed
-              text="1592년 5월 3일, 일본군 한양 입성"
+              text="1592년 음력 5월 3일, 일본군 한양 입성"
               start={4}
               cps={30}
               style={{

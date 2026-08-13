@@ -55,6 +55,12 @@ PRESETS = {
         "accents": [(6.7, 0.8), (9.1, 0.9), (11.5, 1.0),
                     (15.3, 0.9), (18.1, 1.0),
                     (26.7, 0.9), (28.9, 1.0), (30.7, 1.0)],
+        "typing": [
+            ("1592년 음력 5월 3일, 일본군 한양 입성", 4, 30, 0.42),
+            ("11", 42, 8, 0.85),
+            ("개월", 50, 8, 0.85),
+            ("일본군이 한양을 차지하고 있던 기간", 72, 22, 0.46),
+        ],
     },
     "kw": {
         "out": "public/bgm-kw.wav",
@@ -73,6 +79,12 @@ PRESETS = {
                     (24.1, 1.0),                  # 압록강
                     (26.5, 1.0), (31.3, 1.0),     # 중공군·1·4후퇴
                     (41.7, 1.0)],                 # 정전
+        "typing": [
+            ("1950년 6월 25일 새벽, 38선", 4, 30, 0.42),
+            ("40", 40, 8, 0.85),
+            ("일", 48, 8, 0.85),
+            ("낙동강까지 밀리는 데 걸린 시간", 66, 22, 0.46),
+        ],
     },
     "ty": {
         "out": "public/bgm-ty.wav",
@@ -91,6 +103,12 @@ PRESETS = {
         ],
         # 각 태풍의 상륙 시점(구간의 72%)에 타격
         "accents": [(11.3, 1.0), (22.3, 1.0), (32.3, 1.0), (42.6, 1.0), (46.0, 0.9)],
+        "typing": [
+            ("1959년 추석날, 남해안", 4, 30, 0.42),
+            ("849", 32, 8, 0.85),
+            ("명", 44, 8, 0.85),
+            ("광복 이후 가장 많은 태풍 사망·실종자", 62, 22, 0.46),
+        ],
     },
 }
 
@@ -216,6 +234,47 @@ def pulse_train(a: float, b: float, bpm0: float, bpm1: float, gain=0.7) -> None:
         i += 1
 
 
+FPS = 30  # 컴포지션과 같은 프레임률. 글자 등장 프레임을 초로 옮길 때 쓴다.
+
+
+def key(at: float, gain=0.5, space=False) -> None:
+    """
+    키 하나 치는 소리.
+
+    노이즈를 그냥 짧게 자르면 '치'하고 끝나서 종이 소리에 가깝다. 실제
+    키보드 소리는 두 겹이다 — 손톱이 키캡에 닿는 고역 딱 소리와, 키가
+    바닥을 치면서 나는 낮은 몸통. 둘을 겹쳐야 '탁'으로 들린다.
+
+    난수는 시각에서 파생시켜 결정적으로 만든다. 렌더할 때마다 달라지면
+    영상과 어긋난다.
+    """
+    dur = 0.06
+    i0, i1 = int(at * SR), min(n, int((at + dur) * SR))
+    if i1 <= i0:
+        return
+    k = np.arange(i1 - i0) / SR
+    rng = np.random.default_rng((int(at * 10007) + 13) & 0xFFFF)
+    nz = rng.standard_normal(i1 - i0)
+    # 1차 차분 = 고역통과. 딱 소리의 재료.
+    nz = np.concatenate([[0.0], np.diff(nz)])
+    click = nz * np.exp(-k / 0.0035)
+    # 스페이스바는 크고 둔하다. 몸통 주파수를 내린다.
+    f = 620.0 if space else 1650.0
+    body = np.sin(2 * np.pi * f * k) * np.exp(-k / 0.011)
+    mix[i0:i1] += (click * 0.55 + body * 0.30) * gain
+
+
+def typing(spec) -> None:
+    """<Typed>가 글자를 띄우는 프레임마다 키 소리를 놓는다."""
+    for text, start, cps, gain in spec:
+        rng = np.random.default_rng((start * 977 + len(text)) & 0xFFFF)
+        for i, ch in enumerate(text):
+            # Typed는 floor((frame-start)*cps/fps) >= i+1일 때 i번째를 띄운다
+            at = (start + (i + 1) * FPS / cps) / FPS
+            # 세기를 조금씩 흔들어야 사람이 친 것처럼 들린다
+            key(at, gain * (1.0 + rng.normal(0, 0.13)), space=(ch == " "))
+
+
 # ── 구성 ────────────────────────────────────────────
 # 훅: 큰 타격 하나 + 라이저로 지도 등장까지 끌고 간다
 hit(0.15, 1.1, 2.2)
@@ -232,6 +291,10 @@ for (a, b, base, bpm0, bpm1) in SECTIONS:
 # 종결 — 마지막 타격 후 여운
 taiko(END - 1.4, 1.2, 48, 1.8)
 hit(END - 1.4, 0.9, 2.8)
+
+# 훅 타이핑 — 글자가 뜨는 프레임에 맞춘다
+if P.get("typing"):
+    typing(P["typing"])
 
 # 주요 사건 강조 — 영상의 impact 지점과 맞춘 초
 for at, g in P["accents"]:
