@@ -25,9 +25,10 @@ import {
 } from "./data/typhoon";
 import { C, FPS, INK } from "./theme";
 import { Grain } from "./Grain";
+import { Typed } from "./Typed";
 import { useFonts } from "./fonts";
 
-const HOOK = Math.round(3.5 * FPS);
+const HOOK = Math.round(4 * FPS);
 
 /**
  * 태풍마다 다른 시간을 준다.
@@ -408,42 +409,54 @@ export const ShortsTyphoon: React.FC = () => {
           }}
         >
           <div style={{ opacity: hookIn }}>
-            <div style={{ color: C.dim, fontSize: 40, fontWeight: 700 }}>
-              1959년 추석날 태풍이 올라왔다
-            </div>
+            <Typed
+              text="2002년 8월 31일, 강릉"
+              start={4}
+              cps={30}
+              style={{
+                display: "block",
+                color: C.dim,
+                fontSize: 40,
+                fontWeight: 700,
+              }}
+            />
             <div
               style={{
                 display: "flex",
                 alignItems: "baseline",
-                gap: 8,
                 marginTop: 2,
               }}
             >
-              <span
+              <Typed
+                text="870.5"
+                start={24}
+                cps={9}
                 style={{
                   color: INK.oxideHot,
-                  fontSize: 280,
+                  fontSize: 270,
                   fontWeight: 900,
                   lineHeight: 1,
                 }}
-              >
-                849
-              </span>
-              <span style={{ color: C.text, fontSize: 92, fontWeight: 800 }}>명이</span>
+              />
+              <Typed
+                text="mm"
+                start={41}
+                cps={9}
+                style={{ color: C.text, fontSize: 92, fontWeight: 800 }}
+              />
             </div>
-            <div
+            <Typed
+              text="하루 동안 내린 비다"
+              start={62}
+              cps={22}
               style={{
+                display: "block",
                 color: C.text,
                 fontSize: 52,
                 fontWeight: 700,
-                lineHeight: 1.4,
                 marginTop: 10,
               }}
-            >
-              죽거나 사라졌다
-              <br />
-              이런 게 세 번 더 있었다
-            </div>
+            />
           </div>
         </AbsoluteFill>
       )}

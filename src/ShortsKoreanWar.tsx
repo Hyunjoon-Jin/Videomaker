@@ -22,6 +22,7 @@ import {
 import { project } from "./data/places";
 import { C, FPS } from "./theme";
 import { Grain } from "./Grain";
+import { Typed } from "./Typed";
 import { useFonts } from "./fonts";
 
 const PROVINCES: Array<{ id: string; d: string }> = provinces.provinces;
@@ -42,7 +43,7 @@ const ZONES = KW_GUERRILLA.map((z) => ({
   model: makePocket(z.keys, z.from, z.to, 12),
 }));
 
-const HOOK = Math.round(2.4 * FPS);
+const HOOK = Math.round(4 * FPS);
 
 /**
  * 3년 1개월을 어떻게 배분하는가.
@@ -381,31 +382,48 @@ export const ShortsKoreanWar: React.FC = () => {
           }}
         >
           <div style={{ opacity: hookIn }}>
-            <div style={{ color: C.dim, fontSize: 40, fontWeight: 700 }}>
-              1950년 6월부터 1953년 7월까지
-            </div>
-            <div
+            <Typed
+              text="1950년 6월 25일 새벽, 38선"
+              start={4}
+              cps={30}
               style={{
-                color: "#D4694F",
-                fontSize: 250,
-                fontWeight: 900,
-                lineHeight: 1.08,
-                marginTop: 2,
+                display: "block",
+                color: C.dim,
+                fontSize: 40,
+                fontWeight: 700,
               }}
-            >
-              네 번
+            />
+            <div style={{ display: "flex", alignItems: "baseline", marginTop: 2 }}>
+              <Typed
+                text="40"
+                start={26}
+                cps={8}
+                style={{
+                  color: "#D4694F",
+                  fontSize: 280,
+                  fontWeight: 900,
+                  lineHeight: 1,
+                }}
+              />
+              <Typed
+                text="일"
+                start={34}
+                cps={8}
+                style={{ color: C.text, fontSize: 94, fontWeight: 800 }}
+              />
             </div>
-            <div
+            <Typed
+              text="만에 낙동강까지 밀렸다"
+              start={58}
+              cps={22}
               style={{
+                display: "block",
                 color: C.text,
                 fontSize: 52,
                 fontWeight: 700,
-                lineHeight: 1.4,
                 marginTop: 10,
               }}
-            >
-              서울의 주인이 바뀌었다
-            </div>
+            />
           </div>
         </AbsoluteFill>
       )}

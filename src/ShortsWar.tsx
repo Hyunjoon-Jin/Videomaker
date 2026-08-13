@@ -5,9 +5,10 @@ import { TOTAL_MONTHS, monthLabel, warEventAt } from "./data/war";
 import { battlesUpTo } from "./data/battles";
 import { C, FPS } from "./theme";
 import { Grain } from "./Grain";
+import { Typed } from "./Typed";
 import { useFonts } from "./fonts";
 
-const HOOK = Math.round(2.4 * FPS);
+const HOOK = Math.round(4 * FPS);
 
 /**
  * 7년을 어떻게 배분하는가.
@@ -200,42 +201,48 @@ export const ShortsWar: React.FC = () => {
           }}
         >
           <div style={{ opacity: hookIn }}>
-            <div style={{ color: C.dim, fontSize: 40, fontWeight: 700 }}>
-              1592년 4월 13일, 부산
-            </div>
-            <div
+            <Typed
+              text="1592년 5월 3일, 한양 함락"
+              start={4}
+              cps={30}
               style={{
-                display: "flex",
-                alignItems: "baseline",
-                gap: 8,
-                marginTop: 2,
+                display: "block",
+                color: C.dim,
+                fontSize: 40,
+                fontWeight: 700,
               }}
-            >
-              <span
+            />
+            <div style={{ display: "flex", alignItems: "baseline", marginTop: 2 }}>
+              <Typed
+                text="11"
+                start={26}
+                cps={8}
                 style={{
                   color: C.dropHot,
-                  fontSize: 290,
+                  fontSize: 280,
                   fontWeight: 900,
                   lineHeight: 1,
                 }}
-              >
-                20
-              </span>
-              <span style={{ color: C.text, fontSize: 96, fontWeight: 800 }}>일</span>
+              />
+              <Typed
+                text="개월"
+                start={34}
+                cps={8}
+                style={{ color: C.text, fontSize: 94, fontWeight: 800 }}
+              />
             </div>
-            <div
+            <Typed
+              text="뒤 일본군은 한양에서 물러났다"
+              start={60}
+              cps={22}
               style={{
+                display: "block",
                 color: C.text,
                 fontSize: 52,
                 fontWeight: 700,
-                lineHeight: 1.4,
                 marginTop: 10,
               }}
-            >
-              만에 한양이 무너졌다
-              <br />
-              전쟁은 거기서 7년을 더 갔다
-            </div>
+            />
           </div>
         </AbsoluteFill>
       )}
