@@ -27,6 +27,7 @@
 틀린 곳을 찾으면 댓글로 알려주세요. 고쳐서 다시 올립니다.
 
 지도 데이터: Natural Earth
+음악: Kevin MacLeod (incompetech.com), CC BY 4.0
 ```
 
 ### 이미지
@@ -54,6 +55,10 @@
 - 부산 상륙에서 한양 함락까지 20일
 - 전투 28곳과 주요 도시는 실제 위경도를 투영한 좌표입니다
 - 전라도는 1차 침공에서 끝내 뚫리지 않아 점선으로 따로 둘렀습니다
+
+음악: "The Descent" — Kevin MacLeod (incompetech.com)
+Licensed under Creative Commons: By Attribution 4.0
+https://creativecommons.org/licenses/by/4.0/
 
 #임진왜란 #한국사 #역사지도 #이순신 #정유재란
 ```
@@ -99,6 +104,10 @@
 전선 하나로는 표현이 안 되는 것이 둘 있어 따로 그렸습니다. 흥남처럼
 전선 뒤에 고립된 채 아군이 지키던 지역은 점선으로 도려냈고, 지리산과
 태백산맥의 유격 지역은 점령이 아니라 활동 범위라 옅은 음영으로만 뒀습니다.
+
+음악: "Volatile Reaction" — Kevin MacLeod (incompetech.com)
+Licensed under Creative Commons: By Attribution 4.0
+https://creativecommons.org/licenses/by/4.0/
 
 #6·25전쟁 #한국사 #역사지도 #한국전쟁 #인천상륙작전
 ```
@@ -148,6 +157,10 @@
 방향 오른쪽이 위험합니다. 회전풍과 태풍 자체의 이동속도가 그쪽에서
 더해지기 때문입니다. 그 반원에 들어간 땅을 빗금으로 덮었습니다.
 
+음악: "Anguish" — Kevin MacLeod (incompetech.com)
+Licensed under Creative Commons: By Attribution 4.0
+https://creativecommons.org/licenses/by/4.0/
+
 #태풍 #사라 #루사 #매미 #힌남노 #기상
 ```
 
@@ -196,6 +209,10 @@
 
 북측 구간을 지우지 않고 회색 점선으로 남긴 이유는, 선로가 사라진 게
 아니라 다니지 못하게 된 것이기 때문입니다.
+
+음악: "Lost Frontier" — Kevin MacLeod (incompetech.com)
+Licensed under Creative Commons: By Attribution 4.0
+https://creativecommons.org/licenses/by/4.0/
 
 #철도 #한국사 #역사지도 #경의선 #KTX #도라산
 ```
