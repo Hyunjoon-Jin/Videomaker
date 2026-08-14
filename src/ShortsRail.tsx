@@ -13,6 +13,7 @@ import {
   cutLatAt,
   northmostAt,
   RAIL_EVENTS,
+  STATIONS,
   partialPath,
   railEventAt,
   splitAt,
@@ -37,8 +38,15 @@ const HOOK = Math.round(4.5 * FPS);
  */
 const BEATS = RAIL_EVENTS.map((e) => beatOf(e.year, e.impact ?? 0.4, FPS));
 const SPANS = layoutBeats(BEATS, HOOK, 0.22);
-const TAIL = Math.round(1.8 * FPS);
-export const RAIL_DURATION = SPANS[SPANS.length - 1].t2 + TAIL;
+/**
+ * 마무리.
+ *
+ * 마지막 사건이 끝나자마자 화면이 꺼져서 뚝 끊기는 느낌이었다.
+ * 태풍 편처럼 지금까지 본 것을 한 장으로 세우고 닫는다.
+ */
+const BODY_END = SPANS[SPANS.length - 1].t2;
+const OUTRO = Math.round(9 * FPS);
+export const RAIL_DURATION = BODY_END + OUTRO;
 
 function yearAt(frame: number): number {
   return valueAtBeats(SPANS, frame, 2026);
@@ -62,6 +70,8 @@ const SHOTS: Shot[] = [
       { at: sp.t2, cx: q.x, cy: q.y, z },
     ];
   }),
+  // 마무리 — 다시 전국으로 빠져 전체를 보여준다
+  { at: SPANS[SPANS.length - 1].t2 + Math.round(1.6 * FPS), cx: 455, cy: 505, z: 1.52 },
 ];
 
 const LANDF = "#302C22";
@@ -87,6 +97,11 @@ export const ShortsRail: React.FC = () => {
   const ev = bi >= 0 ? RAIL_EVENTS[bi] : null;
   const north = northmostAt(year);
   const cut = year >= CUT_YEAR;
+  const inOutro = frame >= BODY_END;
+  const outroIn = interpolate(frame, [BODY_END, BODY_END + 22], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
   /** 끊기는 순간의 충격 — 사건 직후에만 실린다 */
   const near = bi >= 0 ? Math.max(0, 1 - (frame - SPANS[bi].t1) / 26) : 0;
   const impact = (ev?.impact ?? 0) * near;
@@ -138,7 +153,35 @@ export const ShortsRail: React.FC = () => {
             <Line key={l.id} l={l} year={year} u={u} />
           ))}
 
-          {/* 서울에서 갈 수 있는 최북단 */}
+          {/* 역 이름 — 이 편만 지명이 하나도 없어 화면이 비어 보였다 */}
+          {STATIONS.filter((st) => year >= st.from && st.name !== north.name).map((st) => {
+            const q = project(st.lon, st.lat);
+            return (
+              <g key={st.name}>
+                <circle
+                  cx={q.x}
+                  cy={q.y}
+                  r={u(st.major ? 5 : 3.6)}
+                  fill={C.bg}
+                  stroke={LIVE}
+                  strokeWidth={u(st.major ? 3 : 2.2)}
+                />
+                <text
+                  x={q.x + u(st.side === "left" ? -13 : 13)}
+                  y={q.y + u(8 + (st.dy ?? 0))}
+                  textAnchor={st.side === "left" ? "end" : "start"}
+                  fontSize={u(st.major ? 30 : 26)}
+                  fontWeight={st.major ? 900 : 700}
+                  fill={st.major ? "#E8DCC4" : "#B7A98C"}
+                  style={{ paintOrder: "stroke", stroke: C.bg, strokeWidth: u(6) }}
+                >
+                  {st.name}
+                </text>
+              </g>
+            );
+          })}
+
+          {/* 경의선 종점 */}
           <g>
             <circle
               cx={nq.x}
@@ -182,7 +225,7 @@ export const ShortsRail: React.FC = () => {
       />
 
       {/* ── 연도 ── */}
-      {mapIn > 0.5 && (
+      {mapIn > 0.5 && !inOutro && (
         <div style={{ position: "absolute", top: 104, left: 60, right: 60 }}>
           <div style={{ color: C.dim, fontSize: 30, fontWeight: 700 }}>
             한반도 철도
@@ -202,7 +245,7 @@ export const ShortsRail: React.FC = () => {
       )}
 
       {/* ── 지표와 사건 ── */}
-      {mapIn > 0.5 && ev && (
+      {mapIn > 0.5 && ev && !inOutro && (
         <div style={{ position: "absolute", bottom: 300, left: 60, right: 60 }}>
           <div style={{ height: 1, background: "#3B342A", marginBottom: 14 }} />
           <div
@@ -215,7 +258,7 @@ export const ShortsRail: React.FC = () => {
               fontWeight: 700,
             }}
           >
-            <span>서울에서 갈 수 있는 가장 북쪽</span>
+            <span>경의선 종점</span>
             <span style={{ color: INK.brass, fontSize: 40, fontWeight: 900 }}>
               {north.name}
             </span>
@@ -251,6 +294,60 @@ export const ShortsRail: React.FC = () => {
             }}
           />
         </div>
+      )}
+
+      {/* ── 마무리 ── */}
+      {inOutro && (
+        <AbsoluteFill
+          style={{
+            justifyContent: "flex-end",
+            padding: "0 60px 236px",
+            opacity: outroIn,
+          }}
+        >
+          <div style={{ color: C.dim, fontSize: 30, fontWeight: 700, marginBottom: 12 }}>
+            서울역에서 경의선을 타면 닿던 곳
+          </div>
+          {[
+            ["1906", "신의주"],
+            ["1945", "개성"],
+            ["1953", "문산"],
+            ["2002", "도라산"],
+          ].map(([y, place]) => (
+            <div
+              key={y}
+              style={{ display: "flex", alignItems: "baseline", gap: 22, marginTop: 4 }}
+            >
+              <span
+                style={{
+                  color: C.dim,
+                  fontSize: 40,
+                  fontWeight: 700,
+                  fontVariantNumeric: "tabular-nums",
+                  minWidth: 130,
+                }}
+              >
+                {y}
+              </span>
+              <span style={{ color: INK.brass, fontSize: 48, fontWeight: 900 }}>
+                {place}
+              </span>
+            </div>
+          ))}
+          <div style={{ height: 1, background: "#3B342A", margin: "26px 0 16px" }} />
+          <div
+            style={{
+              color: C.text,
+              fontSize: 54,
+              fontWeight: 800,
+              lineHeight: 1.34,
+            }}
+          >
+            도라산역 승강장에는
+            <br />
+            개성과 평양 방면 표기가 그대로 있다
+          </div>
+        </AbsoluteFill>
       )}
 
       {/* ── 범례와 고지 ── */}

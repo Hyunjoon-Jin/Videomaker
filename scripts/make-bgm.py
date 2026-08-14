@@ -136,7 +136,7 @@ PRESETS = {
     },
     "rail": {
         "out": "public/bgm-rail.wav",
-        **build("src/data/rail.ts", "export const RAIL_EVENTS", 4.5, 1.8, [41.2, 43.7, 32.7, 38.9, 46.2]),
+        **build("src/data/rail.ts", "export const RAIL_EVENTS", 4.5, 9.0, [41.2, 43.7, 32.7, 38.9, 46.2]),
         "typing": [
             ("서울역에서 신의주행 표를 팔던", 4, 30, 0.42),
             ("39", 38, 8, 0.85),

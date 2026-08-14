@@ -77,7 +77,7 @@ export const LINES: RailLine[] = [
     pts: [[128.62, 36.81], [128.73, 36.89], [128.90, 37.02], [129.05, 37.13]],
   },
   {
-    id: "taebaek", name: "태백선", year: 1963, span: "제천 ~ 태백",
+    id: "taebaek", name: "태백선", year: 1973, span: "제천 ~ 백산",
     pts: [[128.19, 37.13], [128.46, 37.18], [128.73, 37.14], [128.99, 37.16]],
   },
   {
@@ -102,18 +102,18 @@ export const LINES: RailLine[] = [
 ];
 
 /**
- * 서울역에서 기차로 갈 수 있던 최북단.
+ * 경의선 종점.
  *
- * 이 편의 지표다. 총 연장이나 노선 수보다 이게 낫다. 46년 동안 북으로
- * 올라가다가 1945년에 한 번에 떨어지고, 그 뒤로 80년이 지나도 회복되지
- * 않는다. 숫자 하나로 이 영상의 내용 전부가 들어온다.
+ * 처음에는 '서울에서 기차로 갈 수 있는 가장 북쪽'으로 잡았는데 그건
+ * 틀렸다. 도라산역은 남측 최북단 역이 아니다 — 경원선 백마고지역이
+ * 위도상 더 위에 있다. 경의선 종점으로 좁히면 정확해지고, 40.10도에서
+ * 37.97도로 떨어지는 이야기는 그대로 남는다.
  */
 export const NORTHMOST: Array<{
   year: number; name: string; lat: number; lon: number; why: string;
 }> = [
-  { year: 1899, name: "서울", lat: 37.55, lon: 126.97, why: "경인선 개통" },
+  { year: 1899, name: "용산", lat: 37.53, lon: 126.97, why: "아직 경의선이 없다" },
   { year: 1906, name: "신의주", lat: 40.10, lon: 124.40, why: "경의선 개통" },
-  { year: 1928, name: "회령", lat: 42.44, lon: 129.75, why: "함경선 개통" },
   { year: 1945, name: "개성", lat: 37.97, lon: 126.55, why: "38선으로 남북이 갈리다" },
   { year: 1953, name: "문산", lat: 37.86, lon: 126.79, why: "개성이 북쪽으로 넘어가다" },
   { year: 2002, name: "도라산", lat: 37.90, lon: 126.71, why: "도라산역 개통" },
@@ -144,14 +144,14 @@ export const RAIL_EVENTS: RailEvent[] = [
   { year: 1905, title: "경부선 개통", detail: "서울과 부산이 하루 거리가 되다", impact: 0.8 , focus: [127.70, 36.30], zoom: 1.9 },
   { year: 1906, title: "경의선 개통", detail: "서울역에서 신의주행 표를 팔기 시작하다", impact: 0.9 , focus: [125.60, 38.90], zoom: 2.1 },
   { year: 1914, title: "호남선·경원선 개통", detail: "목포와 원산이 같은 해에 이어지다", impact: 0.6 , focus: [126.90, 36.60], zoom: 1.8 },
-  { year: 1928, title: "함경선 개통", detail: "회령까지, 기차가 닿은 가장 북쪽", impact: 0.9 , focus: [128.90, 41.00], zoom: 2.1 },
+  { year: 1928, title: "함경선 개통", detail: "회령까지, 당시 조선 철도가 닿은 가장 북쪽", impact: 0.9 , focus: [128.90, 41.00], zoom: 2.1 },
   { year: 1936, title: "전라선 개통", detail: "익산에서 여수까지", impact: 0.5 , focus: [127.35, 35.35], zoom: 2.8 },
   { year: 1942, title: "중앙선 개통", detail: "청량리에서 경주까지 내륙을 관통하다", impact: 0.6 , focus: [128.10, 36.70], zoom: 2.4 },
   { year: 1945, title: "38선", detail: "북으로 가던 세 노선이 한꺼번에 끊기다", impact: 1, cut: true , focus: [126.90, 38.00], zoom: 3.2 },
   { year: 1950, title: "6·25 전쟁", detail: "남은 선로마저 부서지다", impact: 0.8, cut: true , focus: [127.30, 37.40], zoom: 2.2 },
   { year: 1955, title: "영암선 개통", detail: "광복 이후 처음으로 새로 놓은 노선", impact: 0.7 , focus: [128.85, 36.95], zoom: 3.2 },
   { year: 1963, title: "태백선 개통", detail: "석탄을 실어 나르려 산으로 들어가다", impact: 0.5 , focus: [128.60, 37.15], zoom: 3.2 },
-  { year: 2002, title: "도라산역 개통", detail: "서울에서 갈 수 있는 가장 북쪽 역", impact: 0.9 , focus: [126.78, 37.88], zoom: 3.4 },
+  { year: 2002, title: "도라산역 개통", detail: "경의선의 종점이자 남측 최전방 역", impact: 0.9 , focus: [126.78, 37.88], zoom: 3.4 },
   { year: 2004, title: "KTX 개통", detail: "서울에서 부산까지 2시간대", impact: 0.9 , focus: [127.80, 36.40], zoom: 1.9 },
   { year: 2015, title: "호남고속선 개통", detail: "오송에서 광주송정까지", impact: 0.5 , focus: [127.00, 35.90], zoom: 2.5 },
   { year: 2017, title: "강릉선 개통", detail: "태백을 뚫고 동해까지", impact: 0.6 , focus: [128.00, 37.55], zoom: 2.5 },
@@ -256,3 +256,34 @@ export function splitAt(
           .join("");
   return { south: toPath(south), north: toPath(north) };
 }
+
+
+/**
+ * 지도에 찍는 역.
+ *
+ * 철도 편만 지명이 하나도 없었다. 다른 편에는 도시와 전투 이름이 깔려
+ * 있는데 여기는 선만 자라니 화면이 비어 보인다. 노선이 그 역에 닿는
+ * 해부터 띄운다.
+ */
+export const STATIONS: Array<{
+  name: string; lon: number; lat: number; from: number;
+  side?: "left" | "right"; dy?: number; major?: boolean;
+}> = [
+  { name: "서울", lon: 126.97, lat: 37.55, from: 1899, side: "left", major: true },
+  { name: "인천", lon: 126.63, lat: 37.47, from: 1899, side: "left", dy: 22 },
+  { name: "대전", lon: 127.38, lat: 36.33, from: 1905, side: "right", major: true },
+  { name: "대구", lon: 128.60, lat: 35.87, from: 1905, side: "right" },
+  { name: "부산", lon: 129.04, lat: 35.15, from: 1905, side: "right", major: true },
+  { name: "개성", lon: 126.55, lat: 37.97, from: 1906, side: "left", dy: -14 },
+  { name: "평양", lon: 125.75, lat: 39.02, from: 1906, side: "left", major: true },
+  { name: "신의주", lon: 124.40, lat: 40.10, from: 1906, side: "right", major: true },
+  { name: "익산", lon: 127.00, lat: 35.95, from: 1914, side: "left" },
+  { name: "목포", lon: 126.39, lat: 34.79, from: 1914, side: "left" },
+  { name: "원산", lon: 127.44, lat: 39.16, from: 1914, side: "right", major: true },
+  { name: "함흥", lon: 127.54, lat: 39.92, from: 1928, side: "left" },
+  { name: "청진", lon: 129.78, lat: 41.80, from: 1928, side: "left" },
+  { name: "회령", lon: 129.75, lat: 42.44, from: 1928, side: "left" },
+  { name: "여수", lon: 127.66, lat: 34.76, from: 1936, side: "right" },
+  { name: "경주", lon: 129.22, lat: 35.84, from: 1942, side: "right", dy: 24 },
+  { name: "강릉", lon: 128.90, lat: 37.76, from: 2017, side: "right" },
+];
