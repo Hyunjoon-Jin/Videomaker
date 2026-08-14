@@ -51,6 +51,10 @@ SR = 48000
 # 전부 어긋난다. 컴포지션과 같은 규칙으로 여기서 다시 계산한다.
 FPS = 30
 
+# 곡 전체를 한 템포로 간다. 구간마다 bpm을 올리면 뒤로 갈수록 조여들어
+# 듣기 피곤하고, 한 영상 안에서 속도가 바뀌는 게 그대로 들린다.
+BPM = 132
+
 
 def read_beats(path: str, key: str):
     """TS 연표에서 (값, impact)를 뽑는다. 형식이 단순해 정규식으로 충분하다."""
@@ -104,8 +108,7 @@ def build(path: str, key: str, hook: float, tail: float, bases, quiet_idx=None):
         if k == quiet_idx:
             sections.append((round(a, 1), round(b, 1), bases[k], None, None))
         else:
-            sections.append((round(a, 1), round(b, 1), bases[k],
-                             124 + k * 6, 134 + k * 7))
+            sections.append((round(a, 1), round(b, 1), bases[k], BPM, BPM))
     # 큰 사건에만 타격을 놓는다. 전부 때리면 다시 '탕탕'이 된다.
     accents = [(round(t1, 1), min(1.0, imp)) for t1, _, imp in beats if imp >= 0.85]
     return {"dur": round(dur, 1), "hook": hook, "sections": sections, "accents": accents}
@@ -138,10 +141,10 @@ PRESETS = {
         "out": "public/bgm-rail.wav",
         **build("src/data/rail.ts", "export const RAIL_EVENTS", 4.5, 9.0, [41.2, 43.7, 32.7, 38.9, 46.2]),
         "typing": [
-            ("서울역에서 신의주행 표를 팔던", 4, 30, 0.42),
-            ("39", 38, 8, 0.85),
-            ("년", 46, 8, 0.85),
-            ("1906년 경의선 개통에서 1945년까지", 64, 22, 0.46),
+            ("서울역에서 신의주행 표를 팔던 건 39년", 4, 30, 0.42),
+            ("81", 44, 8, 0.85),
+            ("년", 52, 8, 0.85),
+            ("그 표를 팔지 못한 시간", 70, 22, 0.46),
         ],
     },
     "ty": {
@@ -153,11 +156,11 @@ PRESETS = {
         # 구간 길이가 태풍마다 다르다(9.5/11.5/9.5/10.5초).
         # ShortsTyphoon.tsx의 SECS와 같은 값이어야 타격이 상륙에 맞는다.
         "sections": [
-            (4.5, 14.0, 38.9, 68, 80),     # 사라
-            (14.0, 25.5, 41.2, 76, 88),    # 루사
-            (25.5, 35.0, 36.7, 84, 96),    # 매미
-            (35.0, 45.5, 32.7, 92, 108),   # 힌남노 — 가장 낮고 빠르게
-            (45.5, 53.0, 41.2, None, None),  # 마무리 — 북이 빠지고 여운
+            (4.5, 14.0, 38.9, BPM, BPM),   # 사라
+            (14.0, 25.5, 41.2, BPM, BPM),  # 루사
+            (25.5, 35.0, 36.7, BPM, BPM),  # 매미
+            (35.0, 45.5, 32.7, BPM, BPM),  # 힌남노
+            (45.5, 53.0, 41.2, None, None),  # 마무리 — 드럼이 빠지고 여운
         ],
         # 각 태풍의 상륙 시점(구간의 84%)에 타격
         "accents": [(12.5, 1.0), (23.7, 1.0), (33.5, 1.0), (43.8, 1.0), (46.5, 0.9)],
@@ -357,8 +360,9 @@ def groove(a: float, b: float, bpm0: float, bpm1: float, root: float,
                 kick(now + beat * 0.75 + j(0.008), gain * 0.7)
             if pos in (1, 3):
                 snare(now + j(0.007), gain * 0.9)
-            # 16분 하이햇. 뒤로 갈수록 촘촘하게 해서 몰아친다.
-            steps = 4 if prog_t > 0.45 else 2
+            # 16분 하이햇 고정. 구간 안에서 분할을 바꾸면 템포가 변한
+            # 것처럼 들린다.
+            steps = 4
             for k in range(steps):
                 strong = k == 0
                 hat(now + beat * k / steps + j(0.004),
@@ -415,7 +419,7 @@ def breakdown(a: float, b: float, root: float, gain=1.0) -> None:
     긴장은 멈춰서 만드는 게 아니라 빼서 만든다. 코드와 아르페지오는
     남기고 킥·스네어만 들어낸다.
     """
-    groove(a, b, 92, 100, root, gain * 0.62, drums=False)
+    groove(a, b, BPM, BPM, root, gain * 0.62, drums=False)
 
 
 # ── 구성 ────────────────────────────────────────────

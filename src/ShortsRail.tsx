@@ -376,20 +376,20 @@ export const ShortsRail: React.FC = () => {
         >
           <div style={{ opacity: hookIn }}>
             <Typed
-              text="서울역에서 신의주행 표를 팔던"
+              text="서울역에서 신의주행 표를 팔던 건 39년"
               start={4}
               cps={30}
               style={{
                 display: "block",
                 color: C.dim,
-                fontSize: 40,
+                fontSize: 38,
                 fontWeight: 700,
               }}
             />
             <div style={{ display: "flex", alignItems: "baseline", marginTop: 2 }}>
               <Typed
-                text="39"
-                start={38}
+                text="81"
+                start={44}
                 cps={8}
                 style={{
                   color: INK.brass,
@@ -400,14 +400,14 @@ export const ShortsRail: React.FC = () => {
               />
               <Typed
                 text="년"
-                start={46}
+                start={52}
                 cps={8}
                 style={{ color: C.text, fontSize: 94, fontWeight: 800 }}
               />
             </div>
             <Typed
-              text="1906년 경의선 개통에서 1945년까지"
-              start={64}
+              text="그 표를 팔지 못한 시간"
+              start={70}
               cps={22}
               style={{
                 display: "block",
