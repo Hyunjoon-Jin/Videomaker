@@ -185,7 +185,12 @@ END = SECTIONS[-1][1]
 
 n = int(SR * DUR)
 t = np.arange(n) / SR
+# 드럼과 화성을 따로 만든다. 한 버퍼에 다 쏟으면 같은 순간에 서로 자리를
+# 뺏어 뭉갠다. 마지막에 킥이 칠 때 화성을 눌러 섞는다.
 mix = np.zeros(n)
+tonal = np.zeros(n)
+# 킥이 떨어진 시각 — 사이드체인 엔벨로프를 만들 때 쓴다
+KICKS: list = []
 
 
 def env(start: float, dur: float, attack=0.002, curve=4.0) -> np.ndarray:
@@ -206,14 +211,15 @@ def semi(root: float, x: float) -> float:
     return root * (2.0 ** (x / 12.0))
 
 
-def put(at: float, v: np.ndarray) -> None:
+def put(at: float, v: np.ndarray, buf=None) -> None:
     """파형 조각을 제자리에 더한다. 경계를 넘으면 잘라 넣는다."""
+    target = mix if buf is None else buf
     i0 = int(at * SR)
     if i0 >= n or i0 + len(v) <= 0:
         return
     a = max(0, i0)
     b = min(n, i0 + len(v))
-    mix[a:b] += v[a - i0:b - i0]
+    target[a:b] += v[a - i0:b - i0]
 
 
 def kick(at: float, gain=1.0) -> None:
@@ -231,6 +237,7 @@ def kick(at: float, gain=1.0) -> None:
     body = np.sin(ph) + 0.6 * np.sin(ph * 2) + 0.25 * np.sin(ph * 3)
     e = np.exp(-k / 0.10)
     click = np.exp(-k / 0.0025) * 0.5
+    KICKS.append(at)
     put(at, (body * e + click) * 0.42 * gain)
 
 
@@ -269,11 +276,13 @@ def bass(at: float, f: float, dur: float, gain=1.0) -> None:
         return
     k = np.arange(ln) / SR
     v = np.zeros(ln)
-    for h, a in [(1, 1.0), (2, 0.55), (3, 0.32), (4, 0.18), (5, 0.10)]:
+    # 배음을 셋까지만 쓴다. 다섯까지 쌓으면 아르페지오가 있는 대역까지
+    # 올라와서 둘이 서로 뭉갠다.
+    for h, a in [(1, 1.0), (2, 0.5), (3, 0.22)]:
         v += a * np.sin(2 * np.pi * f * h * k)
     atk = np.clip(k / 0.006, 0, 1)
-    rel = np.clip((k[-1] - k) / 0.05, 0, 1)
-    put(at, v * atk * rel * np.exp(-k / (dur * 1.6)) * 0.13 * gain)
+    rel = np.clip((k[-1] - k) / 0.04, 0, 1)
+    put(at, v * atk * rel * np.exp(-k / (dur * 1.1)) * 0.15 * gain, tonal)
 
 
 def pluck(at: float, f: float, gain=0.5, dur=0.5) -> None:
@@ -286,14 +295,19 @@ def pluck(at: float, f: float, gain=0.5, dur=0.5) -> None:
     for h, a, d in [(1, 1.0, 1.0), (2, 0.5, 0.55), (3, 0.28, 0.35),
                     (4.02, 0.15, 0.25), (6.0, 0.08, 0.18)]:
         v += a * np.sin(2 * np.pi * f * h * k) * np.exp(-k / (dur * d))
-    put(at, v * 0.3 * gain)
+    put(at, v * 0.3 * gain, tonal)
 
 
-def stab(at: float, root: float, gain=1.0, dur=0.55, minor=True) -> None:
-    """코드 한 방 — 마디 머리에 놓아 화성이 바뀌는 걸 귀에 알린다."""
+def stab(at: float, root: float, gain=1.0, dur=0.42, minor=True) -> None:
+    """
+    코드 한 방 — 마디 머리에 놓아 화성이 바뀌는 걸 귀에 알린다.
+
+    아르페지오와 같은 옥타브에서 같은 박에 터지고 있었다. 둘이 같은
+    자리를 쓰니 마디마다 소리가 뭉갰다. 한 옥타브 내려 비켜준다.
+    """
     third = 3 if minor else 4
-    for x, a in [(0, 1.0), (third, 0.8), (7, 0.85), (12, 0.5), (19, 0.3)]:
-        pluck(at, semi(root, x) * 4, gain * a * 0.55, dur)
+    for x, a in [(0, 1.0), (third, 0.7), (7, 0.75)]:
+        pluck(at, semi(root, x) * 2, gain * a * 0.5, dur)
 
 
 def riser(a: float, b: float, gain=0.5) -> None:
@@ -373,11 +387,13 @@ def groove(a: float, b: float, bpm0: float, bpm1: float, root: float,
         bass(now, chord, beat * 0.46, gain)
         bass(now + beat / 2, chord, beat * 0.4, gain * 0.7)
 
-        # 아르페지오 16분음표
+        # 아르페지오 16분음표.
+        # 음 길이를 자기 자리보다 조금만 길게 잡는다. 예전에는 16분
+        # 간격의 3.6배로 울려서 항상 네 음이 겹쳐 뭉개져 있었다.
         for k in range(4):
             deg = ARP[(i * 4 + k) % len(ARP)]
             pluck(now + beat * k / 4, semi(chord, deg) * 4,
-                  gain * (0.42 if k == 0 else 0.24), beat * 0.9)
+                  gain * (0.34 if k == 0 else 0.18), beat * 0.32)
 
         now += beat
         i += 1
@@ -468,6 +484,28 @@ def highpass(x: np.ndarray, fc: float) -> np.ndarray:
     return x - lo
 
 
+def duck(times, depth=0.62, release=0.17) -> np.ndarray:
+    """
+    킥이 칠 때 화성을 눌러주는 엔벨로프.
+
+    드럼과 화성이 같은 순간에 최대로 울리면 둘 다 안 들린다. 킥이
+    떨어지는 순간 화성을 깎았다가 되돌리면 킥은 킥대로 또렷하고
+    화성은 그 사이를 채운다.
+    """
+    e = np.ones(n)
+    ln = int(release * SR)
+    shape = 1.0 - depth * np.exp(-np.arange(ln) / (release * SR / 3.2))
+    for at in times:
+        i0 = int(at * SR)
+        if i0 >= n:
+            continue
+        i1 = min(n, i0 + ln)
+        e[i0:i1] = np.minimum(e[i0:i1], shape[: i1 - i0])
+    return e
+
+
+tonal *= duck(KICKS)
+mix = mix + tonal
 mix = highpass(mix, 95.0)
 # 소프트 클리핑 — 하드 클립하면 지직거린다
 mix = np.tanh(mix * 1.15)
