@@ -1,21 +1,25 @@
 #!/usr/bin/env python3
 """
-BGM 합성 — 임진왜란 7년 영상용.
+BGM 합성.
 
-음원을 구해 붙이는 대신 코드로 만든다. 이유가 두 가지다.
- 1) 저작권 문제가 없다. 전부 사인파와 노이즈에서 나온다.
- 2) 영상과 같은 타임라인을 쓰므로 타격이 정확히 맞는다. 전투 순간에
-    북이 떨어지고, 전선이 밀리는 구간에서 드론이 조여든다.
+음원을 구해 붙이는 대신 코드로 만든다. 저작권 문제가 없고, 영상과 같은
+타임라인을 쓰므로 타격이 사건에 정확히 맞는다.
 
-구성(초) — src/ShortsWar.tsx의 LEGS와 같은 경계:
-  0.0~2.4   훅        저역 임팩트 + 라이저
-  2.4~11.4  1592 북상  타이코 가속, 긴장 상승
-  11.4~19.4 1593 반격  박자 유지, 화성 밝아짐
-  19.4~23.4 소강      북이 빠지고 드론만
-  23.4~31.4 1597      다시 조여듦, 가장 빠름
-  31.4~38.4 종결      큰 타격 후 감쇠
+전에는 드론을 깔고 네 박에 한 번 북을 치는 구성이었다. 그건 다큐멘터리
+앰비언트지 긴장을 만드는 음악이 아니다. 화면은 전선이 뒤집히는데 소리는
+계속 뭉근하게 웅웅거리고 있었다.
 
-사용:  pip install numpy && python3 scripts/make-bgm.py [imjin|kw|ty]
+지금은 리듬 섹션을 제대로 짠다.
+  킥      1박·3박, 그리고 마디 끝의 밀어치기
+  스네어  2박·4박
+  하이햇  16분음표, 뒤로 갈수록 촘촘하게
+  베이스  8분음표로 근음을 계속 밟는다
+  아르페지오 16분음표
+  코드    마디 첫 박에 한 방
+화성은 단조 i - VI - III - VII 로 계속 움직인다. 한자리에 머무는 드론은
+긴장을 못 만든다. 템포는 124에서 150까지 올라간다.
+
+사용:  pip install numpy && python3 scripts/make-bgm.py [imjin|kw|ty|rail]
 출력:  public/bgm.wav (48kHz 16bit 스테레오)
 """
 import math
@@ -101,7 +105,7 @@ def build(path: str, key: str, hook: float, tail: float, bases, quiet_idx=None):
             sections.append((round(a, 1), round(b, 1), bases[k], None, None))
         else:
             sections.append((round(a, 1), round(b, 1), bases[k],
-                             78 + k * 8, 90 + k * 9))
+                             124 + k * 6, 134 + k * 7))
     # 큰 사건에만 타격을 놓는다. 전부 때리면 다시 '탕탕'이 된다.
     accents = [(round(t1, 1), min(1.0, imp)) for t1, _, imp in beats if imp >= 0.85]
     return {"dur": round(dur, 1), "hook": hook, "sections": sections, "accents": accents}
@@ -194,139 +198,99 @@ def env(start: float, dur: float, attack=0.002, curve=4.0) -> np.ndarray:
     return e
 
 
-def taiko(at: float, gain=1.0, pitch=58.0, dur=0.6) -> None:
-    """큰북 — 피치가 살짝 떨어지는 저역 사인 + 어택 노이즈."""
-    e = env(at, dur, 0.001, 5.0)
-    i0, i1 = int(at * SR), min(n, int((at + dur) * SR))
-    if i1 <= i0:
+def semi(root: float, x: float) -> float:
+    """반음 x칸 위 주파수"""
+    return root * (2.0 ** (x / 12.0))
+
+
+def put(at: float, v: np.ndarray) -> None:
+    """파형 조각을 제자리에 더한다. 경계를 넘으면 잘라 넣는다."""
+    i0 = int(at * SR)
+    if i0 >= n or i0 + len(v) <= 0:
         return
-    k = np.arange(i1 - i0) / SR
-    # 피치 드롭이 있어야 '북'으로 들린다. 고정 주파수면 그냥 삐 소리다.
-    f = pitch * np.exp(-3.2 * k)
+    a = max(0, i0)
+    b = min(n, i0 + len(v))
+    mix[a:b] += v[a - i0:b - i0]
+
+
+def kick(at: float, gain=1.0) -> None:
+    """
+    킥.
+
+    기음이 50Hz면 휴대폰에서 통째로 사라지고 '틱' 소리만 남는다.
+    피치를 105Hz에서 48Hz로 떨어뜨리되 2·3배 배음을 같이 실어
+    작은 스피커에서도 몸통이 들리게 한다.
+    """
+    dur = 0.34
+    k = np.arange(int(dur * SR)) / SR
+    f = 48 + 57 * np.exp(-k / 0.022)
     ph = 2 * np.pi * np.cumsum(f) / SR
-    # 휴대폰 스피커는 150Hz 아래를 거의 못 낸다. 기음만 쓰면 어택의 '탁'
-    # 소리만 남고 몸통이 통째로 사라진다. 배음을 얹어야 북으로 들린다.
-    body = 0.7 * np.sin(ph) + 0.85 * np.sin(ph * 2) + 0.5 * np.sin(ph * 3.2)
-    seg = np.zeros(n)
-    seg[i0:i1] = body
-    # 어택 순간의 짧은 노이즈가 타격감을 만든다
-    rng = np.random.default_rng(int(at * 1000) & 0xFFFF)
-    noise = np.zeros(n)
-    ln = min(n - i0, int(0.02 * SR))
-    noise[i0:i0 + ln] = rng.standard_normal(ln) * np.linspace(1, 0, ln)
-    mix[:] += (seg * e * 0.55 + noise * 0.10) * gain
+    body = np.sin(ph) + 0.6 * np.sin(ph * 2) + 0.25 * np.sin(ph * 3)
+    e = np.exp(-k / 0.10)
+    click = np.exp(-k / 0.0025) * 0.5
+    put(at, (body * e + click) * 0.42 * gain)
 
 
-def hit(at: float, gain=1.0, dur=1.6) -> None:
-    """충돌음 — 넓은 노이즈, 큰 사건용."""
-    rng = np.random.default_rng((int(at * 977) + 7) & 0xFFFF)
-    e = env(at, dur, 0.001, 3.0)
-    seg = np.zeros(n)
-    i0, i1 = int(at * SR), min(n, int((at + dur) * SR))
-    if i1 > i0:
-        seg[i0:i1] = rng.standard_normal(i1 - i0)
-        # 저역만 남겨 '쿵' 쪽으로. 단순 이동평균 = 저역통과.
-        w = 24
-        seg[i0:i1] = np.convolve(seg[i0:i1], np.ones(w) / w, mode="same")
-    mix[:] += seg * e * gain * 1.4
+def snare(at: float, gain=1.0) -> None:
+    """스네어 — 노이즈에 190Hz 몸통. 몸통이 없으면 '치' 소리만 난다."""
+    dur = 0.22
+    ln = int(dur * SR)
+    k = np.arange(ln) / SR
+    rng = np.random.default_rng((int(at * 6151) + 3) & 0xFFFF)
+    nz = rng.standard_normal(ln)
+    nz = nz - np.convolve(nz, np.ones(9) / 9, mode="same")   # 고역만
+    tone = np.sin(2 * np.pi * 190 * k) + 0.7 * np.sin(2 * np.pi * 278 * k)
+    e = np.exp(-k / 0.055)
+    put(at, (nz * 0.85 + tone * 0.35) * e * 0.34 * gain)
 
 
-def semi(root: float, n: float) -> float:
-    """반음 n칸 위 주파수"""
-    return root * (2.0 ** (n / 12.0))
+def hat(at: float, gain=1.0, open_=False) -> None:
+    """하이햇 — 아주 짧은 고역 노이즈. 16분음표를 채워 속도를 만든다."""
+    dur = 0.16 if open_ else 0.045
+    ln = int(dur * SR)
+    rng = np.random.default_rng((int(at * 9973) + 11) & 0xFFFF)
+    nz = rng.standard_normal(ln)
+    nz = nz - np.convolve(nz, np.ones(4) / 4, mode="same")
+    k = np.arange(ln) / SR
+    put(at, nz * np.exp(-k / (0.05 if open_ else 0.012)) * 0.34 * gain)
 
 
-def pluck(at: float, f: float, gain=0.5, dur=1.1) -> None:
+def bass(at: float, f: float, dur: float, gain=1.0) -> None:
     """
-    뜯는 소리.
-
-    이 곡들이 휴대폰에서 '탕탕' 소리로만 들리던 원인이 여기 있었다.
-    화성을 전부 32~65Hz 드론에 담아뒀는데 휴대폰 스피커는 그 대역을
-    재생하지 못한다. 남는 것은 타악기의 어택뿐이다.
-    그래서 실제로 들리는 200~2000Hz에 음을 놓는 층을 따로 만든다.
-
-    배음마다 감쇠 속도를 다르게 준다. 고배음이 먼저 죽어야 뜯는 소리가
-    되고, 다 같이 죽으면 오르간처럼 들린다.
+    베이스 — 톱니에 가까운 배음 구성.
+    사인 하나로는 폰에서 안 들린다. 홀수·짝수 배음을 같이 넣어야
+    작은 스피커가 기음을 못 내도 귀가 근음을 복원한다.
     """
-    i0, i1 = int(at * SR), min(n, int((at + dur) * SR))
-    if i1 <= i0:
+    ln = int(dur * SR)
+    if ln <= 0:
         return
-    k = np.arange(i1 - i0) / SR
-    v = np.zeros(i1 - i0)
-    for h, amp, dec in [(1, 1.0, 1.0), (2, 0.52, 0.60), (3, 0.30, 0.40),
-                        (4.02, 0.17, 0.28), (5.97, 0.09, 0.20)]:
-        v += amp * np.sin(2 * np.pi * f * h * k) * np.exp(-k / (dur * dec))
-    # 어택의 짧은 잡음이 손끝이 줄에 닿는 소리를 만든다
-    ln = min(len(v), int(0.004 * SR))
-    rng = np.random.default_rng((int(at * 911) + 5) & 0xFFFF)
-    v[:ln] += rng.standard_normal(ln) * 0.45
-    mix[i0:i1] += v * gain * 0.33
+    k = np.arange(ln) / SR
+    v = np.zeros(ln)
+    for h, a in [(1, 1.0), (2, 0.55), (3, 0.32), (4, 0.18), (5, 0.10)]:
+        v += a * np.sin(2 * np.pi * f * h * k)
+    atk = np.clip(k / 0.006, 0, 1)
+    rel = np.clip((k[-1] - k) / 0.05, 0, 1)
+    put(at, v * atk * rel * np.exp(-k / (dur * 1.6)) * 0.13 * gain)
 
 
-def pad(a: float, b: float, root: float, gain=0.15) -> None:
-    """
-    지속 화음.
-
-    드론과 같은 근음을 쓰되 실체는 옥타브 위에 둔다. 근음·단3도·5도를
-    쌓아 조성을 잡아준다. 아주 느린 흔들림이 없으면 신호음처럼 들린다.
-    """
-    i0, i1 = int(a * SR), min(n, int(b * SR))
-    if i1 <= i0:
+def pluck(at: float, f: float, gain=0.5, dur=0.5) -> None:
+    """아르페지오용 뜯는 소리. 고배음이 먼저 죽어야 뜯는 소리가 된다."""
+    ln = int(dur * SR)
+    if ln <= 0:
         return
-    k = np.arange(i1 - i0) / SR
-    fade = np.minimum(np.minimum(k / 1.2, 1.0), np.clip((k[-1] - k) / 1.6, 0, 1))
-    v = np.zeros(i1 - i0)
-    for mult, amp in [(2.0, 0.50), (2.0 * 2 ** (3 / 12), 0.26),
-                      (3.0, 0.34), (4.0, 0.18), (6.0, 0.10)]:
-        drift = 1.0 + 0.0014 * np.sin(2 * np.pi * 0.06 * k + mult)
-        v += amp * np.sin(2 * np.pi * root * mult * np.cumsum(drift) / SR)
-    mix[i0:i1] += v * fade * gain
+    k = np.arange(ln) / SR
+    v = np.zeros(ln)
+    for h, a, d in [(1, 1.0, 1.0), (2, 0.5, 0.55), (3, 0.28, 0.35),
+                    (4.02, 0.15, 0.25), (6.0, 0.08, 0.18)]:
+        v += a * np.sin(2 * np.pi * f * h * k) * np.exp(-k / (dur * d))
+    put(at, v * 0.3 * gain)
 
 
-# 단5음 음형 — 어느 편이든 이 안에서만 논다. 조성이 흔들리지 않는다.
-FIGURE = [0, 3, 7, 5, 3, 10, 7, 3]
-
-
-def ostinato(a: float, b: float, bpm0: float, bpm1: float,
-             root: float, gain=1.0) -> None:
-    """
-    반복 음형. 이 층이 곡을 곡으로 만든다.
-
-    드론과 같은 음이되 여섯 배 위에서 연주한다. 화성은 그대로 두고
-    실체만 휴대폰이 낼 수 있는 자리로 옮기는 것이다.
-    """
-    rng = np.random.default_rng((int(a * 613) + 41) & 0xFFFF)
-    now, i = a, 0
-    while now < b:
-        prog = (now - a) / max(1e-6, b - a)
-        bpm = bpm0 + (bpm1 - bpm0) * prog
-        step = 60.0 / bpm / 2.0            # 8분음표
-        deg = FIGURE[i % len(FIGURE)]
-        # 세 바퀴에 한 번은 옥타브 위로 올려 같은 음형이 지겹지 않게
-        if (i // len(FIGURE)) % 3 == 2:
-            deg += 12
-        f = semi(root * 6.0, deg)
-        strong = (i % 4) == 0
-        g = (0.55 if strong else 0.32) * (1.0 + rng.normal(0, 0.12))
-        pluck(now + rng.normal(0, 0.007), f, gain * g, 0.95)
-        now += step
-        i += 1
-
-
-def drone(a: float, b: float, base: float, gain: float, detune=1.008) -> None:
-    """지속 저음 — 두 음을 살짝 어긋나게 겹쳐 맥놀이를 만든다."""
-    i0, i1 = int(a * SR), min(n, int(b * SR))
-    if i1 <= i0:
-        return
-    k = np.arange(i1 - i0) / SR
-    fade = np.minimum(np.minimum(k / 0.8, 1.0), np.clip((k[-1] - k) / 1.2, 0, 1))
-    # 주파수가 딱 고정되면 신호음처럼 들린다. 아주 느리게 흔들어 준다.
-    drift = 1.0 + 0.0016 * np.sin(2 * np.pi * 0.09 * k + base)
-    ph = 2 * np.pi * base * np.cumsum(drift) / SR
-    v = (np.sin(ph)
-         + 0.7 * np.sin(ph * detune)
-         + 0.35 * np.sin(ph * 2))
-    mix[i0:i1] += v * fade * gain
+def stab(at: float, root: float, gain=1.0, dur=0.55, minor=True) -> None:
+    """코드 한 방 — 마디 머리에 놓아 화성이 바뀌는 걸 귀에 알린다."""
+    third = 3 if minor else 4
+    for x, a in [(0, 1.0), (third, 0.8), (7, 0.85), (12, 0.5), (19, 0.3)]:
+        pluck(at, semi(root, x) * 4, gain * a * 0.55, dur)
 
 
 def riser(a: float, b: float, gain=0.5) -> None:
@@ -337,70 +301,101 @@ def riser(a: float, b: float, gain=0.5) -> None:
     rng = np.random.default_rng(4242)
     k = np.linspace(0, 1, i1 - i0)
     nz = rng.standard_normal(i1 - i0)
-    # 뒤로 갈수록 평활 폭을 줄여 고역을 살린다(=밝아진다)
     out = np.empty_like(nz)
     step = max(1, (i1 - i0) // 64)
-    for s in range(0, i1 - i0, step):
-        e = min(i1 - i0, s + step)
-        w = max(1, int(40 * (1 - k[s]) + 2))
-        out[s:e] = np.convolve(nz[s:e], np.ones(w) / w, mode="same")
+    for s0 in range(0, i1 - i0, step):
+        e = min(i1 - i0, s0 + step)
+        w = max(1, int(40 * (1 - k[s0]) + 2))
+        out[s0:e] = np.convolve(nz[s0:e], np.ones(w) / w, mode="same")
     mix[i0:i1] += out * (k ** 2.2) * gain
 
 
-def pulse_train(a: float, b: float, bpm0: float, bpm1: float, gain=0.7) -> None:
-    """
-    일정 구간을 북으로 채운다. bpm이 선형으로 변해 가속·감속이 들린다.
+def hit(at: float, gain=1.0, dur=1.2) -> None:
+    """충돌음 — 큰 사건용. 킥과 겹쳐 무게를 준다."""
+    ln = int(dur * SR)
+    rng = np.random.default_rng((int(at * 977) + 7) & 0xFFFF)
+    k = np.arange(ln) / SR
+    nz = rng.standard_normal(ln)
+    nz = np.convolve(nz, np.ones(20) / 20, mode="same")
+    put(at, nz * np.exp(-k / (dur * 0.28)) * 0.5 * gain)
 
-    박을 정확히 격자에 놓으면 사람이 친 것으로 안 들린다. 클릭 트랙이다.
-    실제 연주자는 매번 몇 십 ms씩 앞뒤로 밀리고 세기도 고르지 않다.
-    난수는 시작 시각에서 파생시켜 결정적으로 만든다 — 매번 다르게
-    렌더되면 영상과 음악이 어긋난다.
+
+# 단조 진행 i - VI - III - VII. 한 마디에 하나씩 돈다.
+# 드론처럼 한자리에 머물면 아무리 세게 쳐도 긴장이 안 생긴다.
+PROG = (0, 8, 3, 10)
+# 16분음표 아르페지오 음형 — 코드 톤 위주라 어떤 코드에 얹어도 맞는다
+ARP = (0, 7, 12, 15, 12, 7, 12, 19)
+
+
+def groove(a: float, b: float, bpm0: float, bpm1: float, root: float,
+           gain=1.0, drums=True) -> None:
+    """
+    한 구간을 리듬 섹션으로 채운다.
+
+    난수는 시각에서 파생시켜 결정적으로 만든다. 렌더할 때마다 달라지면
+    영상과 어긋난다. 사람이 친 것처럼 들리게 박마다 살짝 흔들되,
+    강박은 덜 흔들린다 — 실제 연주가 그렇다.
     """
     rng = np.random.default_rng((int(a * 733) + 31) & 0xFFFF)
-    now = a
-    i = 0
+    now, i = a, 0
     while now < b:
-        prog = (now - a) / max(1e-6, b - a)
-        bpm = bpm0 + (bpm1 - bpm0) * prog
+        prog_t = (now - a) / max(1e-6, b - a)
+        bpm = bpm0 + (bpm1 - bpm0) * prog_t
         beat = 60.0 / bpm
-        strong = (i % 4) == 0            # 4박에 한 번 강박
-        # 강박은 덜 흔들리고 약박은 더 흔들린다. 사람이 그렇게 친다.
-        jitter = rng.normal(0, 0.008 if strong else 0.018)
-        vel = 1.0 + rng.normal(0, 0.10)
-        taiko(max(a, now + jitter), gain * (1.0 if strong else 0.45) * vel,
-              pitch=76 if strong else 96, dur=0.55 if strong else 0.3)
+        bar, pos = i // 4, i % 4
+        chord = semi(root, PROG[bar % len(PROG)])
+
+        if pos == 0:
+            stab(now, chord, gain * 0.9)
+
+        if drums:
+            j = lambda s: rng.normal(0, s)
+            if pos in (0, 2):
+                kick(now + j(0.006), gain * (1.0 if pos == 0 else 0.85))
+            # 마디 끝 밀어치기 — 이게 있어야 다음 마디로 굴러간다
+            if pos == 3:
+                kick(now + beat * 0.75 + j(0.008), gain * 0.7)
+            if pos in (1, 3):
+                snare(now + j(0.007), gain * 0.9)
+            # 16분 하이햇. 뒤로 갈수록 촘촘하게 해서 몰아친다.
+            steps = 4 if prog_t > 0.45 else 2
+            for k in range(steps):
+                strong = k == 0
+                hat(now + beat * k / steps + j(0.004),
+                    gain * (0.62 if strong else 0.36),
+                    open_=(pos == 3 and k == steps - 1))
+
+        # 베이스 — 8분음표로 근음을 계속 밟는다
+        bass(now, chord, beat * 0.46, gain)
+        bass(now + beat / 2, chord, beat * 0.4, gain * 0.7)
+
+        # 아르페지오 16분음표
+        for k in range(4):
+            deg = ARP[(i * 4 + k) % len(ARP)]
+            pluck(now + beat * k / 4, semi(chord, deg) * 4,
+                  gain * (0.42 if k == 0 else 0.24), beat * 0.9)
+
         now += beat
         i += 1
-
-
-FPS = 30  # 컴포지션과 같은 프레임률. 글자 등장 프레임을 초로 옮길 때 쓴다.
 
 
 def key(at: float, gain=0.5, space=False) -> None:
     """
     키 하나 치는 소리.
 
-    노이즈를 그냥 짧게 자르면 '치'하고 끝나서 종이 소리에 가깝다. 실제
-    키보드 소리는 두 겹이다 — 손톱이 키캡에 닿는 고역 딱 소리와, 키가
-    바닥을 치면서 나는 낮은 몸통. 둘을 겹쳐야 '탁'으로 들린다.
-
-    난수는 시각에서 파생시켜 결정적으로 만든다. 렌더할 때마다 달라지면
-    영상과 어긋난다.
+    노이즈를 짧게 자르기만 하면 종이 소리에 가깝다. 실제 키보드는
+    두 겹이다 — 키캡에 닿는 고역 딱 소리와 키가 바닥을 치는 낮은 몸통.
     """
     dur = 0.06
-    i0, i1 = int(at * SR), min(n, int((at + dur) * SR))
-    if i1 <= i0:
-        return
-    k = np.arange(i1 - i0) / SR
+    ln = int(dur * SR)
+    k = np.arange(ln) / SR
     rng = np.random.default_rng((int(at * 10007) + 13) & 0xFFFF)
-    nz = rng.standard_normal(i1 - i0)
-    # 1차 차분 = 고역통과. 딱 소리의 재료.
+    nz = rng.standard_normal(ln)
     nz = np.concatenate([[0.0], np.diff(nz)])
     click = nz * np.exp(-k / 0.0035)
-    # 스페이스바는 크고 둔하다. 몸통 주파수를 내린다.
     f = 620.0 if space else 1650.0
     body = np.sin(2 * np.pi * f * k) * np.exp(-k / 0.011)
-    mix[i0:i1] += (click * 0.55 + body * 0.30) * gain
+    put(at, (click * 0.55 + body * 0.30) * gain)
 
 
 def typing(spec) -> None:
@@ -408,35 +403,40 @@ def typing(spec) -> None:
     for text, start, cps, gain in spec:
         rng = np.random.default_rng((start * 977 + len(text)) & 0xFFFF)
         for i, ch in enumerate(text):
-            # Typed는 floor((frame-start)*cps/fps) >= i+1일 때 i번째를 띄운다
             at = (start + (i + 1) * FPS / cps) / FPS
-            # 세기를 조금씩 흔들어야 사람이 친 것처럼 들린다
             key(at, gain * (1.0 + rng.normal(0, 0.13)), space=(ch == " "))
+
+
+def breakdown(a: float, b: float, root: float, gain=1.0) -> None:
+    """
+    브레이크 — 드럼을 빼고 화성만 남긴다.
+
+    조용한 구간을 통째로 비워두면 음악이 죽는다. 몰아치는 음악에서
+    긴장은 멈춰서 만드는 게 아니라 빼서 만든다. 코드와 아르페지오는
+    남기고 킥·스네어만 들어낸다.
+    """
+    groove(a, b, 92, 100, root, gain * 0.62, drums=False)
 
 
 # ── 구성 ────────────────────────────────────────────
 # 훅: 큰 타격 하나 + 라이저로 지도 등장까지 끌고 간다
-hit(0.15, 0.5, 1.8)
-taiko(0.15, 1.2, 70, 1.1)
-riser(0.5, HOOK, 0.55)
-drone(0.0, HOOK + 0.6, 41.2, 0.16)
+hit(0.15, 0.9, 1.6)
+kick(0.15, 1.2)
+riser(0.6, HOOK, 0.5)
 
-# 섹션 — 층이 셋이다. 저역 드론(있는 기기에서만 들린다), 중역 화음,
-# 그리고 실제로 선율로 들리는 음형. 북은 그 위에 얹는 것이지 혼자
-# 남으면 안 된다.
+# 섹션 — bpm이 None인 구간은 드럼을 빼고 화성만 남긴다
 for (a, b, base, bpm0, bpm1) in SECTIONS:
-    drone(a, b + 0.5, base, 0.07)
-    pad(a, b + 0.6, base, 0.42 if bpm0 is None else 0.26)
     if bpm0 is None:
-        # 멈춘 구간에도 소리는 있어야 한다. 음형을 아주 느리게만 남긴다.
-        ostinato(a, b, 40, 34, base, 1.25)
+        breakdown(a, b, base)
     else:
-        ostinato(a, b, bpm0, bpm1, base, 1.6)
-        pulse_train(a, b, bpm0, bpm1, 0.42)
+        groove(a, b, bpm0, bpm1, base)
+    # 구간이 바뀌기 직전 라이저 — 다음 구간으로 밀어 넣는다
+    if b < END - 0.5:
+        riser(max(a, b - 1.4), b, 0.26)
 
-# 종결 — 마지막 타격 후 여운
-taiko(END - 1.4, 1.2, 66, 1.8)
-hit(END - 1.4, 0.4, 2.4)
+# 종결
+kick(END - 1.4, 1.3)
+hit(END - 1.4, 0.8, 2.0)
 
 # 훅 타이핑 — 글자가 뜨는 프레임에 맞춘다
 if P.get("typing"):
@@ -444,8 +444,9 @@ if P.get("typing"):
 
 # 주요 사건 강조 — 영상의 impact 지점과 맞춘 초
 for at, g in P["accents"]:
-    taiko(at, g * 0.8, 72, 0.8)
-    hit(at, g * 0.18, 0.9)
+    kick(at, g * 1.25)
+    snare(at, g * 0.5)
+    hit(at, g * 0.35, 0.9)
 
 # ── 마스터링 ────────────────────────────────────────
 def highpass(x: np.ndarray, fc: float) -> np.ndarray:
