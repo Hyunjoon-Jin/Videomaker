@@ -14,6 +14,7 @@
  * 선형은 실제 궤도가 아니라 주요 정차역의 실좌표를 이은 근사다. 산을
  * 돌아가는 실제 노선보다 짧고 곧다. 화면에 그렇게 밝힌다.
  */
+import { smooth } from "../front";
 import { project } from "./places";
 
 export interface RailLine {
@@ -133,24 +134,27 @@ export interface RailEvent {
   impact?: number;
   /** 끊기는 사건인가 */
   cut?: boolean;
+  /** 카메라가 볼 곳 [경도, 위도]와 배율. 자막과 화면을 맞추려면 여기 있어야 한다. */
+  focus?: [number, number];
+  zoom?: number;
 }
 
 export const RAIL_EVENTS: RailEvent[] = [
-  { year: 1899, title: "경인선 개통", detail: "노량진에서 제물포까지 33km", impact: 0.7 },
-  { year: 1905, title: "경부선 개통", detail: "서울과 부산이 하루 거리가 되다", impact: 0.8 },
-  { year: 1906, title: "경의선 개통", detail: "서울역에서 신의주행 표를 팔기 시작하다", impact: 0.9 },
-  { year: 1914, title: "호남선·경원선 개통", detail: "목포와 원산이 같은 해에 이어지다", impact: 0.6 },
-  { year: 1928, title: "함경선 개통", detail: "회령까지, 기차가 닿은 가장 북쪽", impact: 0.9 },
-  { year: 1936, title: "전라선 개통", detail: "익산에서 여수까지", impact: 0.5 },
-  { year: 1942, title: "중앙선 개통", detail: "청량리에서 경주까지 내륙을 관통하다", impact: 0.6 },
-  { year: 1945, title: "38선", detail: "북으로 가던 세 노선이 한꺼번에 끊기다", impact: 1, cut: true },
-  { year: 1950, title: "6·25 전쟁", detail: "남은 선로마저 부서지다", impact: 0.8, cut: true },
-  { year: 1955, title: "영암선 개통", detail: "광복 이후 처음으로 새로 놓은 노선", impact: 0.7 },
-  { year: 1963, title: "태백선 개통", detail: "석탄을 실어 나르려 산으로 들어가다", impact: 0.5 },
-  { year: 2002, title: "도라산역 개통", detail: "서울에서 갈 수 있는 가장 북쪽 역", impact: 0.9 },
-  { year: 2004, title: "KTX 개통", detail: "서울에서 부산까지 2시간대", impact: 0.9 },
-  { year: 2015, title: "호남고속선 개통", detail: "오송에서 광주송정까지", impact: 0.5 },
-  { year: 2017, title: "강릉선 개통", detail: "태백을 뚫고 동해까지", impact: 0.6 },
+  { year: 1899, title: "경인선 개통", detail: "노량진에서 제물포까지 33km", impact: 0.7 , focus: [126.80, 37.49], zoom: 3.4 },
+  { year: 1905, title: "경부선 개통", detail: "서울과 부산이 하루 거리가 되다", impact: 0.8 , focus: [127.70, 36.30], zoom: 1.9 },
+  { year: 1906, title: "경의선 개통", detail: "서울역에서 신의주행 표를 팔기 시작하다", impact: 0.9 , focus: [125.60, 38.90], zoom: 2.1 },
+  { year: 1914, title: "호남선·경원선 개통", detail: "목포와 원산이 같은 해에 이어지다", impact: 0.6 , focus: [126.90, 36.60], zoom: 1.8 },
+  { year: 1928, title: "함경선 개통", detail: "회령까지, 기차가 닿은 가장 북쪽", impact: 0.9 , focus: [128.90, 41.00], zoom: 2.1 },
+  { year: 1936, title: "전라선 개통", detail: "익산에서 여수까지", impact: 0.5 , focus: [127.35, 35.35], zoom: 2.8 },
+  { year: 1942, title: "중앙선 개통", detail: "청량리에서 경주까지 내륙을 관통하다", impact: 0.6 , focus: [128.10, 36.70], zoom: 2.4 },
+  { year: 1945, title: "38선", detail: "북으로 가던 세 노선이 한꺼번에 끊기다", impact: 1, cut: true , focus: [126.90, 38.00], zoom: 3.2 },
+  { year: 1950, title: "6·25 전쟁", detail: "남은 선로마저 부서지다", impact: 0.8, cut: true , focus: [127.30, 37.40], zoom: 2.2 },
+  { year: 1955, title: "영암선 개통", detail: "광복 이후 처음으로 새로 놓은 노선", impact: 0.7 , focus: [128.85, 36.95], zoom: 3.2 },
+  { year: 1963, title: "태백선 개통", detail: "석탄을 실어 나르려 산으로 들어가다", impact: 0.5 , focus: [128.60, 37.15], zoom: 3.2 },
+  { year: 2002, title: "도라산역 개통", detail: "서울에서 갈 수 있는 가장 북쪽 역", impact: 0.9 , focus: [126.78, 37.88], zoom: 3.4 },
+  { year: 2004, title: "KTX 개통", detail: "서울에서 부산까지 2시간대", impact: 0.9 , focus: [127.80, 36.40], zoom: 1.9 },
+  { year: 2015, title: "호남고속선 개통", detail: "오송에서 광주송정까지", impact: 0.5 , focus: [127.00, 35.90], zoom: 2.5 },
+  { year: 2017, title: "강릉선 개통", detail: "태백을 뚫고 동해까지", impact: 0.6 , focus: [128.00, 37.55], zoom: 2.5 },
 ];
 
 export function railEventAt(year: number): RailEvent | null {
@@ -163,12 +167,28 @@ export function railEventAt(year: number): RailEvent | null {
 export const LAT_38 = 38.0;
 
 /**
+ * 정차역 좌표를 부드러운 곡선으로 바꾼다.
+ *
+ * 좌표를 직선으로 이으면 역마다 각이 져서 철길이 아니라 접은 종이처럼
+ * 보인다. 실제 노선은 산과 강을 따라 휜다. 통과하는 점은 그대로 두고
+ * 사이만 굽히는 곡선이라, 역 위치를 왜곡하지는 않는다.
+ */
+function curveOf(pts: Array<[number, number]>): Array<{ x: number; y: number }> {
+  const raw = pts.map(([lo, la]) => {
+    const q = project(lo, la);
+    return [q.x, q.y] as [number, number];
+  });
+  if (raw.length < 3) return raw.map(([x, y]) => ({ x, y }));
+  return smooth(raw, 14).map(([x, y]) => ({ x, y }));
+}
+
+/**
  * 폴리라인을 진행도 p(0..1)만큼만 그린다.
  * 선이 한 번에 나타나면 '놓인' 것이 아니라 '있는' 것으로 보인다.
  * 길이 기준으로 잘라야 구간이 긴 노선이 오래 그려진다.
  */
 export function partialPath(pts: Array<[number, number]>, p: number): string {
-  const q = pts.map(([lo, la]) => project(lo, la));
+  const q = curveOf(pts);
   if (q.length < 2) return "";
   const segs = q.slice(1).map((b, i) => Math.hypot(b.x - q[i].x, b.y - q[i].y));
   const total = segs.reduce((a, b) => a + b, 0);
@@ -211,6 +231,7 @@ export function splitAt(
   pts: Array<[number, number]>,
   lat: number
 ): { south: string; north: string } {
+  // 경계 판정은 위경도로 하되, 그리는 것은 곡선이어야 본선과 겹친다.
   const south: Array<[number, number]> = [];
   const north: Array<[number, number]> = [];
   for (let i = 0; i < pts.length; i++) {
@@ -230,11 +251,8 @@ export function splitAt(
   const toPath = (a: Array<[number, number]>) =>
     a.length < 2
       ? ""
-      : a
-          .map(([lo, la], i) => {
-            const q = project(lo, la);
-            return `${i ? "L" : "M"}${q.x} ${q.y}`;
-          })
+      : curveOf(a)
+          .map((q, i) => `${i ? "L" : "M"}${q.x.toFixed(1)} ${q.y.toFixed(1)}`)
           .join("");
   return { south: toPath(south), north: toPath(north) };
 }

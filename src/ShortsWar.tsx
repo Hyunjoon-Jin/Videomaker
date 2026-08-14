@@ -1,9 +1,10 @@
 import React from "react";
 import { AbsoluteFill, Audio, interpolate, staticFile, useCurrentFrame } from "remotion";
 import { WarMap } from "./ProvinceMap";
-import { TOTAL_MONTHS, monthLabel, warEventAt } from "./data/war";
+import { TOTAL_MONTHS, WAR_EVENTS, monthLabel, warEventAt } from "./data/war";
 import { battlesUpTo } from "./data/battles";
-import { Shot, cameraAt } from "./mapcam";
+import { project } from "./data/places";
+import { Shot, cameraAt, shotsFromEvents } from "./mapcam";
 import { C, FPS } from "./theme";
 import { Grain } from "./Grain";
 import { Typed } from "./Typed";
@@ -55,24 +56,23 @@ function monthAt(frame: number): number {
 }
 
 /**
- * 카메라 샷.
+ * 카메라 샷 — 연표에서 만든다.
  *
- * 부산에 상륙할 때는 부산으로, 한산도에서 이길 때는 남해로, 의주까지
- * 밀릴 때는 압록강 쪽으로 붙는다. 좌표는 지도 좌표계(0..1000)다.
- * LEGS가 프레임을 정하므로 at 값은 그 경계에서 가져왔다.
+ * 처음에는 프레임 숫자를 손으로 찍어 샷을 적었는데, 그러면 자막과
+ * 화면이 어긋난다. 한산도 대첩 자막이 떠 있는데 카메라는 평안도를
+ * 보고 있는 식이다. 사건이 뜨는 프레임과 그 사건이 벌어진 좌표를
+ * 같은 곳에서 가져오면 어긋날 수가 없다.
+ *
+ * 사건보다 살짝 먼저 도착해야 한다. 자막이 뜨는 순간 카메라가
+ * 출발하면 글자를 다 읽을 때까지 화면이 흐르고 있다.
  */
-const SHOTS: Shot[] = [
-  { at: HOOK - 20, cx: 455, cy: 500, z: 1.5 },
-  { at: HOOK + 34, cx: 600, cy: 790, z: 3.2 },    // 부산 상륙
-  { at: HOOK + 110, cx: 470, cy: 600, z: 2.5 },   // 북상
-  { at: HOOK + 180, cx: 500, cy: 800, z: 3.0 },   // 한산도
-  { at: HOOK + 250, cx: 380, cy: 330, z: 2.3 },   // 평양·의주
-  { at: HOOK + 400, cx: 440, cy: 520, z: 1.9 },   // 반격
-  { at: HOOK + 560, cx: 430, cy: 700, z: 2.4 },   // 소강 — 남해안 왜성
-  { at: HOOK + 700, cx: 380, cy: 700, z: 2.9 },   // 정유재란·명량
-  { at: HOOK + 830, cx: 470, cy: 760, z: 2.6 },   // 노량
-  { at: HOOK + 960, cx: 455, cy: 520, z: 1.7 },
-];
+const SHOTS: Shot[] = shotsFromEvents(
+  WAR_EVENTS.filter((e) => e.focus).map((e) => {
+    const q = project(e.focus![0], e.focus![1]);
+    return { frame: Math.max(HOOK + 8, frameOfMonth(e.month)), cx: q.x, cy: q.y, z: e.zoom ?? 2.4 };
+  }),
+  { lead: 18, hold: 30, first: { at: HOOK - 24, cx: 455, cy: 520, z: 1.5 } }
+);
 
 export const ShortsWar: React.FC = () => {
   useFonts();

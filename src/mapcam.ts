@@ -85,3 +85,44 @@ export function cameraAt(
   const last = shots[shots.length - 1];
   return box(last.cx, last.cy, last.z);
 }
+
+
+/**
+ * 연표에서 샷 목록을 만든다.
+ *
+ * 사건마다 샷을 하나만 두면 카메라가 도착하자마자 다음 사건을 향해
+ * 떠난다. 자막은 아직 그 사건을 말하고 있는데 화면은 벌써 다른 데로
+ * 흐르는 것이다. 그래서 사건마다 둘을 넣는다 — 자막보다 lead만큼 먼저
+ * 도착하는 샷, 그리고 hold만큼 그 자리에 머무는 같은 위치의 샷.
+ *
+ * 사건이 붙어 있으면 머무는 샷이 다음 도착 샷을 넘어설 수 있다.
+ * 그때는 머무는 시간을 잘라 순서를 지킨다. 순서가 뒤집히면 카메라가
+ * 뒤로 갔다가 다시 오는 것처럼 보인다.
+ */
+export function shotsFromEvents(
+  items: Array<{ frame: number; cx: number; cy: number; z: number }>,
+  opts: { lead?: number; hold?: number; first?: Shot } = {}
+): Shot[] {
+  const lead = opts.lead ?? 16;
+  const hold = opts.hold ?? 26;
+  const sorted = [...items].sort((a, b) => a.frame - b.frame);
+  const out: Shot[] = opts.first ? [opts.first] : [];
+
+  sorted.forEach((it, i) => {
+    const next = sorted[i + 1];
+    const arrive = it.frame - lead;
+    const nextArrive = next ? next.frame - lead : Infinity;
+    // 다음 샷이 출발하기 전까지만 머문다
+    const stay = Math.min(it.frame + hold, nextArrive - 2);
+    out.push({ at: arrive, cx: it.cx, cy: it.cy, z: it.z });
+    if (stay > arrive) out.push({ at: stay, cx: it.cx, cy: it.cy, z: it.z });
+  });
+
+  // at이 단조 증가해야 보간이 성립한다
+  let last = -Infinity;
+  return out.filter((sh) => {
+    if (sh.at <= last) return false;
+    last = sh.at;
+    return true;
+  });
+}

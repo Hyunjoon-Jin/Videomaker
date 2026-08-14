@@ -12,12 +12,13 @@ import {
   RailLine,
   cutLatAt,
   northmostAt,
+  RAIL_EVENTS,
   partialPath,
   railEventAt,
   splitAt,
 } from "./data/rail";
 import { project } from "./data/places";
-import { Shot, cameraAt } from "./mapcam";
+import { Shot, cameraAt, shotsFromEvents } from "./mapcam";
 import { C, FPS, INK } from "./theme";
 import { Grain } from "./Grain";
 import { Typed } from "./Typed";
@@ -79,35 +80,27 @@ function yearAt(frame: number): number {
 }
 
 /**
- * 카메라 샷.
+ * 카메라 샷 — 연표에서 만든다.
  *
- * 선이 놓이는 자리를 따라간다. 1945년에는 38선으로 바짝 붙어야
- * '끊긴다'가 사건으로 읽힌다. 멀리서 보면 그냥 색이 바뀔 뿐이다.
+ * 손으로 프레임을 찍으면 자막과 화면이 어긋난다. 사건이 뜨는 프레임과
+ * 그 사건이 벌어진 좌표를 같은 곳에서 가져오면 어긋날 수가 없다.
  */
-const SHOTS: Shot[] = [
-  { at: HOOK - 20, cx: 455, cy: 520, z: 1.5 },
-  { at: HOOK + 40, cx: 440, cy: 570, z: 3.0 },    // 경인선 — 서울과 인천
-  { at: HOOK + 130, cx: 500, cy: 690, z: 2.2 },   // 경부선 남하
-  { at: HOOK + 230, cx: 360, cy: 380, z: 2.1 },   // 경의선 북상
-  { at: HOOK + 330, cx: 470, cy: 560, z: 1.7 },   // 호남·경원
-  { at: HOOK + 430, cx: 520, cy: 260, z: 1.9 },   // 함경선
-  { at: HOOK + 560, cx: 470, cy: 640, z: 2.0 },   // 전라·중앙
-  { at: HOOK + 650, cx: 442, cy: 511, z: 3.3 },   // 1945 — 38선에 바짝
-  { at: HOOK + 760, cx: 470, cy: 620, z: 2.2 },   // 전쟁과 복구
-  { at: HOOK + 900, cx: 500, cy: 660, z: 2.4 },   // 남쪽 확장
-  { at: HOOK + 1010, cx: 438, cy: 520, z: 3.1 },  // 도라산
-  { at: HOOK + 1120, cx: 480, cy: 640, z: 1.9 },  // 고속선
-  { at: RAIL_DURATION, cx: 460, cy: 540, z: 1.7 },
-];
+const SHOTS: Shot[] = shotsFromEvents(
+  RAIL_EVENTS.filter((e) => e.focus).map((e) => {
+    const q = project(e.focus![0], e.focus![1]);
+    return { frame: Math.max(HOOK + 8, frameOfYear(e.year)), cx: q.x, cy: q.y, z: e.zoom ?? 2.2 };
+  }),
+  { lead: 18, hold: 30, first: { at: HOOK - 24, cx: 455, cy: 520, z: 1.5 } }
+);
 
-const LANDF = "#26241D";
-const COAST = "#4A4638";
+const LANDF = "#302C22";
+const COAST = "#5E5747";
 /** 개통 후 살아 있는 선 */
-const LIVE = "#C9975A";
+const LIVE = "#D9A45E";
 /** 고속선 */
 const FAST = "#7FA8C4";
 /** 끊긴 선 */
-const DEAD = "#5A5347";
+const DEAD = "#6A6252";
 
 /** 노선이 다 그려지는 데 걸리는 연수 — 길이와 무관하게 같은 시간을 준다 */
 const DRAW_YEARS = 1.6;
@@ -159,9 +152,9 @@ export const ShortsRail: React.FC = () => {
 
           {/* 38선 — 이 편의 사건은 전부 이 선 위에서 일어난다 */}
           <line
-            x1={0}
+            x1={228}
             y1={project(127, 38).y}
-            x2={1000}
+            x2={660}
             y2={project(127, 38).y}
             stroke={cut ? INK.oxide : "#4A4638"}
             strokeWidth={u(cut ? 3 : 1.8)}
@@ -240,32 +233,24 @@ export const ShortsRail: React.FC = () => {
       {mapIn > 0.5 && ev && (
         <div style={{ position: "absolute", bottom: 300, left: 60, right: 60 }}>
           <div style={{ height: 1, background: "#3B342A", marginBottom: 14 }} />
-          <div style={{ color: C.dim, fontSize: 27, fontWeight: 700 }}>
-            서울에서 기차로 갈 수 있는 가장 북쪽
-          </div>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 14 }}>
-            <span
-              style={{
-                color: INK.brass,
-                fontSize: 84,
-                fontWeight: 900,
-                lineHeight: 1.1,
-              }}
-            >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "baseline",
+              gap: 12,
+              color: C.dim,
+              fontSize: 27,
+              fontWeight: 700,
+            }}
+          >
+            <span>서울에서 갈 수 있는 가장 북쪽</span>
+            <span style={{ color: INK.brass, fontSize: 40, fontWeight: 900 }}>
               {north.name}
             </span>
-            <span
-              style={{
-                color: C.dim,
-                fontSize: 38,
-                fontWeight: 700,
-                fontVariantNumeric: "tabular-nums",
-              }}
-            >
+            <span style={{ fontVariantNumeric: "tabular-nums" }}>
               북위 {north.lat.toFixed(2)}°
             </span>
           </div>
-
           <Typed
             text={ev.title}
             start={frameOfYear(ev.year)}

@@ -278,25 +278,31 @@ export interface KWEvent {
   /** 남측(한국·유엔) 국면이면 true */
   south?: boolean;
   impact?: number;
+  /**
+   * 카메라가 볼 곳 [경도, 위도]와 배율.
+   * 샷을 따로 적으면 자막과 어긋난다. 사건이 곧 구도가 되게 여기 붙인다.
+   */
+  focus?: [number, number];
+  zoom?: number;
 }
 
 export const KW_EVENTS: KWEvent[] = [
-  { day: 0, title: "남침", detail: "북한군, 38선 전역에서 남침", impact: 1 },
-  { day: 3, title: "서울 함락", detail: "개전 사흘 만에 수도 함락", impact: 0.9 },
-  { day: 25, title: "대전 함락", detail: "전선은 계속 남쪽으로", impact: 0.7 },
-  { day: 52, title: "낙동강 방어선", detail: "국토의 10%만 남다", impact: 1 },
-  { day: 82, title: "인천상륙작전", detail: "전세를 단번에 뒤집다", south: true, impact: 1 },
-  { day: 95, title: "서울 수복", detail: "3개월 만에 수도를 되찾다", south: true, impact: 0.9 },
-  { day: 116, title: "평양 점령", detail: "국군·유엔군 북진", south: true, impact: 0.8 },
-  { day: 123, title: "압록강 도달", detail: "초산, 전쟁의 최북단", south: true, impact: 1 },
-  { day: 145, title: "중국군 참전", detail: "20만 대군, 전선이 다시 뒤집히다", impact: 1 },
-  { day: 155, title: "장진호", detail: "영하 30도의 철수전", impact: 0.9 },
-  { day: 182, title: "흥남 철수", detail: "피난민 9만여 명을 배에 태우다", south: true, impact: 0.9 },
-  { day: 193, title: "1·4 후퇴", detail: "서울을 다시 내주다", impact: 1 },
-  { day: 262, title: "서울 재수복", detail: "전선이 38선으로 돌아오다", south: true, impact: 0.8 },
-  { day: 380, title: "휴전 회담", detail: "2년간의 고지전이 시작되다" },
-  { day: 855, title: "백마고지", detail: "열흘간 주인이 스물네 번 바뀌다", south: true, impact: 0.9 },
-  { day: 1128, title: "정전협정", detail: "3년 1개월 만에 전선은 제자리로", impact: 1 },
+  { day: 0, title: "남침", detail: "북한군, 38선 전역에서 남침", impact: 1, focus: [127.20, 38.00], zoom: 2.4 },
+  { day: 3, title: "서울 함락", detail: "개전 사흘 만에 수도 함락", impact: 0.9, focus: [126.98, 37.50], zoom: 3.0 },
+  { day: 25, title: "대전 함락", detail: "전선은 계속 남쪽으로", impact: 0.7, focus: [127.38, 36.33], zoom: 2.7 },
+  { day: 52, title: "낙동강 방어선", detail: "국토의 10%만 남다", impact: 1, focus: [128.60, 35.60], zoom: 3.0 },
+  { day: 82, title: "인천상륙작전", detail: "전세를 단번에 뒤집다", south: true, impact: 1, focus: [126.63, 37.47], zoom: 3.2 },
+  { day: 95, title: "서울 수복", detail: "3개월 만에 수도를 되찾다", south: true, impact: 0.9, focus: [126.98, 37.55], zoom: 3.0 },
+  { day: 116, title: "평양 점령", detail: "국군·유엔군 북진", south: true, impact: 0.8, focus: [125.75, 39.02], zoom: 2.6 },
+  { day: 123, title: "압록강 도달", detail: "초산, 전쟁의 최북단", south: true, impact: 1, focus: [125.90, 40.60], zoom: 2.3 },
+  { day: 145, title: "중국군 참전", detail: "20만 대군, 전선이 다시 뒤집히다", impact: 1, focus: [126.40, 40.20], zoom: 2.1 },
+  { day: 155, title: "장진호", detail: "영하 30도의 철수전", impact: 0.9, focus: [127.25, 40.45], zoom: 3.0 },
+  { day: 182, title: "흥남 철수", detail: "피난민 9만여 명을 배에 태우다", south: true, impact: 0.9, focus: [127.60, 39.83], zoom: 3.0 },
+  { day: 193, title: "1·4 후퇴", detail: "서울을 다시 내주다", impact: 1, focus: [127.00, 37.30], zoom: 2.3 },
+  { day: 262, title: "서울 재수복", detail: "전선이 38선으로 돌아오다", south: true, impact: 0.8, focus: [126.98, 37.60], zoom: 2.6 },
+  { day: 380, title: "휴전 회담", detail: "2년간의 고지전이 시작되다", focus: [127.30, 38.20], zoom: 2.4 },
+  { day: 855, title: "백마고지", detail: "열흘간 주인이 스물네 번 바뀌다", south: true, impact: 0.9, focus: [127.10, 38.30], zoom: 3.2 },
+  { day: 1128, title: "정전협정", detail: "3년 1개월 만에 전선은 제자리로", impact: 1, focus: [127.40, 38.10], zoom: 1.9 },
 ];
 
 export function kwEventAt(day: number): KWEvent | null {

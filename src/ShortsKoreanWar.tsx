@@ -14,13 +14,14 @@ import {
   KW_POCKETS,
   KW_GUERRILLA,
   KW_CITIES,
+  KW_EVENTS,
   TOTAL_DAYS,
   dateLabel,
   kwBattlesUpTo,
   kwEventAt,
 } from "./data/korean-war";
 import { project } from "./data/places";
-import { Shot, cameraAt } from "./mapcam";
+import { Shot, cameraAt, shotsFromEvents } from "./mapcam";
 import { C, FPS } from "./theme";
 import { Grain } from "./Grain";
 import { Typed } from "./Typed";
@@ -90,27 +91,19 @@ function dayAt(frame: number): number {
 }
 
 /**
- * 카메라 샷.
+ * 카메라 샷 — 연표에서 만든다.
  *
- * 전선이 뒤집히는 네 순간을 각각 다른 거리에서 본다. 낙동강까지 밀릴
- * 때는 부산 쪽으로 조이고, 압록강에 닿을 때는 확 빠져서 그 거리를
- * 보여준다. 좌표는 지도 좌표계(0..1000)이고 project()로 확인했다.
- *
- * 배율 1.75면 반도 전체가 세로로 꽉 찬다. 지금까지는 지도를 상자에
- * 넣어 화면의 4분의 1만 쓰고 있었다.
+ * 손으로 적은 프레임 숫자로 샷을 두면 자막과 화면이 어긋난다.
+ * 사건이 뜨는 프레임과 그 사건이 벌어진 좌표를 같은 곳에서 가져온다.
+ * LEAD만큼 먼저 도착해야 자막을 읽는 동안 화면이 안 흐른다.
  */
-const SHOTS: Shot[] = [
-  { at: HOOK - 20, cx: 460, cy: 500, z: 1.55 },
-  { at: HOOK + 40, cx: 462, cy: 530, z: 2.15 },   // 38선 남침
-  { at: 375, cx: 596, cy: 742, z: 3.05 },         // 낙동강 방어선
-  { at: 521, cx: 436, cy: 566, z: 3.35 },         // 인천상륙
-  { at: 600, cx: 452, cy: 548, z: 3.0 },          // 서울 수복
-  { at: 729, cx: 386, cy: 268, z: 2.35 },         // 압록강
-  { at: 908, cx: 486, cy: 342, z: 2.95 },         // 흥남 철수
-  { at: 990, cx: 458, cy: 556, z: 2.3 },          // 1·4후퇴
-  { at: 1140, cx: 460, cy: 505, z: 1.72 },        // 고지전 — 빠진다
-  { at: 1305, cx: 460, cy: 512, z: 1.66 },
-];
+const SHOTS: Shot[] = shotsFromEvents(
+  KW_EVENTS.filter((e) => e.focus).map((e) => {
+    const q = project(e.focus![0], e.focus![1]);
+    return { frame: Math.max(HOOK + 8, frameOfDay(e.day)), cx: q.x, cy: q.y, z: e.zoom ?? 2.4 };
+  }),
+  { lead: 18, hold: 30, first: { at: HOOK - 24, cx: 460, cy: 500, z: 1.5 } }
+);
 
 const NORTH_C = "#B33A2B";
 const SOUTH_C = "#4C7A9B";

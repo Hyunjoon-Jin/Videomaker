@@ -50,6 +50,15 @@ const FRONT = makePolyFront(IMJIN_FRONT, "south");
 const JEOLLA = makePocket(JEOLLA_POCKET, JEOLLA_FROM, JEOLLA_TO, 2.5);
 
 /**
+ * 전라도 테두리는 실제 도 경계로 그린다.
+ * 점령 영역에서 빼내는 데는 손으로 만든 다각형(JEOLLA_POCKET)을 쓰지만,
+ * 그 다각형을 그대로 선으로 그리면 도 모양과 안 맞아 화면에 뜬금없는
+ * 파란 점선이 하나 떠 있는 것으로 보인다.
+ */
+const JEOLLA_PATH: string =
+  PROVINCES.find((p) => p.id === "jeolla")?.d ?? "";
+
+/**
  * 전쟁 지도 — 점령권을 곡선으로 그린다.
  *
  * 도 폴리곤을 칠하지 않는다. 행정 경계에 맞추면 도 하나가 통째로 켜졌다
@@ -103,14 +112,14 @@ export const WarMap: React.FC<Props> = ({
             strokeWidth={u(4)}
             opacity={0.85}
           />
-          {jeollaD && (
+          {jeollaA > 0 && (
             <path
-              d={jeollaD}
+              d={JEOLLA_PATH}
               fill="none"
               stroke={JOSEON_C}
-              strokeWidth={3.2}
+              strokeWidth={u(4)}
               strokeDasharray={`${u(11)} ${u(8)}`}
-              opacity={jeollaA}
+              opacity={jeollaA * 0.9}
             />
           )}
         </g>
@@ -142,6 +151,10 @@ export const WarMap: React.FC<Props> = ({
         {ROUTES.map((r) => {
           const prog = routeProgress(r, month);
           if (prog <= 0) return null;
+          // 도착하고 나면 서서히 지운다. 남겨두면 몇 년 뒤 화면에도
+          // 그때의 행군로가 그대로 떠 있게 된다.
+          const gone = Math.max(0, Math.min(1, (month - (r.to + 1.5)) / 3));
+          if (gone >= 1) return null;
           const pts = smooth(r.pts.map((p) => [p.x, p.y] as [number, number]), 16);
           const n = Math.max(2, Math.round(pts.length * prog));
           const d = pts
@@ -156,10 +169,16 @@ export const WarMap: React.FC<Props> = ({
                 fill="none"
                 stroke={r.color}
                 strokeWidth={u(3.3)}
-                strokeDasharray="9 7"
-                opacity={0.9}
+                strokeDasharray={`${u(11)} ${u(9)}`}
+                opacity={0.9 * (1 - gone)}
               />
-              <circle cx={head[0]} cy={head[1]} r={4.5} fill={r.color} />
+              <circle
+                cx={head[0]}
+                cy={head[1]}
+                r={u(6)}
+                fill={r.color}
+                opacity={1 - gone}
+              />
             </g>
           );
         })}
@@ -222,9 +241,9 @@ export const WarMap: React.FC<Props> = ({
         {/* 전라도 라벨 — 지켜낸 도라는 것이 읽혀야 한다 */}
         {jeollaA > 0 && (
           <text
-            x={352}
-            y={866}
-            textAnchor="end"
+            x={330}
+            y={800}
+            textAnchor="middle"
             fontSize={u(28)}
             fontWeight={900}
             fill={JOSEON_C}
