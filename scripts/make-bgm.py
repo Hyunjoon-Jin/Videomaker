@@ -23,6 +23,8 @@ import os
 import struct
 import wave
 
+import re
+
 import numpy as np
 
 import sys
@@ -38,23 +40,79 @@ SR = 48000
 #
 # 각 섹션: (시작, 끝, 드론 주파수, bpm 시작, bpm 끝)
 #   bpm이 None이면 북 없이 드론만 — "아무 일도 없음"을 소리로 표현한다.
+
+# ── 연표에서 구간을 계산한다 ──────────────────────────
+# 사건마다 체류 시간을 주는 방식으로 바꾸면서 영상 길이가 사건 수에 따라
+# 정해지게 됐다. 경계를 손으로 적어두면 사건 하나만 늘려도 음악이
+# 전부 어긋난다. 컴포지션과 같은 규칙으로 여기서 다시 계산한다.
+FPS = 30
+
+
+def read_beats(path: str, key: str):
+    """TS 연표에서 (값, impact)를 뽑는다. 형식이 단순해 정규식으로 충분하다."""
+    src = open(path, encoding="utf-8").read()
+    i = src.index(key)
+    j = src.index("\n];", i)
+    rows = []
+    for line in src[i:j].splitlines():
+        m = re.search(r"\b(?:month|day|year):\s*([0-9.]+)", line)
+        if not m:
+            continue
+        imp = re.search(r"impact:\s*([0-9.]+)", line)
+        rows.append((float(m.group(1)), float(imp.group(1)) if imp else 0.4))
+    rows.sort(key=lambda r: r[0])
+    return rows
+
+
+def layout(rows, hook: float):
+    """src/beats.ts의 beatOf·layoutBeats와 같은 규칙."""
+    out, f = [], hook * FPS
+    for _, imp in rows:
+        big = imp >= 0.85
+        travel = round((1.05 if big else 0.85) * FPS)
+        hold = round((3.0 if big else 2.4) * FPS)
+        t1 = f + travel
+        t2 = t1 + hold
+        out.append((t1 / FPS, t2 / FPS, imp))
+        f = t2
+    return out
+
+
+def build(path: str, key: str, hook: float, tail: float, bases, quiet_idx=None):
+    """연표에서 프리셋 한 벌을 만든다."""
+    beats = layout(read_beats(path, key), hook)
+    dur = beats[-1][1] + tail
+    n = len(beats)
+    # 사건을 다섯 덩어리로 묶어 악곡 구간으로 삼는다
+    groups = 5
+    edges = [round(k * n / groups) for k in range(groups + 1)]
+    if quiet_idx is None:
+        # 가장 조용한 덩어리를 자동으로 고른다 — 사건의 무게가 제일 가벼운 곳
+        avg = [
+            sum(b[2] for b in beats[edges[k]:edges[k + 1]]) / max(1, edges[k + 1] - edges[k])
+            for k in range(groups)
+        ]
+        quiet_idx = avg.index(min(avg))
+    sections = []
+    for k in range(groups):
+        a = hook if k == 0 else beats[edges[k] - 1][1]
+        b = beats[edges[k + 1] - 1][1]
+        if k == quiet_idx:
+            sections.append((round(a, 1), round(b, 1), bases[k], None, None))
+        else:
+            sections.append((round(a, 1), round(b, 1), bases[k],
+                             78 + k * 8, 90 + k * 9))
+    # 큰 사건에만 타격을 놓는다. 전부 때리면 다시 '탕탕'이 된다.
+    accents = [(round(t1, 1), min(1.0, imp)) for t1, _, imp in beats if imp >= 0.85]
+    return {"dur": round(dur, 1), "hook": hook, "sections": sections, "accents": accents}
+
+
 PRESETS = {
     # 훅이 4.5초다. 첫 문장을 다 쓰고 한 박자 쉰 뒤 숫자가 뜨는 시간까지
     # 포함한 값이라, 여기 경계는 각 컴포지션의 HOOK/LEGS와 같아야 한다.
     "imjin": {
         "out": "public/bgm.wav",
-        "dur": 40.5,
-        "hook": 4.5,
-        "sections": [
-            (4.5, 13.5, 41.2, 82, 116),    # 1592 북상 — 가속
-            (13.5, 21.5, 61.7, 116, 104),  # 1593 반격 — 5도 위
-            (21.5, 25.5, 36.7, None, None),  # 강화 협상 — 정지
-            (25.5, 33.5, 38.9, 104, 138),  # 1597 — 가장 빠름
-            (33.5, 39.5, 41.2, 100, 76),   # 종결
-        ],
-        "accents": [(6.7, 0.8), (9.1, 0.9), (11.5, 1.0),
-                    (15.3, 0.9), (18.1, 1.0),
-                    (26.7, 0.9), (28.9, 1.0), (30.7, 1.0)],
+        **build("src/data/war.ts", "export const WAR_EVENTS", 4.5, 1.6, [41.2, 61.7, 36.7, 38.9, 41.2]),
         "typing": [
             ("1592년 음력 5월 3일, 일본군 한양 입성", 4, 30, 0.42),
             ("11", 42, 8, 0.85),
@@ -64,21 +122,7 @@ PRESETS = {
     },
     "kw": {
         "out": "public/bgm-kw.wav",
-        "dur": 43.5,
-        "hook": 4.5,
-        "sections": [
-            (4.5, 12.5, 41.2, 84, 124),    # 남침 → 낙동강, 조여든다
-            (12.5, 19.5, 61.7, 124, 108),  # 인천상륙 → 서울 수복, 5도 위
-            (19.5, 25.5, 65.4, 108, 98),   # 북진 → 압록강
-            (25.5, 32.5, 36.7, 98, 142),   # 중공군 → 1·4후퇴, 가장 빠르고 낮게
-            (32.5, 37.5, 41.2, 142, 92),   # 재수복 → 38선 고착
-            (37.5, 42.5, 38.9, None, None),  # 고지전 2년 — 정지
-        ],
-        "accents": [(5.5, 1.0), (11.5, 1.0),      # 남침·낙동강
-                    (13.5, 1.0), (17.5, 0.9),     # 인천상륙·서울수복
-                    (24.1, 1.0),                  # 압록강
-                    (26.5, 1.0), (31.3, 1.0),     # 중공군·1·4후퇴
-                    (41.7, 1.0)],                 # 정전
+        **build("src/data/korean-war.ts", "export const KW_EVENTS", 4.5, 1.6, [41.2, 61.7, 65.4, 36.7, 41.2]),
         "typing": [
             ("1950년 6월 25일 새벽, 38선", 4, 30, 0.42),
             ("40", 40, 8, 0.85),
@@ -88,25 +132,7 @@ PRESETS = {
     },
     "rail": {
         "out": "public/bgm-rail.wav",
-        "dur": 44.5,
-        "hook": 4.5,
-        # 훅 4.5 + 9 + 7 + 6 + 5 + 5 + 6 + 꼬리 2 = 44.5초
-        # 1944~1954 구간(20.5~26.5초)이 끊기는 대목이라 북을 뺀다.
-        # 철도는 전투가 아니다. 북을 몰아치는 대신 규칙적인 맥박으로 두고,
-        # 선이 끊기는 6초 동안 그 맥박을 통째로 빼서 정적을 만든다.
-        "sections": [
-            (4.5, 13.5, 41.2, 76, 92),     # 1899~1915 선이 뻗는다
-            (13.5, 20.5, 43.7, 92, 104),   # 1915~1944 가장 멀리
-            (20.5, 26.5, 32.7, None, None),  # 분단과 전쟁 — 맥박이 멈춘다
-            (26.5, 31.5, 38.9, 72, 88),    # 1954~2001 다시 놓는다
-            (31.5, 42.5, 46.2, 88, 106),   # 도라산·고속선
-        ],
-        "accents": [(8.4, 0.8),            # 경의선
-                    (16.6, 0.9),           # 함경선
-                    (21.1, 1.0),           # 38선
-                    (24.1, 0.9),           # 6·25
-                    (32.3, 1.0),           # 도라산
-                    (34.0, 0.8)],          # KTX
+        **build("src/data/rail.ts", "export const RAIL_EVENTS", 4.5, 1.8, [41.2, 43.7, 32.7, 38.9, 46.2]),
         "typing": [
             ("서울역에서 신의주행 표를 팔던", 4, 30, 0.42),
             ("39", 38, 8, 0.85),

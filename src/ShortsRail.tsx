@@ -18,7 +18,8 @@ import {
   splitAt,
 } from "./data/rail";
 import { project } from "./data/places";
-import { Shot, cameraAt, shotsFromEvents } from "./mapcam";
+import { Shot, cameraAt } from "./mapcam";
+import { beatIndexAt, beatOf, layoutBeats, valueAtBeats } from "./beats";
 import { C, FPS, INK } from "./theme";
 import { Grain } from "./Grain";
 import { Typed } from "./Typed";
@@ -30,68 +31,38 @@ const VIEWBOX: string = provinces.viewBox;
 const HOOK = Math.round(4.5 * FPS);
 
 /**
- * 127년을 어떻게 배분하는가.
- * 등속으로 흘리면 노선이 몰린 1899~1945에 아무 시간도 안 돌아간다.
- * 선이 놓이는 구간은 느리게, 아무것도 안 놓이는 구간은 빠르게 간다.
+ * 사건마다 시간을 준다.
+ * 연도 구간에 초를 배분하면 도라산(2002)과 KTX(2004)가 0.6초 간격으로
+ * 지나간다. 자막을 읽을 시간이 없다.
  */
-const LEGS: Array<{ from: number; to: number; secs: number }> = [
-  { from: 1899, to: 1915, secs: 9 },   // 경인·경부·경의·호남·경원
-  { from: 1915, to: 1944, secs: 7 },   // 함경·전라·중앙
-  { from: 1944, to: 1954, secs: 6 },   // 분단과 전쟁 — 끊기는 구간
-  { from: 1954, to: 2001, secs: 5 },   // 남쪽만 촘촘해진다
-  { from: 2001, to: 2007, secs: 5 },   // 도라산과 KTX가 2년 사이에 몰려 있다
-  { from: 2007, to: 2026, secs: 6 },   // 고속선 확장
-];
-
-const LEG_FRAMES = LEGS.map((l) => Math.round(l.secs * FPS));
-const TAIL = Math.round(2 * FPS);
-export const RAIL_DURATION = HOOK + LEG_FRAMES.reduce((a, b) => a + b, 0) + TAIL;
-
-/**
- * 연도 → 프레임. yearAt의 역함수.
- *
- * 사건의 충격을 '몇 년 지났나'로 재면 구간마다 지속 시간이 달라진다.
- * 1954~2001 구간은 초당 9년이 흘러서 2년짜리 감쇠가 0.2초 만에 끝난다.
- * 프레임으로 재야 어느 구간에서든 같은 길이로 보인다.
- */
-function frameOfYear(y: number): number {
-  let f = HOOK;
-  for (let i = 0; i < LEGS.length; i++) {
-    if (y <= LEGS[i].to) {
-      const t = (y - LEGS[i].from) / (LEGS[i].to - LEGS[i].from);
-      return f + Math.max(0, Math.min(1, t)) * LEG_FRAMES[i];
-    }
-    f += LEG_FRAMES[i];
-  }
-  return f;
-}
+const BEATS = RAIL_EVENTS.map((e) => beatOf(e.year, e.impact ?? 0.4, FPS));
+const SPANS = layoutBeats(BEATS, HOOK, 0.22);
+const TAIL = Math.round(1.8 * FPS);
+export const RAIL_DURATION = SPANS[SPANS.length - 1].t2 + TAIL;
 
 function yearAt(frame: number): number {
-  let f = frame - HOOK;
-  if (f <= 0) return LEGS[0].from;
-  for (let i = 0; i < LEGS.length; i++) {
-    if (f <= LEG_FRAMES[i]) {
-      const t = f / LEG_FRAMES[i];
-      return LEGS[i].from + (LEGS[i].to - LEGS[i].from) * t;
-    }
-    f -= LEG_FRAMES[i];
-  }
-  return LEGS[LEGS.length - 1].to;
+  return valueAtBeats(SPANS, frame, 2026);
 }
 
-/**
- * 카메라 샷 — 연표에서 만든다.
- *
- * 손으로 프레임을 찍으면 자막과 화면이 어긋난다. 사건이 뜨는 프레임과
- * 그 사건이 벌어진 좌표를 같은 곳에서 가져오면 어긋날 수가 없다.
- */
-const SHOTS: Shot[] = shotsFromEvents(
-  RAIL_EVENTS.filter((e) => e.focus).map((e) => {
-    const q = project(e.focus![0], e.focus![1]);
-    return { frame: Math.max(HOOK + 8, frameOfYear(e.year)), cx: q.x, cy: q.y, z: e.zoom ?? 2.2 };
+/** 사건이 화면에 뜨는 프레임 = 카메라가 도착하는 프레임 */
+function frameOfEvent(i: number): number {
+  return SPANS[i]?.t1 ?? HOOK;
+}
+
+/** 카메라 샷 — 이동 구간에 움직이고 체류 구간에 선다 */
+const SHOTS: Shot[] = [
+  { at: HOOK - 24, cx: 455, cy: 520, z: 1.5 },
+  ...SPANS.flatMap((sp, i) => {
+    const e = RAIL_EVENTS[i];
+    if (!e.focus) return [];
+    const q = project(e.focus[0], e.focus[1]);
+    const z = e.zoom ?? 2.2;
+    return [
+      { at: sp.t1, cx: q.x, cy: q.y, z },
+      { at: sp.t2, cx: q.x, cy: q.y, z },
+    ];
   }),
-  { lead: 18, hold: 30, first: { at: HOOK - 24, cx: 455, cy: 520, z: 1.5 } }
-);
+];
 
 const LANDF = "#302C22";
 const COAST = "#5E5747";
@@ -112,11 +83,12 @@ export const ShortsRail: React.FC = () => {
   const frame = useCurrentFrame();
 
   const year = yearAt(frame);
-  const ev = railEventAt(year);
+  const bi = beatIndexAt(SPANS, frame);
+  const ev = bi >= 0 ? RAIL_EVENTS[bi] : null;
   const north = northmostAt(year);
   const cut = year >= CUT_YEAR;
   /** 끊기는 순간의 충격 — 사건 직후에만 실린다 */
-  const near = ev ? Math.max(0, 1 - (frame - frameOfYear(ev.year)) / 26) : 0;
+  const near = bi >= 0 ? Math.max(0, 1 - (frame - SPANS[bi].t1) / 26) : 0;
   const impact = (ev?.impact ?? 0) * near;
 
   const hookOut = interpolate(frame, [HOOK - 14, HOOK], [1, 0], {
@@ -253,7 +225,7 @@ export const ShortsRail: React.FC = () => {
           </div>
           <Typed
             text={ev.title}
-            start={frameOfYear(ev.year)}
+            start={frameOfEvent(bi)}
             cps={14}
             style={{
               display: "block",
@@ -268,7 +240,7 @@ export const ShortsRail: React.FC = () => {
           />
           <Typed
             text={ev.detail}
-            start={frameOfYear(ev.year) + Math.ceil((ev.title.length * 30) / 14) + 5}
+            start={frameOfEvent(bi) + Math.ceil((ev.title.length * 30) / 14) + 5}
             cps={26}
             style={{
               display: "block",

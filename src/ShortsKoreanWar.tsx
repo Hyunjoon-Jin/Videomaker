@@ -21,7 +21,8 @@ import {
   kwEventAt,
 } from "./data/korean-war";
 import { project } from "./data/places";
-import { Shot, cameraAt, shotsFromEvents } from "./mapcam";
+import { Shot, cameraAt } from "./mapcam";
+import { beatIndexAt, beatOf, layoutBeats, valueAtBeats } from "./beats";
 import { C, FPS } from "./theme";
 import { Grain } from "./Grain";
 import { Typed } from "./Typed";
@@ -48,62 +49,38 @@ const ZONES = KW_GUERRILLA.map((z) => ({
 const HOOK = Math.round(4.5 * FPS);
 
 /**
- * 3년 1개월을 어떻게 배분하는가.
- * 전선이 뒤집히는 1950년 6개월에 시간의 대부분을 준다.
- * 1951~53 고지전 2년은 전선이 거의 안 움직이므로 짧게 흘린다.
+ * 사건마다 시간을 준다.
+ * 날짜 구간에 초를 배분하면 중국군 참전과 장진호처럼 열흘 차이 나는
+ * 사건들이 1초 만에 지나간다. 자막을 다 읽기 전에 다음 자막이 온다.
  */
-const LEGS: Array<{ from: number; to: number; secs: number }> = [
-  { from: 0, to: 52, secs: 8 },      // 남침 → 낙동강
-  { from: 52, to: 95, secs: 7 },     // 인천상륙 → 서울 수복
-  { from: 95, to: 130, secs: 6 },    // 북진 → 압록강
-  { from: 130, to: 193, secs: 7 },   // 중공군 → 1·4후퇴
-  { from: 193, to: 330, secs: 5 },   // 재수복 → 38선 고착
-  { from: 330, to: TOTAL_DAYS, secs: 5 }, // 고지전 2년
-];
-
-const LEG_FRAMES = LEGS.map((l) => Math.round(l.secs * FPS));
-export const KW_DURATION = HOOK + LEG_FRAMES.reduce((a, b) => a + b, 0) + 30;
-
-/** 일 → 프레임. 사건이 화면에 뜬 시점을 알아야 글자를 그때부터 쓴다. */
-function frameOfDay(d: number): number {
-  let f = HOOK;
-  for (let i = 0; i < LEGS.length; i++) {
-    if (d <= LEGS[i].to) {
-      const t = (d - LEGS[i].from) / (LEGS[i].to - LEGS[i].from);
-      return f + Math.max(0, Math.min(1, t)) * LEG_FRAMES[i];
-    }
-    f += LEG_FRAMES[i];
-  }
-  return f;
-}
+const BEATS = KW_EVENTS.map((e) => beatOf(e.day, e.impact ?? 0.4, FPS));
+const SPANS = layoutBeats(BEATS, HOOK, 0.22);
+const TAIL = Math.round(1.6 * FPS);
+export const KW_DURATION = SPANS[SPANS.length - 1].t2 + TAIL;
 
 function dayAt(frame: number): number {
-  let f = frame - HOOK;
-  if (f <= 0) return 0;
-  for (let i = 0; i < LEGS.length; i++) {
-    if (f <= LEG_FRAMES[i]) {
-      const t = f / LEG_FRAMES[i];
-      return LEGS[i].from + (LEGS[i].to - LEGS[i].from) * t;
-    }
-    f -= LEG_FRAMES[i];
-  }
-  return TOTAL_DAYS;
+  return valueAtBeats(SPANS, frame, TOTAL_DAYS);
 }
 
-/**
- * 카메라 샷 — 연표에서 만든다.
- *
- * 손으로 적은 프레임 숫자로 샷을 두면 자막과 화면이 어긋난다.
- * 사건이 뜨는 프레임과 그 사건이 벌어진 좌표를 같은 곳에서 가져온다.
- * LEAD만큼 먼저 도착해야 자막을 읽는 동안 화면이 안 흐른다.
- */
-const SHOTS: Shot[] = shotsFromEvents(
-  KW_EVENTS.filter((e) => e.focus).map((e) => {
-    const q = project(e.focus![0], e.focus![1]);
-    return { frame: Math.max(HOOK + 8, frameOfDay(e.day)), cx: q.x, cy: q.y, z: e.zoom ?? 2.4 };
+/** 사건이 화면에 뜨는 프레임 = 카메라가 도착하는 프레임 */
+function frameOfEvent(i: number): number {
+  return SPANS[i]?.t1 ?? HOOK;
+}
+
+/** 카메라 샷 — 이동 구간에 움직이고 체류 구간에 선다 */
+const SHOTS: Shot[] = [
+  { at: HOOK - 24, cx: 460, cy: 500, z: 1.5 },
+  ...SPANS.flatMap((sp, i) => {
+    const e = KW_EVENTS[i];
+    if (!e.focus) return [];
+    const q = project(e.focus[0], e.focus[1]);
+    const z = e.zoom ?? 2.4;
+    return [
+      { at: sp.t1, cx: q.x, cy: q.y, z },
+      { at: sp.t2, cx: q.x, cy: q.y, z },
+    ];
   }),
-  { lead: 18, hold: 30, first: { at: HOOK - 24, cx: 460, cy: 500, z: 1.5 } }
-);
+];
 
 const NORTH_C = "#B33A2B";
 const SOUTH_C = "#4C7A9B";
@@ -115,8 +92,9 @@ export const ShortsKoreanWar: React.FC = () => {
   const frame = useCurrentFrame();
 
   const day = dayAt(frame);
-  const ev = kwEventAt(day);
-  const near = ev ? Math.max(0, 1 - (day - ev.day) / 14) : 0;
+  const bi = beatIndexAt(SPANS, frame);
+  const ev = bi >= 0 ? KW_EVENTS[bi] : null;
+  const near = bi >= 0 ? Math.max(0, 1 - (frame - SPANS[bi].t1) / 26) : 0;
   const impact = (ev?.impact ?? 0) * near;
 
   const hookOut = interpolate(frame, [HOOK - 14, HOOK], [1, 0], {
@@ -349,7 +327,7 @@ export const ShortsKoreanWar: React.FC = () => {
           </div>
           <Typed
             text={ev.title}
-            start={frameOfDay(ev.day)}
+            start={frameOfEvent(bi)}
             cps={14}
             style={{
               display: "block",
@@ -364,7 +342,7 @@ export const ShortsKoreanWar: React.FC = () => {
           />
           <Typed
             text={ev.detail}
-            start={frameOfDay(ev.day) + Math.ceil((ev.title.length * 30) / 14) + 5}
+            start={frameOfEvent(bi) + Math.ceil((ev.title.length * 30) / 14) + 5}
             cps={26}
             style={{
               display: "block",

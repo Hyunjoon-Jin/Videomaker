@@ -4,7 +4,8 @@ import { WarMap } from "./ProvinceMap";
 import { TOTAL_MONTHS, WAR_EVENTS, monthLabel, warEventAt } from "./data/war";
 import { battlesUpTo } from "./data/battles";
 import { project } from "./data/places";
-import { Shot, cameraAt, shotsFromEvents } from "./mapcam";
+import { Shot, cameraAt } from "./mapcam";
+import { beatIndexAt, beatOf, layoutBeats, valueAtBeats } from "./beats";
 import { C, FPS } from "./theme";
 import { Grain } from "./Grain";
 import { Typed } from "./Typed";
@@ -13,66 +14,48 @@ import { useFonts } from "./fonts";
 const HOOK = Math.round(4.5 * FPS);
 
 /**
- * 7년을 어떻게 배분하는가.
- * 등속으로 흘리면 아무 일 없는 1594~1596이 전체의 절반을 먹는다.
- * 사건이 몰린 구간은 느리게, 소강기는 빠르게 — 구간별로 속도를 정한다.
+ * 사건마다 시간을 준다.
+ *
+ * 예전에는 7년을 다섯 구간으로 나눠 초를 배분했다. 그러면 사건이 몰린
+ * 구간에서 자막이 1초도 못 버틴다. 한산도 대첩과 이치 전투는 음력으로
+ * 보름 차이라 1.3초 만에 넘어갔다. 읽을 수가 없다.
+ *
+ * 지금은 사건 하나가 체류 시간을 갖고, 영상 길이는 사건 수가 정한다.
+ * 길이를 먼저 정하고 사건을 우겨넣는 게 애초에 순서가 틀렸다.
  */
-const LEGS: Array<{ from: number; to: number; secs: number }> = [
-  { from: 0, to: 4, secs: 9 },    // 1592 개전~최대진출
-  { from: 4, to: 12, secs: 8 },   // 1593 반격~수복
-  { from: 12, to: 60, secs: 4 },  // 1594~96 소강 — 빠르게 흘린다
-  { from: 60, to: 67, secs: 8 },  // 1597 정유재란~명량
-  { from: 67, to: 79, secs: 6 },  // 1598 종결
-];
+const BEATS = WAR_EVENTS.map((e) => beatOf(e.month, e.impact ?? 0.4, FPS));
+const SPANS = layoutBeats(BEATS, HOOK, 0.22);
+const TAIL = Math.round(1.6 * FPS);
+export const WAR_DURATION = SPANS[SPANS.length - 1].t2 + TAIL;
 
-const LEG_FRAMES = LEGS.map((l) => Math.round(l.secs * FPS));
-export const WAR_DURATION = HOOK + LEG_FRAMES.reduce((a, b) => a + b, 0) + 30;
-
-/** 프레임 → 개월. 구간별 속도가 다르지만 전체적으로는 단조 증가. */
-/** 개월 → 프레임. 사건이 화면에 뜬 시점을 알아야 글자를 그때부터 쓴다. */
-function frameOfMonth(m: number): number {
-  let f = HOOK;
-  for (let i = 0; i < LEGS.length; i++) {
-    if (m <= LEGS[i].to) {
-      const t = (m - LEGS[i].from) / (LEGS[i].to - LEGS[i].from);
-      return f + Math.max(0, Math.min(1, t)) * LEG_FRAMES[i];
-    }
-    f += LEG_FRAMES[i];
-  }
-  return f;
+/** 프레임 → 개월 */
+function monthAt(frame: number): number {
+  return valueAtBeats(SPANS, frame, TOTAL_MONTHS);
 }
 
-function monthAt(frame: number): number {
-  let f = frame - HOOK;
-  if (f <= 0) return 0;
-  for (let i = 0; i < LEGS.length; i++) {
-    if (f <= LEG_FRAMES[i]) {
-      const t = f / LEG_FRAMES[i];
-      return LEGS[i].from + (LEGS[i].to - LEGS[i].from) * t;
-    }
-    f -= LEG_FRAMES[i];
-  }
-  return TOTAL_MONTHS;
+/** 사건이 화면에 뜨는 프레임 = 카메라가 도착하는 프레임 */
+function frameOfEvent(i: number): number {
+  return SPANS[i]?.t1 ?? HOOK;
 }
 
 /**
- * 카메라 샷 — 연표에서 만든다.
- *
- * 처음에는 프레임 숫자를 손으로 찍어 샷을 적었는데, 그러면 자막과
- * 화면이 어긋난다. 한산도 대첩 자막이 떠 있는데 카메라는 평안도를
- * 보고 있는 식이다. 사건이 뜨는 프레임과 그 사건이 벌어진 좌표를
- * 같은 곳에서 가져오면 어긋날 수가 없다.
- *
- * 사건보다 살짝 먼저 도착해야 한다. 자막이 뜨는 순간 카메라가
- * 출발하면 글자를 다 읽을 때까지 화면이 흐르고 있다.
+ * 카메라 샷 — 비트에서 그대로 나온다.
+ * 이동 구간에 움직이고 체류 구간에 선다. 자막이 뜨는 프레임과 카메라가
+ * 도착하는 프레임이 같은 값이라 어긋날 수가 없다.
  */
-const SHOTS: Shot[] = shotsFromEvents(
-  WAR_EVENTS.filter((e) => e.focus).map((e) => {
-    const q = project(e.focus![0], e.focus![1]);
-    return { frame: Math.max(HOOK + 8, frameOfMonth(e.month)), cx: q.x, cy: q.y, z: e.zoom ?? 2.4 };
+const SHOTS: Shot[] = [
+  { at: HOOK - 24, cx: 455, cy: 520, z: 1.5 },
+  ...SPANS.flatMap((sp, i) => {
+    const e = WAR_EVENTS[i];
+    if (!e.focus) return [];
+    const q = project(e.focus[0], e.focus[1]);
+    const z = e.zoom ?? 2.4;
+    return [
+      { at: sp.t1, cx: q.x, cy: q.y, z },
+      { at: sp.t2, cx: q.x, cy: q.y, z },
+    ];
   }),
-  { lead: 18, hold: 30, first: { at: HOOK - 24, cx: 455, cy: 520, z: 1.5 } }
-);
+];
 
 export const ShortsWar: React.FC = () => {
   useFonts();
@@ -80,10 +63,11 @@ export const ShortsWar: React.FC = () => {
 
   const month = monthAt(frame);
 
-  const ev = warEventAt(month);
+  const bi = beatIndexAt(SPANS, frame);
+  const ev = bi >= 0 ? WAR_EVENTS[bi] : null;
 
   // 사건 직후에만 충격이 실린다
-  const near = ev ? Math.max(0, 1 - (month - ev.month) * 2.2) : 0;
+  const near = bi >= 0 ? Math.max(0, 1 - (frame - SPANS[bi].t1) / 26) : 0;
   const impact = (ev?.impact ?? 0) * near;
 
   const hookOut = interpolate(frame, [HOOK - 14, HOOK], [1, 0], {
@@ -161,7 +145,7 @@ export const ShortsWar: React.FC = () => {
               한 번에 훑고 끝나서 아무것도 안 남는다. */}
           <Typed
             text={ev.title}
-            start={frameOfMonth(ev.month)}
+            start={frameOfEvent(bi)}
             cps={14}
             style={{
               display: "block",
@@ -176,7 +160,7 @@ export const ShortsWar: React.FC = () => {
           />
           <Typed
             text={ev.detail}
-            start={frameOfMonth(ev.month) + Math.ceil((ev.title.length * 30) / 14) + 5}
+            start={frameOfEvent(bi) + Math.ceil((ev.title.length * 30) / 14) + 5}
             cps={26}
             style={{
               display: "block",

@@ -135,6 +135,9 @@ export const WAR_EVENTS: WarEvent[] = [
   { month: 79, date: "1598년 11월", title: "노량 해전", detail: "이순신이 전사하고 7년 전쟁이 끝나다", win: true, sea: "노량", impact: 1, focus: [127.88, 34.94], zoom: 3.0 },
 ];
 
+// 시간순이 아니면 비트 타임라인이 뒤로 갔다 오는 것처럼 보인다
+WAR_EVENTS.sort((a, b) => a.month - b.month);
+
 export function warEventAt(month: number): WarEvent | null {
   let cur: WarEvent | null = null;
   for (const e of WAR_EVENTS) if (e.month <= month) cur = e;
