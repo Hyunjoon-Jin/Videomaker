@@ -10,7 +10,6 @@ import {
   EA_KOREA,
   EA_LANDS,
   EA_VIEWBOX,
-  ISLETS,
   RAIN_MAX,
   TYPHOONS,
   Typhoon,
@@ -172,26 +171,6 @@ export const ShortsTyphoon: React.FC = () => {
           {EA_KOREA.map((d, i) => (
             <path key={`k${i}`} d={d} fill={KOREA_F} stroke={KOREA_S} strokeWidth={u(2.6)} />
           ))}
-
-          {/* 울릉도·독도 — 축척상 폴리곤으로는 안 보여 점으로 찍는다 */}
-          {ISLETS.map((is) => {
-            const q = eaProject(is.lon, is.lat);
-            return (
-              <g key={is.name}>
-                <circle cx={q.x} cy={q.y} r={u(5)} fill={KOREA_F} stroke={KOREA_S} strokeWidth={u(2.6)} />
-                <text
-                  x={q.x + u(is.dx)}
-                  y={q.y + u(is.dy)}
-                  fontSize={u(23)}
-                  fontWeight={700}
-                  fill="#7E7666"
-                  style={{ paintOrder: "stroke", stroke: SEA, strokeWidth: u(5) }}
-                >
-                  {is.name}
-                </text>
-              </g>
-            );
-          })}
 
           {/* 지나간 태풍은 옅게 남겨 누적을 보여준다 */}
           {TYPHOONS.map((t, i) => {

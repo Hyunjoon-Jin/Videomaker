@@ -54,7 +54,7 @@ TRACKS = [
         "고른 구간이 저역 76%라 휴대폰에서 뭉근하게만 들렸다.",
     ),
     (
-        "public/bgm-kw.wav", "Volatile Reaction", 25.0, 67.97,
+        "public/bgm-kw.wav", "Volatile Reaction", 25.0, 76.1,
         "6·25 — 어둡고 밀어붙이는 진행. 전선이 네 번 뒤집히는 편에 맞는다.",
     ),
     (
