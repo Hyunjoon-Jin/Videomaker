@@ -9,6 +9,7 @@ import {
 import provinces from "./data/provinces.json";
 import {
   CUT,
+  FED_FROM_NORTH,
   FEEDS,
   PLANT_XY,
   P_EVENTS,
@@ -147,19 +148,65 @@ export const ShortsPower: React.FC = () => {
             // 단전 뒤에는 배가 주역이다. 그냥 두면 6,900kW짜리 점이라
             // 화면에서 아무 일도 안 일어난 것처럼 보인다.
             const halo = p.ship && cut;
+            if (p.ship) {
+              // 원으로 그리면 발전소와 구분이 안 되고, 이름만 띄우면
+              // '자코나'가 지명처럼 읽힌다. 배 모양으로 그리고 라벨도
+              // 이름이 아니라 '발전함'이라고 쓴다. 이름은 자막이 말한다.
+              const w = u(19);
+              const h = u(9);
+              return (
+                <g key={`${p.name}${p.lon}`}>
+                  {halo && (
+                    <circle
+                      cx={p.x}
+                      cy={p.y}
+                      r={u(24) + u(14) * (0.5 + 0.5 * Math.sin(frame / 6))}
+                      fill="none"
+                      stroke={INK.indigoHot}
+                      strokeWidth={u(2.4)}
+                      opacity={0.5}
+                    />
+                  )}
+                  {/* 선체 */}
+                  <path
+                    d={`M${p.x - w} ${p.y}L${p.x + w} ${p.y}L${p.x + w * 0.72} ${p.y + h}L${p.x - w * 0.72} ${p.y + h}Z`}
+                    fill={INK.indigoHot}
+                    opacity={0.9}
+                  />
+                  {/* 선실과 굴뚝 */}
+                  <rect
+                    x={p.x - w * 0.34}
+                    y={p.y - h * 0.95}
+                    width={w * 0.68}
+                    height={h * 0.95}
+                    fill={INK.indigoHot}
+                    opacity={0.75}
+                  />
+                  <rect
+                    x={p.x - u(1.6)}
+                    y={p.y - h * 1.9}
+                    width={u(3.2)}
+                    height={h * 0.95}
+                    fill={INK.indigoHot}
+                  />
+                  {labelFits(p.x, 3) && (
+                    <text
+                      x={p.x - w - u(9)}
+                      y={p.y + u(6) + u(p.dy ?? 0)}
+                      textAnchor="end"
+                      fontSize={u(26)}
+                      fontWeight={900}
+                      fill="#9FC2DA"
+                      style={{ paintOrder: "stroke", stroke: "#100E0A", strokeWidth: u(6) }}
+                    >
+                      발전함
+                    </text>
+                  )}
+                </g>
+              );
+            }
             return (
               <g key={p.name}>
-                {halo && (
-                  <circle
-                    cx={p.x}
-                    cy={p.y}
-                    r={r + u(10) + u(16) * (0.5 + 0.5 * Math.sin(frame / 6))}
-                    fill="none"
-                    stroke={INK.indigoHot}
-                    strokeWidth={u(2.4)}
-                    opacity={0.55}
-                  />
-                )}
                 <circle cx={p.x} cy={p.y} r={r} fill={col} opacity={off ? 0.22 : 0.28} />
                 <circle
                   cx={p.x}
@@ -183,7 +230,7 @@ export const ShortsPower: React.FC = () => {
                   >
                     {/* "커 보인다"까지는 원 크기가 하고, "몇 퍼센트인지"는
                         숫자가 해야 한다. 이 편의 주제가 비율이다. */}
-                    {p.ship ? p.name : `${p.name} ${shareLabel(p.kw)}`}
+                    {`${p.name} ${shareLabel(p.kw)}`}
                   </text>
                 )}
               </g>
@@ -220,6 +267,17 @@ export const ShortsPower: React.FC = () => {
         }}
       />
 
+      {/* 위 읽을거리가 막대 둘까지 늘어나 지도 라벨과 겹쳤다.
+          그라데이션만으로는 못 이겨서 판을 하나 깐다. */}
+      {mapIn > 0.5 && !inOutro && (
+        <AbsoluteFill
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(10,8,6,0.96) 0%, rgba(10,8,6,0.94) 16%, rgba(10,8,6,0.86) 24%, rgba(10,8,6,0) 32%)",
+            pointerEvents: "none",
+          }}
+        />
+      )}
       {mapIn > 0.5 && !inOutro && (
         <div style={{ position: "absolute", top: 104, left: 60, right: 60 }}>
           {/* 이 자리는 이 영상이 무엇을 보는 중인지 계속 말해준다.
@@ -239,6 +297,7 @@ export const ShortsPower: React.FC = () => {
             {yearLabel(year)}
           </div>
           <ShareBar year={year} cut={cut} />
+          {cut && <DemandBar />}
         </div>
       )}
 
@@ -348,7 +407,7 @@ export const ShortsPower: React.FC = () => {
           <div style={{ display: "flex", gap: 22, marginBottom: 10, flexWrap: "wrap" }}>
             <Key color={LIVE} label="가동 중" />
             <Key color={DEAD} label="끊긴 공급" />
-            <Key color={INK.indigoHot} label="발전함 (8척 중 둘)" />
+            <Key color={INK.indigoHot} label="발전함 (8척 중 둘)" ship />
             <span style={{ color: C.dim, fontSize: 23, fontWeight: 700 }}>
               원 크기 = 설비용량
             </span>
@@ -483,11 +542,62 @@ const ShareBar: React.FC<{ year: number; cut: boolean }> = ({ year, cut }) => {
   );
 };
 
-const Key: React.FC<{ color: string; label: string }> = ({ color, label }) => (
+/**
+ * 수요 막대 — 단전 뒤에만 뜬다.
+ *
+ * "전차가 섰다"를 글로 쓰는 것으로는 얼마나 큰일인지 안 보인다. 쓰던
+ * 전기의 3분의 2가 꺼지는 것을 눈으로 봐야 전차도 공장도 쌀도 설명이
+ * 된다. 위 막대(설비가 어디 있었나)와 분모가 다르므로 제목을 따로 단다.
+ *
+ * 자료가 60~66%로 폭을 두므로 막대는 가운데값(63%)으로 긋고 글자에는
+ * 범위를 적는다.
+ */
+const DemandBar: React.FC = () => {
+  const mid = (FED_FROM_NORTH[0] + FED_FROM_NORTH[1]) / 2;
+  return (
+    <div style={{ marginTop: 16 }}>
+      <div style={{ color: C.dim, fontSize: 24, fontWeight: 700, marginBottom: 6 }}>
+        남한이 쓰던 전기
+      </div>
+      <div
+        style={{
+          display: "flex",
+          height: 26,
+          borderRadius: 4,
+          overflow: "hidden",
+          border: "1px solid #4A4234",
+        }}
+      >
+        <div style={{ width: `${mid}%`, background: "#3A322A" }} />
+        <div style={{ width: `${100 - mid}%`, background: LIVE, opacity: 0.95 }} />
+      </div>
+      <div style={{ display: "flex", gap: 20, marginTop: 8 }}>
+        <span style={{ color: "#B3452F", fontSize: 30, fontWeight: 900 }}>
+          꺼짐 {FED_FROM_NORTH[0]}~{FED_FROM_NORTH[1]}%
+        </span>
+        <span style={{ color: INK.flame, fontSize: 30, fontWeight: 900 }}>
+          남은 것 {100 - FED_FROM_NORTH[1]}~{100 - FED_FROM_NORTH[0]}%
+        </span>
+      </div>
+    </div>
+  );
+};
+
+const Key: React.FC<{ color: string; label: string; ship?: boolean }> = ({ color, label, ship }) => (
   <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
     <svg width={24} height={24}>
-      <circle cx={12} cy={12} r={9} fill={color} opacity={0.28} />
-      <circle cx={12} cy={12} r={9} fill="none" stroke={color} strokeWidth={2.6} />
+      {ship ? (
+        <>
+          <path d="M3 14L21 14L17 20L7 20Z" fill={color} opacity={0.9} />
+          <rect x={9} y={9} width={6} height={5} fill={color} opacity={0.75} />
+          <rect x={11.2} y={4} width={1.6} height={5} fill={color} />
+        </>
+      ) : (
+        <>
+          <circle cx={12} cy={12} r={9} fill={color} opacity={0.28} />
+          <circle cx={12} cy={12} r={9} fill="none" stroke={color} strokeWidth={2.6} />
+        </>
+      )}
     </svg>
     <span style={{ color: "#BDB3A0", fontSize: 23, fontWeight: 700 }}>{label}</span>
   </div>

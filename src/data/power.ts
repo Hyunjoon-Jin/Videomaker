@@ -45,6 +45,15 @@ export const TOTAL_KW = 1_723_000;
 /** 그중 남한 몫 */
 export const SOUTH_KW = 199_000;
 
+/**
+ * 남한이 쓰던 전기 가운데 북에서 오던 몫.
+ *
+ * 설비의 11.5%와는 다른 값이다. 앞의 것은 발전소가 어디 있었나이고
+ * 이것이 실제로 얼마를 잃었나다. 자료가 60~66%로 폭을 두므로 막대는
+ * 가운데값으로 그리고 화면에는 범위를 적는다. (국가기록원)
+ */
+export const FED_FROM_NORTH: [number, number] = [60, 66];
+
 export interface Plant {
   name: string;
   /**
@@ -83,8 +92,8 @@ export const PLANTS: Plant[] = [
   { name: "청평", where: "경기 가평", lon: 127.42, lat: 37.735, kw: 39_600, from: 1943, north: false, side: "right", dy: -14 },
 
   // 배에 실린 발전소. 단전에 대한 미군정의 임시 대응이다.
-  { name: "자코나", where: "부산항 · 발전함 8척 중 하나", lon: 129.04, lat: 35.10, kw: 20_000, from: 1948.2, north: false, ship: true, side: "left", dy: 22 },
-  { name: "엘렉트라", where: "인천항 · 발전함 8척 중 하나", lon: 126.61, lat: 37.46, kw: 6_900, from: 1948.5, north: false, ship: true, side: "left" },
+  { name: "발전함", where: "부산항 · 자코나 2만kW", lon: 129.04, lat: 35.10, kw: 20_000, from: 1948.2, north: false, ship: true, side: "left", dy: 22 },
+  { name: "발전함", where: "인천항 · 엘렉트라 6,900kW", lon: 126.61, lat: 37.46, kw: 6_900, from: 1948.5, north: false, ship: true, side: "left", dy: 30 },
 
   // 이름을 적지 않은 나머지. 172만 3천kW / 남한 19만 9천kW에 맞춘 차액이다.
   //   북한 152만 4천 − 명시분 147만 2천 80 = 5만 1천 920
@@ -200,7 +209,12 @@ export const P_EVENTS: PEvent[] = [
   // 숫자가 없었다. 설비의 11.5%와 수요의 60~66%는 다른 값이다.
   // 앞의 것은 발전소가 어디 있었나이고, 뒤의 것이 실제로 얼마를 잃었나다.
   { year: 1948.42, title: "쓰던 전기의 60~66%", detail: "남한이 쓰던 전기 가운데 북에서 오던 몫이다", impact: 1, focus: [127.20, 38.20], zoom: 1.45 },
-  { year: 1948.5, title: "전차가 길에 섰다", detail: "공장 가동 중지, 격일제 송전, 전열기 사용 금지", impact: 0.9, focus: [126.98, 37.55], zoom: 2.6 },
-  { year: 1948.6, title: "쌀 55만 석", detail: "모내기철과 겹쳐 관개용 전기가 가지 못했다", impact: 0.9, focus: [127.10, 36.60], zoom: 1.9 },
-  { year: 1951, title: "배가 전기를 냈다", detail: "발전함 여덟 척이 1956년까지. 1951년엔 총 발전량의 56.4%", impact: 1, focus: [127.80, 36.40], zoom: 1.5 },
+  // 전차와 쌀을 따로 세우지 않는다.
+  //
+  // 각각 비트를 주면 화면은 그대로인데 자막만 바뀐다. 지도가 보여줄 수
+  // 없는 것을 비트로 세우면 그게 곧 '말로만 하는' 것이다. 남은 전기로
+  // 무엇을 못 했는지는 한 줄에 모으고, 그림은 수요 막대가 맡는다 —
+  // 쓰던 전기의 3분의 2가 꺼지는 것을 눈으로 보게.
+  { year: 1948.55, title: "남은 것으로 살았다", detail: "전차 정지 · 공장 중지 · 격일제 송전 · 쌀 55만 석 감수", impact: 0.9, focus: [127.00, 37.30], zoom: 1.9 },
+  { year: 1951, title: "배가 전기를 냈다", detail: "항구에 댄 발전함 여덟 척. 1951년 총 발전량의 56.4%다", impact: 1, focus: [127.80, 36.40], zoom: 1.5 },
 ];
