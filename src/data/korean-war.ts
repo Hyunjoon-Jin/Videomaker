@@ -78,6 +78,23 @@ export const FRONT_TRACE: Array<[number, LonLat[]]> = [
   [116, [[124.90, 39.40], [125.60, 39.45], [126.40, 39.60], [127.20, 39.70],
          [128.20, 40.00], [129.60, 40.30]]],
 
+  // 10.26 서부 최대 진출 — 초산에서 압록강에 닿는다.
+  //
+  // 이 키프레임이 없어서 초산이 어느 프레임에서도 아군 지역 안에 들어간
+  // 적이 없었다. 평양선에서 11.24선으로 바로 보간되니, 자막은 압록강에
+  // 닿았다고 하는데 지도에서는 초산이 계속 적 지역에 남아 있었다.
+  //
+  // 국군 6사단 7연대가 밀고 올라간 돌출부라 선이 뾰족하다. 폴리라인
+  // 모델을 쓴 이유가 바로 이런 형태 때문이다.
+  [123, [[124.90, 39.95], [125.30, 40.30], [125.80, 40.83], [126.30, 40.60],
+         [127.00, 40.30], [128.00, 40.55], [128.90, 40.65], [130.00, 40.70]]],
+
+  // 11.6 중국군 1차 공세 뒤 — 서부만 청천강으로 물러난다.
+  // 동부는 공세를 받지 않아 계속 북상 중이었다. 서부와 동부가 이때부터
+  // 크게 어긋나기 시작한다.
+  [134, [[124.85, 39.90], [125.40, 39.85], [126.00, 40.00], [126.60, 40.10],
+         [127.30, 40.40], [128.30, 40.90], [129.20, 41.20], [130.20, 41.40]]],
+
   // 11.24 최대 북진 — 청천강·희천·장진·혜산진·청진
   //
   // 서부와 동부의 도달선이 크게 다르다. 서부 8군은 10월 말 중국군 1차
@@ -141,7 +158,7 @@ export const KW_POCKETS: KWPocket[] = [
     // 떨어진 별개 교두보였다. 9.26에 남부에서 북상한 부대와 연결된다.
     id: "incheon",
     label: "인천 교두보",
-    labelAt: [126.35, 37.30],
+    labelAt: [126.28, 37.16],
     side: "left",
     from: 82,
     to: 94,
@@ -156,7 +173,7 @@ export const KW_POCKETS: KWPocket[] = [
     // 지키며 철수했다. 그 기간 흥남 일대는 중공군에 둘러싸인 아군 지역이다.
     id: "hungnam",
     label: "흥남 교두보",
-    labelAt: [128.15, 39.80],
+    labelAt: [128.05, 39.55],
     side: "right",
     from: 155,
     to: 184,
@@ -216,8 +233,8 @@ export const KW_GUERRILLA: KWZone[] = [
     // 태백산맥 — 오대산·태백 일대. 1952년 중 대부분 소멸.
     id: "taebaek",
     label: "태백산맥 유격",
-    labelAt: [129.55, 37.20],
-    side: "right",
+    labelAt: [128.30, 37.62],
+    side: "left",
     from: 112,
     to: 580,
     keys: [
@@ -250,32 +267,43 @@ const B = (
 ): KWBattle => ({ name, day, won, ...project(lon, lat), ...opt });
 
 export const KW_BATTLES: KWBattle[] = [
-  B("서울 함락", 3, "north", 126.98, 37.57, { major: true, side: "right", dy: -32 }),
+  B("서울 함락", 3, "north", 126.98, 37.57, { major: true, side: "right", dy: -46 }),
   B("오산 죽미령", 10, "north", 127.06, 37.13, { side: "left" }),
   B("대전", 25, "north", 127.38, 36.35, { side: "left" }),
   B("다부동", 48, "south", 128.45, 36.13, { major: true, side: "right" }),
-  B("인천상륙", 82, "south", 126.63, 37.47, { sea: true, major: true, side: "left", dy: 20 }),
-  B("서울 수복", 95, "south", 126.98, 37.57, { major: true, side: "right", dy: 34 }),
+  B("인천상륙", 82, "south", 126.63, 37.47, { sea: true, major: true, side: "left", dy: 36 }),
+  B("서울 수복", 95, "south", 126.98, 37.57, { major: true, side: "right", dy: 4 }),
   B("평양 점령", 116, "south", 125.75, 39.02, { major: true, side: "left" }),
   B("초산", 123, "south", 125.80, 40.83, { major: true, side: "right" }),
   B("운산", 122, "north", 125.75, 40.10, { side: "left" }),
   B("장진호", 155, "north", 127.20, 40.45, { major: true, side: "right" }),
   B("흥남 철수", 182, "south", 127.62, 39.83, { sea: true, major: true, side: "right" }),
-  B("서울 재함락", 193, "north", 126.98, 37.57, { major: true, side: "right", dy: 72 }),
-  B("서울 재수복", 262, "south", 126.98, 37.57, { side: "right", dy: 110 }),
+  B("서울 재함락", 193, "north", 126.98, 37.57, { major: true, side: "right", dy: 54 }),
+  B("서울 재수복", 262, "south", 126.98, 37.57, { side: "right", dy: 104 }),
   B("설마리", 300, "south", 126.90, 37.95, { side: "left" }),
   B("백마고지", 855, "south", 127.10, 38.28, { major: true, side: "right" }),
 ];
 
 /* ── 주요 도시 ─────────────────────────────────────── */
 
-export const KW_CITIES = [
-  { ...project(126.98, 37.57), name: "서울", from: 0, side: "right" as const },
-  { ...project(129.08, 35.18), name: "부산", from: 0, side: "right" as const },
-  { ...project(125.75, 39.02), name: "평양", from: 0, side: "left" as const },
-  { ...project(128.60, 35.87), name: "대구", from: 20, side: "right" as const },
-  { ...project(126.63, 37.47), name: "인천", from: 70, side: "left" as const },
-  { ...project(126.68, 37.95), name: "판문점", from: 380, side: "left" as const },
+/**
+ * 주요 도시.
+ *
+ * until은 라벨을 거두는 날이다. 서울과 인천은 곧 그 자리에 전투 라벨이
+ * 붙는데(서울 함락·서울 수복·인천상륙), 도시 라벨을 그대로 두면 같은
+ * 지명이 두 번 겹쳐 읽기가 어려워진다. 전투 라벨이 지명을 대신하는
+ * 시점부터는 도시 라벨을 뺀다.
+ */
+export const KW_CITIES: Array<{
+  x: number; y: number; name: string; from: number; until?: number;
+  side: "left" | "right";
+}> = [
+  { ...project(126.98, 37.57), name: "서울", from: 0, until: 3, side: "right" },
+  { ...project(129.08, 35.18), name: "부산", from: 0, side: "right" },
+  { ...project(125.75, 39.02), name: "평양", from: 0, until: 116, side: "left" },
+  { ...project(128.60, 35.87), name: "대구", from: 20, side: "right" },
+  { ...project(126.63, 37.47), name: "인천", from: 70, until: 82, side: "left" },
+  { ...project(126.68, 37.95), name: "판문점", from: 380, side: "left" },
 ];
 
 /* ── 사건 ─────────────────────────────────────────── */
@@ -303,9 +331,9 @@ export const KW_EVENTS: KWEvent[] = [
   { day: 82, title: "인천상륙작전", detail: "전세를 단번에 뒤집다", south: true, impact: 1, focus: [126.63, 37.47], zoom: 3.2 },
   { day: 95, title: "서울 수복", detail: "3개월 만에 수도를 되찾다", south: true, impact: 0.9, focus: [126.98, 37.55], zoom: 3.0 },
   { day: 116, title: "평양 점령", detail: "국군·유엔군 북진", south: true, impact: 0.8, focus: [125.75, 39.02], zoom: 2.6 },
-  { day: 122, title: "중국군 참전", detail: "10월 25일 1차 공세, 서부전선이 청천강까지 밀리다", impact: 0.9, focus: [126.20, 39.90], zoom: 2.2 },
-  { day: 123, title: "압록강 도달", detail: "국군 6사단 7연대가 초산에서 압록강에 닿다", south: true, impact: 1, focus: [125.90, 40.60], zoom: 2.6 },
-  { day: 152, title: "최대 북진", detail: "서부는 청천강, 동부는 혜산진과 청진까지", south: true, impact: 1, focus: [127.40, 40.70], zoom: 1.85 },
+  { day: 123, title: "압록강 도달", detail: "국군 6사단 7연대가 초산에서 압록강에 닿다", south: true, impact: 1, focus: [125.85, 40.55], zoom: 2.7 },
+  { day: 134, title: "중국군 1차 공세", detail: "서부만 청천강으로 물러나다. 동부는 계속 북상한다", impact: 0.9, focus: [126.40, 40.20], zoom: 2.2 },
+  { day: 152, title: "크리스마스 공세", detail: "동부는 혜산진과 청진까지 올라갔다", south: true, impact: 1, focus: [127.60, 40.80], zoom: 1.85 },
   { day: 153, title: "중국군 2차 공세", detail: "11월 25일, 전선이 한꺼번에 무너지다", impact: 1, focus: [126.60, 40.00], zoom: 2.0 },
   { day: 155, title: "장진호", detail: "영하 30도의 철수전", impact: 0.9, focus: [127.25, 40.45], zoom: 3.0 },
   { day: 182, title: "흥남 철수", detail: "피난민 9만여 명을 배에 태우다", south: true, impact: 0.9, focus: [127.60, 39.83], zoom: 3.0 },

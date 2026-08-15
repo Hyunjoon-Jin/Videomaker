@@ -55,8 +55,25 @@ const HOOK = Math.round(4.5 * FPS);
  */
 const BEATS = KW_EVENTS.map((e) => beatOf(e.day, e.impact ?? 0.4, FPS));
 const SPANS = layoutBeats(BEATS, HOOK, 0.22);
-const TAIL = Math.round(1.6 * FPS);
-export const KW_DURATION = SPANS[SPANS.length - 1].t2 + TAIL;
+/**
+ * 마무리.
+ *
+ * 정전협정 자막이 끝나자마자 화면이 꺼졌다. 3년을 따라온 사람 입장에서는
+ * 끝난 게 아니라 끊긴 것이다. 철도·태풍 편처럼 카메라를 반도 전체로 빼고
+ * 전선이 닿았던 자리를 한 장으로 세운 뒤 닫는다.
+ */
+const BODY_END = SPANS[SPANS.length - 1].t2;
+const OUTRO = Math.round(9.5 * FPS);
+export const KW_DURATION = BODY_END + OUTRO;
+
+/** 전선이 가장 멀리 닿았던 자리 — 마무리에 세운다 */
+const REACH: Array<[string, string]> = [
+  ["1950. 6. 25", "38선"],
+  ["1950. 8. 4", "낙동강"],
+  ["1950. 10. 26", "압록강"],
+  ["1951. 1. 25", "평택·원주·삼척"],
+  ["1953. 7. 27", "38선 언저리"],
+];
 
 function dayAt(frame: number): number {
   return valueAtBeats(SPANS, frame, TOTAL_DAYS);
@@ -80,12 +97,25 @@ const SHOTS: Shot[] = [
       { at: sp.t2, cx: q.x, cy: q.y, z },
     ];
   }),
+  // 마무리 — 반도 전체로 빠진다. 3년을 따라온 선을 통째로 보여주고 닫는다.
+  // cy를 반도 중심(500)보다 아래로 잡아야 지도가 화면 위쪽으로 올라온다.
+  // 마무리 글이 아래 절반을 쓰므로 휴전선이 글자 위에 걸리게 맞춘 값이다.
+  { at: BODY_END + Math.round(1.8 * FPS), cx: 462, cy: 552, z: 1.45 },
 ];
 
 const NORTH_C = "#B33A2B";
 const SOUTH_C = "#4C7A9B";
 const FREE = "#2C2B24";
 const HELD = "#7A2A20";
+/**
+ * 유격 지역 색.
+ *
+ * 점령색(HELD)과 같은 계열의 어두운 붉은색을 쓰다가, 1·4후퇴로 전선이
+ * 내려온 동안 태백산맥 일대가 점령색 위에 겹쳐 붉은색 위의 붉은색이
+ * 되면서 화면에서 사라졌다. 같은 계열이되 훨씬 밝은 값으로 올려
+ * 어두운 미점령색 위에서도, 점령색 위에서도 뜨게 한다.
+ */
+const ZONE_C = "#E8A48C";
 
 export const ShortsKoreanWar: React.FC = () => {
   useFonts();
@@ -96,6 +126,12 @@ export const ShortsKoreanWar: React.FC = () => {
   const ev = bi >= 0 ? KW_EVENTS[bi] : null;
   const near = bi >= 0 ? Math.max(0, 1 - (frame - SPANS[bi].t1) / 26) : 0;
   const impact = (ev?.impact ?? 0) * near;
+
+  const inOutro = frame >= BODY_END;
+  const outroIn = interpolate(frame, [BODY_END, BODY_END + 22], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
 
   const hookOut = interpolate(frame, [HOOK - 14, HOOK], [1, 0], {
     extrapolateLeft: "clamp",
@@ -116,6 +152,19 @@ export const ShortsKoreanWar: React.FC = () => {
    */
   const u = (px: number) => px / (1.08 * cam.z);
 
+  /**
+   * 이 지점의 라벨을 그려도 되는가.
+   *
+   * 교두보·유격 지역 라벨은 지도 좌표에 고정돼 있는데, 카메라가 서울로
+   * 붙으면 태백산맥 라벨이 화면 오른쪽 끝에 걸쳐 "태백" 하고 잘린다.
+   * 잘린 글자는 정보가 아니라 고장으로 보인다. 글자 길이만큼 여백을
+   * 두고 그 안에 못 들어오면 아예 그리지 않는다.
+   */
+  const labelFits = (x: number, chars: number) => {
+    const w = u(20) * chars;
+    return x - w > cam.x + u(20) && x + w < cam.x + cam.w - u(20);
+  };
+
   const accent = ev?.south ? SOUTH_C : NORTH_C;
 
   return (
@@ -135,6 +184,53 @@ export const ShortsKoreanWar: React.FC = () => {
                 <path key={p.id} d={p.d} />
               ))}
             </clipPath>
+
+            {/*
+              전선에서 교두보 안쪽을 도려낸다.
+              교두보는 전선 뒤에 고립된 아군 지역이므로 그 안으로 전선이
+              지나갈 이유가 없는데, 전선이 흥남을 스쳐 지나가는 12월에는
+              빨간 전선과 파란 점선이 같은 자리에서 엉켜 무슨 선인지
+              읽히지 않았다. 마스크로 안쪽을 지우면 전선이 교두보 경계에서
+              끊기고 두 선이 만나지 않는다.
+            */}
+            <mask id="kwFrontMask" maskUnits="userSpaceOnUse" x={-200} y={-200}
+                  width={1400} height={1400}>
+              <rect x={-200} y={-200} width={1400} height={1400} fill="#fff" />
+              {POCKETS.map((p) => {
+                const a = p.model.alphaAt(day);
+                if (a <= 0) return null;
+                return (
+                  <path key={`m${p.id}`} d={p.model.pathAt(day)} fill="#000" opacity={a} />
+                );
+              })}
+            </mask>
+
+            {/*
+              유격 지역용 빗금.
+              전에는 붉은 반투명 면으로 칠했는데, 1·4후퇴로 전선이 내려온
+              동안 태백산맥이 북한군 점령색(붉은 갈색) 위에 놓여 붉은색
+              위의 붉은색이 되어 통째로 사라졌다. 빗금은 바탕이 어둡든
+              붉든 위로 떠오른다.
+
+              patternUnits이 지도 좌표계이므로 확대하면 빗금 간격이
+              벌어진다. u()로 간격을 잡아 화면상 간격을 일정하게 둔다.
+            */}
+            <pattern
+              id="kwHatch"
+              patternUnits="userSpaceOnUse"
+              width={u(13)}
+              height={u(13)}
+              patternTransform="rotate(45)"
+            >
+              <line
+                x1={0}
+                y1={0}
+                x2={0}
+                y2={u(13)}
+                stroke={ZONE_C}
+                strokeWidth={u(3.6)}
+              />
+            </pattern>
           </defs>
 
           {PROVINCES.map((p) => (
@@ -154,42 +250,48 @@ export const ShortsKoreanWar: React.FC = () => {
               d={FRONT.lineAt(day)}
               fill="none"
               stroke="#D4694F"
-              strokeWidth={3}
+              strokeWidth={u(3)}
               opacity={0.85}
+              mask="url(#kwFrontMask)"
             />
             {POCKETS.map((p) => {
               const a = p.model.alphaAt(day);
               if (a <= 0) return null;
+              const d = p.model.pathAt(day);
               return (
-                <path
-                  key={`o${p.id}`}
-                  d={p.model.pathAt(day)}
-                  fill="none"
-                  stroke={SOUTH_C}
-                  strokeWidth={3.4}
-                  strokeDasharray="9 6"
-                  opacity={a}
-                />
+                <g key={`o${p.id}`} opacity={a}>
+                  {/* 바탕색 테두리를 먼저 깔아 전선과 붙어도 두 선이 구분된다 */}
+                  <path d={d} fill="none" stroke={C.bg} strokeWidth={u(8)} />
+                  <path
+                    d={d}
+                    fill="none"
+                    stroke={SOUTH_C}
+                    strokeWidth={u(3.4)}
+                    strokeDasharray={`${u(9)} ${u(6)}`}
+                  />
+                </g>
               );
             })}
           </g>
 
-          {/* 유격 지역 — 점령색으로 칠하지 않는다. 옅은 음영 + 점선. */}
+          {/* 유격 지역 — 점령색으로 칠하지 않는다. 빗금 + 점선. */}
           <g clipPath="url(#kwLand)">
             {ZONES.map((z) => {
               const a = z.model.alphaAt(day);
               if (a <= 0) return null;
               const d = z.model.pathAt(day);
               return (
-                <g key={z.id}>
-                  <path d={d} fill={NORTH_C} opacity={a * 0.28} />
+                <g key={z.id} opacity={a}>
+                  {/* 빗금이 뜨도록 바탕을 살짝 어둡게 깐다.
+                      점령색 위에서도, 미점령색 위에서도 같은 밝기가 된다. */}
+                  <path d={d} fill="#151310" opacity={0.42} />
+                  <path d={d} fill="url(#kwHatch)" opacity={0.95} />
                   <path
                     d={d}
                     fill="none"
-                    stroke={NORTH_C}
-                    strokeWidth={2.4}
-                    strokeDasharray="5 5"
-                    opacity={a * 0.9}
+                    stroke={ZONE_C}
+                    strokeWidth={u(2.6)}
+                    strokeDasharray={`${u(6)} ${u(5)}`}
                   />
                 </g>
               );
@@ -197,7 +299,7 @@ export const ShortsKoreanWar: React.FC = () => {
           </g>
 
           {PROVINCES.map((p) => (
-            <path key={`c${p.id}`} d={p.d} fill="none" stroke="#4A4638" strokeWidth={1.4} />
+            <path key={`c${p.id}`} d={p.d} fill="none" stroke="#4A4638" strokeWidth={u(1.4)} />
           ))}
 
           {/* 38선 — 시작이자 끝. 기준선으로 계속 보여준다. */}
@@ -207,25 +309,33 @@ export const ShortsKoreanWar: React.FC = () => {
             x2={1000}
             y2={511}
             stroke="#8E8474"
-            strokeWidth={1.6}
-            strokeDasharray="10 8"
+            strokeWidth={u(1.6)}
+            strokeDasharray={`${u(10)} ${u(8)}`}
             opacity={0.5}
           />
-          <text x={905} y={505} fontSize={18} fontWeight={700} fill="#8E8474" opacity={0.75}>
+          <text
+            x={cam.x + cam.w - u(28)}
+            y={511 - u(9)}
+            textAnchor="end"
+            fontSize={u(20)}
+            fontWeight={700}
+            fill="#8E8474"
+            opacity={0.75}
+          >
             38°
           </text>
 
-          {KW_CITIES.filter((c) => c.from <= day).map((c) => (
+          {KW_CITIES.filter((c) => c.from <= day && day < (c.until ?? Infinity)).map((c) => (
             <g key={c.name}>
-              <circle cx={c.x} cy={c.y} r={4} fill="#C09240" />
+              <circle cx={c.x} cy={c.y} r={u(4)} fill="#C09240" />
               <text
-                x={c.side === "left" ? c.x - 11 : c.x + 11}
-                y={c.y + 6}
+                x={c.side === "left" ? c.x - u(11) : c.x + u(11)}
+                y={c.y + u(6)}
                 textAnchor={c.side === "left" ? "end" : "start"}
-                fontSize={23}
+                fontSize={u(23)}
                 fontWeight={900}
                 fill="#DCC48C"
-                style={{ paintOrder: "stroke", stroke: "#151310", strokeWidth: 5 }}
+                style={{ paintOrder: "stroke", stroke: "#151310", strokeWidth: u(5) }}
               >
                 {c.name}
               </text>
@@ -237,17 +347,18 @@ export const ShortsKoreanWar: React.FC = () => {
             const a = p.model.alphaAt(day);
             if (a <= 0) return null;
             const q = project(p.labelAt[0], p.labelAt[1]);
+            if (!labelFits(q.x, p.label.length)) return null;
             return (
               <text
                 key={`l${p.id}`}
                 x={q.x}
                 y={q.y}
                 textAnchor={p.side === "left" ? "end" : "start"}
-                fontSize={21}
+                fontSize={u(21)}
                 fontWeight={900}
                 fill={SOUTH_C}
                 opacity={a}
-                style={{ paintOrder: "stroke", stroke: "#151310", strokeWidth: 5 }}
+                style={{ paintOrder: "stroke", stroke: "#151310", strokeWidth: u(5) }}
               >
                 {p.label}
               </text>
@@ -258,17 +369,18 @@ export const ShortsKoreanWar: React.FC = () => {
             const a = z.model.alphaAt(day);
             if (a <= 0) return null;
             const q = project(z.labelAt[0], z.labelAt[1]);
+            if (!labelFits(q.x, z.label.length)) return null;
             return (
               <text
                 key={`z${z.id}`}
                 x={q.x}
                 y={q.y}
                 textAnchor={z.side === "left" ? "end" : "start"}
-                fontSize={20}
+                fontSize={u(20)}
                 fontWeight={900}
-                fill="#C08A7A"
+                fill={ZONE_C}
                 opacity={a}
-                style={{ paintOrder: "stroke", stroke: "#151310", strokeWidth: 5 }}
+                style={{ paintOrder: "stroke", stroke: "#151310", strokeWidth: u(5) }}
               >
                 {z.label}
               </text>
@@ -276,7 +388,7 @@ export const ShortsKoreanWar: React.FC = () => {
           })}
 
           {kwBattlesUpTo(day).map((b) => (
-            <Mark key={b.name} b={b} day={day} u={u} />
+            <Mark key={b.name} b={b} day={day} u={u} fits={labelFits} />
           ))}
         </svg>
       </AbsoluteFill>
@@ -300,7 +412,7 @@ export const ShortsKoreanWar: React.FC = () => {
       />
 
       {/* ── 날짜 ── */}
-      {mapIn > 0.5 && (
+      {mapIn > 0.5 && !inOutro && (
         <div style={{ position: "absolute", top: 104, left: 60, right: 60 }}>
           <div style={{ color: C.dim, fontSize: 30, fontWeight: 700, letterSpacing: 2 }}>
             6·25 전쟁
@@ -320,7 +432,7 @@ export const ShortsKoreanWar: React.FC = () => {
       )}
 
       {/* ── 사건 ── */}
-      {ev && mapIn > 0.5 && (
+      {ev && mapIn > 0.5 && !inOutro && (
         <div style={{ position: "absolute", bottom: 306, left: 60, right: 60 }}>
           <div style={{ color: accent, fontSize: 34, fontWeight: 900 }}>
             {ev.south ? "국군·유엔군" : "북한군·중국군"}
@@ -355,14 +467,75 @@ export const ShortsKoreanWar: React.FC = () => {
         </div>
       )}
 
+      {/* ── 마무리 ── */}
+      {inOutro && (
+        <>
+          {/* 마무리 글이 다섯 줄이라 본문용 그라데이션보다 위까지 올라온다.
+              그 위로 지도가 그대로 비쳐 글자가 안 읽혀서 한 겹 더 깐다. */}
+          <AbsoluteFill
+            style={{
+              background:
+                "linear-gradient(180deg, rgba(12,10,8,0) 26%, rgba(12,10,8,0.72) 42%, rgba(12,10,8,0.95) 56%)",
+              opacity: outroIn,
+              pointerEvents: "none",
+            }}
+          />
+          <AbsoluteFill
+            style={{
+              justifyContent: "flex-end",
+              padding: "0 60px 232px",
+              opacity: outroIn,
+            }}
+          >
+          <div style={{ color: C.dim, fontSize: 30, fontWeight: 700, marginBottom: 12 }}>
+            전선이 가장 멀리 닿았던 자리
+          </div>
+          {REACH.map(([d, place], i) => (
+            <div
+              key={d}
+              style={{ display: "flex", alignItems: "baseline", gap: 22, marginTop: 4 }}
+            >
+              <span
+                style={{
+                  color: C.dim,
+                  fontSize: 38,
+                  fontWeight: 700,
+                  fontVariantNumeric: "tabular-nums",
+                  minWidth: 226,
+                }}
+              >
+                {d}
+              </span>
+              <span
+                style={{
+                  // 압록강까지 올라간 줄만 국군·유엔군 색, 나머지는 반대편
+                  color: i === 2 ? SOUTH_C : i === 4 ? C.text : "#D4694F",
+                  fontSize: 46,
+                  fontWeight: 900,
+                }}
+              >
+                {place}
+              </span>
+            </div>
+          ))}
+          <div style={{ height: 1, background: "#3B342A", margin: "26px 0 16px" }} />
+          <div style={{ color: C.text, fontSize: 52, fontWeight: 800, lineHeight: 1.34 }}>
+            협정에 서명한 것은 7월 27일 오전 10시,
+            <br />
+            효력이 생긴 것은 그날 밤 10시였다
+            </div>
+          </AbsoluteFill>
+        </>
+      )}
+
       {/* ── 범례 · 고지 ── */}
-      {mapIn > 0.5 && (
+      {mapIn > 0.5 && !inOutro && (
         <div style={{ position: "absolute", bottom: 62, left: 60, right: 60 }}>
           <div style={{ display: "flex", gap: 24, marginBottom: 10, flexWrap: "wrap" }}>
             <Key color={HELD} label="북한군·중국군" />
             <Key color={SOUTH_C} label="국군·유엔군 승" />
             <Key color={NORTH_C} label="북한군·중국군 승" />
-            <Key color="#C08A7A" label="유격 지역" />
+            <Key color={ZONE_C} label="유격 지역" hatch />
           </div>
           <div style={{ color: "#8A8070", fontSize: 20 }}>
             좌표는 실측값, 그 사이는 추정 (자세한 설명은 고정댓글)
@@ -430,11 +603,13 @@ export const ShortsKoreanWar: React.FC = () => {
   );
 };
 
-const Mark: React.FC<{ b: KWBattle; day: number; u: (px: number) => number }> = ({
-  b,
-  day,
-  u,
-}) => {
+const Mark: React.FC<{
+  b: KWBattle;
+  day: number;
+  u: (px: number) => number;
+  /** 화면 밖으로 밀려나는 라벨은 그리지 않는다 — 잘린 글자는 고장으로 보인다 */
+  fits: (x: number, chars: number) => boolean;
+}> = ({ b, day, u, fits }) => {
   const fresh = Math.max(0, 1 - (day - b.day) / 12);
   const color = b.won === "south" ? SOUTH_C : NORTH_C;
   const r = u(b.major ? 8 : 5);
@@ -465,7 +640,7 @@ const Mark: React.FC<{ b: KWBattle; day: number; u: (px: number) => number }> = 
           transform={`rotate(45 ${b.x} ${b.y})`}
         />
       )}
-      {b.major && (
+      {b.major && fits(b.x, b.name.length) && (
         <text
           x={b.side === "left" ? b.x - u(17) : b.x + u(17)}
           y={b.y + u(8) + u(b.dy ?? 0)}
@@ -482,9 +657,31 @@ const Mark: React.FC<{ b: KWBattle; day: number; u: (px: number) => number }> = 
   );
 };
 
-const Key: React.FC<{ color: string; label: string }> = ({ color, label }) => (
+/** 범례 한 칸. 유격 지역만 빗금이라 지도와 같은 무늬로 그려준다. */
+const Key: React.FC<{ color: string; label: string; hatch?: boolean }> = ({
+  color,
+  label,
+  hatch,
+}) => (
   <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-    <div style={{ width: 24, height: 24, background: color }} />
+    {hatch ? (
+      <svg width={24} height={24} style={{ display: "block" }}>
+        <rect width={24} height={24} fill="#151310" />
+        {[-16, -8, 0, 8, 16].map((k) => (
+          <line
+            key={k}
+            x1={k}
+            y1={24}
+            x2={k + 24}
+            y2={0}
+            stroke={color}
+            strokeWidth={3.4}
+          />
+        ))}
+      </svg>
+    ) : (
+      <div style={{ width: 24, height: 24, background: color }} />
+    )}
     <span style={{ color: "#BDB3A0", fontSize: 24, fontWeight: 700 }}>{label}</span>
   </div>
 );

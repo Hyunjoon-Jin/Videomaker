@@ -45,6 +45,16 @@ export interface CameraFrame {
    * 굵어지지 않는다. 안 나누면 줌인할 때 지도가 크레용 그림이 된다.
    */
   z: number;
+  /**
+   * viewBox를 숫자로도 준다.
+   * 화면 가장자리에 붙여야 하는 것(38선 눈금 같은 것)은 지도 좌표
+   * 1000이 아니라 지금 보이는 범위의 끝을 알아야 한다. 문자열을 다시
+   * 파싱하는 것보다 여기서 같이 내주는 편이 낫다.
+   */
+  x: number;
+  y: number;
+  w: number;
+  h: number;
 }
 
 /**
@@ -61,9 +71,15 @@ export function cameraAt(
   const box = (cx: number, cy: number, z: number): CameraFrame => {
     const w = 1000 / z;
     const h = w * aspect;
+    const x = cx - w / 2;
+    const y = cy - h / 2;
     return {
-      viewBox: `${(cx - w / 2).toFixed(1)} ${(cy - h / 2).toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)}`,
+      viewBox: `${x.toFixed(1)} ${y.toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)}`,
       z,
+      x,
+      y,
+      w,
+      h,
     };
   };
 

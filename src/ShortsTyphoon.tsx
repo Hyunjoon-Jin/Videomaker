@@ -341,16 +341,35 @@ export const ShortsTyphoon: React.FC = () => {
                 <span
                   style={{
                     color: C.dim,
-                    fontSize: 38,
+                    fontSize: 36,
                     fontWeight: 700,
                     fontVariantNumeric: "tabular-nums",
-                    minWidth: 220,
+                    minWidth: 210,
                   }}
                 >
                   {t.landDate}
                 </span>
-                <span style={{ color: t.color, fontSize: 44, fontWeight: 900 }}>
+                <span
+                  style={{
+                    color: t.color,
+                    fontSize: 44,
+                    fontWeight: 900,
+                    minWidth: 152,
+                  }}
+                >
                   {t.name}
+                </span>
+                {/* 마무리 문장이 이 숫자들의 합에 기대므로 화면에 세워둔다.
+                    안 보여주면 '390명'이 어디서 나온 값인지 알 수 없다. */}
+                <span
+                  style={{
+                    color: t.id === "sarah" ? C.text : "#9A9080",
+                    fontSize: 38,
+                    fontWeight: t.id === "sarah" ? 900 : 700,
+                    fontVariantNumeric: "tabular-nums",
+                  }}
+                >
+                  {t.dead}명
                 </span>
               </div>
             ))}
@@ -365,9 +384,9 @@ export const ShortsTyphoon: React.FC = () => {
               marginTop: 14,
             }}
           >
-            매미는 사라만큼 강했지만
+            사라 849명,
             <br />
-            죽은 사람은 6분의 1이었다
+            뒤의 셋을 다 합쳐도 390명
           </div>
         </AbsoluteFill>
       )}
