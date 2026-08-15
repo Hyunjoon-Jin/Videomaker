@@ -120,6 +120,17 @@ export const ShortsRail: React.FC = () => {
   /** 화면 픽셀 → 지도 단위. 확대해도 선과 글자가 굵어지지 않게 한다. */
   const u = (px: number) => px / (1.08 * cam.z);
 
+  /**
+   * 이 지점의 라벨을 그려도 되는가.
+   * 역 이름은 지도 좌표에 고정돼 있어서, 카메라가 붙으면 화면 가장자리
+   * 역들이 "신의" "광주송" 하고 잘린다. 잘린 글자는 정보가 아니라
+   * 고장으로 보이므로 안 들어오면 아예 그리지 않는다.
+   */
+  const labelFits = (x: number, chars: number) => {
+    const w = u(20) * chars;
+    return x - w > cam.x + u(16) && x + w < cam.x + cam.w - u(16);
+  };
+
   const nq = project(north.lon, north.lat);
 
   return (
@@ -156,6 +167,7 @@ export const ShortsRail: React.FC = () => {
           {/* 역 이름 — 이 편만 지명이 하나도 없어 화면이 비어 보였다 */}
           {STATIONS.filter((st) => year >= st.from && st.name !== north.name).map((st) => {
             const q = project(st.lon, st.lat);
+            if (!labelFits(q.x, st.name.length)) return null;
             return (
               <g key={st.name}>
                 <circle
@@ -453,8 +465,10 @@ const Line: React.FC<{
 
   return (
     <g>
+      {/* 넓게 깔리는 후광. 끊긴 뒤에는 남은 구간에만 둔다 —
+          이북까지 운행색으로 깔면 회색 점선 밑이 노랗게 뜬다. */}
       <path
-        d={d}
+        d={parts ? parts.south : d}
         fill="none"
         stroke={color}
         strokeWidth={u(l.fast ? 12 : 9)}

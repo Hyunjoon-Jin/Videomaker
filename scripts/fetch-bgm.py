@@ -63,7 +63,7 @@ TRACKS = [
         "중역이 37%뿐이라 휴대폰에서 힘이 없었다. 이쪽이 76%다.",
     ),
     (
-        "public/bgm-rail.wav", "Lost Frontier", 9.0, 66.5,
+        "public/bgm-rail.wav", "Lost Frontier", 9.0, 96.7,
         "철도 — 넓고 계속 나아가는 느낌. 200~4000Hz 비중이 84%로 후보 중 "
         "가장 또렷하다. 전쟁 편들과 톤도 달라야 한다.",
     ),
