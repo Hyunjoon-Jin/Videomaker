@@ -38,7 +38,35 @@ const HOOK = Math.round(4.5 * FPS);
  * 실제로 넷은 할 얘기의 양이 다르다. 루사는 비 얘기가 붙어 제일 길고,
  * 사라는 1959년이라 남은 기록이 적어 제일 짧다.
  */
-const SECS = [9.5, 11.5, 9.5, 10.5];
+/**
+ * 구간 길이는 읽을 글자 수가 정한다.
+ *
+ * 처음에는 [9.5, 11.5, 9.5, 10.5]로 손으로 적었는데, 재보니 사라 구간은
+ * 9.5초에 읽을 글자가 88자였다. 다른 편들과 같은 병이다 — 시간을 먼저
+ * 정하고 글자를 우겨넣은 것이다.
+ *
+ * 다만 여기는 문장이 아니라 계기판이다. 기압·강수량·풍속·인명이 각각
+ * 제 칸에 있어 눈이 훑고 지나가지 한 줄씩 읽지 않는다. 그래서 본문
+ * 자막(초당 6.5자)보다 빠른 초당 9자로 잡는다.
+ *
+ * 넷의 길이가 서로 달라야 한다는 원래 이유는 그대로 살아 있다. 할 얘기의
+ * 양이 다르면 글자 수가 다르고, 글자 수가 다르면 이 식이 알아서 다른
+ * 길이를 준다.
+ */
+const CHARS_PER_SEC = 9;
+const SECS = TYPHOONS.map((t) => {
+  const chars =
+    t.period.length +
+    t.name.length +
+    4 + // 연도
+    9 + // "951.5 hPa"
+    (t.rain == null ? 5 : 6) +
+    t.rainAt.length +
+    t.wind.length +
+    t.toll.length;
+  // 경로가 그려지는 동안은 지도를 보므로 최소 8초는 준다
+  return Math.max(8, chars / CHARS_PER_SEC + 1.2);
+});
 const SEG = SECS.map((s) => Math.round(s * FPS));
 /** 각 구간의 시작 프레임(훅 이후 기준) */
 const STARTS = SEG.reduce<number[]>(
