@@ -20,6 +20,27 @@
 '훅 수정 필요'라고 적힌 후보는 더 세지만 지금 영상 첫 화면과 안 맞물린다.
 쓰려면 훅을 같이 바꾸고 다시 렌더해야 한다.
 
+## 해시태그 쓰는 법
+
+지켜야 하는 것 둘.
+
+- **15개를 넘기면 전부 무시된다.** 하나도 안 걸린다. 다 12~13개로 맞춰뒀다.
+- **가운데점(·)은 쓰지 않는다.** `#6·25전쟁`은 점에서 끊길 수 있어
+  `#625전쟁`과 `#한국전쟁`으로 나눠 넣었다. 하이픈·공백도 같다.
+
+배치.
+
+- **앞의 세 개**만 제목 위에 뜬다. 여기에 제일 구체적이고 제일 많이
+  검색되는 것을 둔다. `#한국사` 같은 넓은 말은 뒤로 뺀다 — 앞에 두면
+  자리만 먹고 이 영상이 무엇인지 못 알려준다.
+- **`#땅과때`를 전 편에 넣는다.** 하나 보고 들어온 사람이 나머지를
+  한 번에 볼 수 있는 자리가 생긴다. 채널이 커지면 이게 제일 값싸게
+  일한다.
+- **`#shorts`는 넣되 기대하지 않는다.** 예전만큼 일하지 않지만 해로울
+  것도 없다.
+- 편마다 그 편에만 있는 고유명사를 서너 개 넣는다. `#장진호`, `#도라산역`,
+  `#태풍사라` 같은 것. 검색량은 적어도 그걸 찾는 사람은 반드시 본다.
+
 ---
 
 영상마다 제목·설명·고정댓글을 함께 둔다. 고정댓글이 따로 있는 이유는,
@@ -199,7 +220,8 @@
 Licensed under Creative Commons: By Attribution 4.0
 https://creativecommons.org/licenses/by/4.0/
 
-#임진왜란 #한국사 #역사지도 #이순신 #정유재란
+#임진왜란 #이순신 #한국사
+#정유재란 #명량 #한산도대첩 #행주대첩 #노량해전 #조선시대 #역사지도 #전쟁사 #땅과때 #shorts
 ```
 
 ### 고정댓글
@@ -251,7 +273,8 @@ https://creativecommons.org/licenses/by/4.0/
 Licensed under Creative Commons: By Attribution 4.0
 https://creativecommons.org/licenses/by/4.0/
 
-#6·25전쟁 #한국사 #역사지도 #한국전쟁 #인천상륙작전
+#625전쟁 #한국전쟁 #인천상륙작전
+#낙동강방어선 #장진호 #흥남철수 #한국사 #근현대사 #역사지도 #전쟁사 #땅과때 #shorts
 ```
 
 ### 고정댓글
@@ -319,7 +342,8 @@ https://creativecommons.org/licenses/by/4.0/
 Licensed under Creative Commons: By Attribution 4.0
 https://creativecommons.org/licenses/by/4.0/
 
-#태풍 #사라 #루사 #매미 #힌남노 #기상
+#태풍 #태풍사라 #힌남노
+#루사 #매미 #기상 #자연재해 #태풍경로 #한국사 #역사지도 #땅과때 #shorts
 ```
 
 ### 고정댓글
@@ -381,7 +405,8 @@ https://creativecommons.org/licenses/by/4.0/
 Licensed under Creative Commons: By Attribution 4.0
 https://creativecommons.org/licenses/by/4.0/
 
-#철도 #한국사 #역사지도 #경의선 #KTX #도라산
+#철도 #경의선 #도라산역
+#KTX #한국철도 #기차 #동해선 #분단 #근현대사 #역사지도 #땅과때 #shorts
 ```
 
 ### 고정댓글
