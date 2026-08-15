@@ -217,10 +217,25 @@ export const ChannelBanner: React.FC = () => {
           >
             땅과 때
           </div>
-          <div style={{ width: 620, height: 1, background: "#4A4234", margin: "22px 0 16px" }} />
-          {/* 소재를 나열하지 않는다. 소재는 매번 바뀌고 이건 안 바뀐다. */}
-          <div style={{ color: "#BDB3A0", fontSize: 36, fontWeight: 500 }}>
-            기록에 있는 값과 채운 값을 구분해서 씁니다
+          <div style={{ width: 560, height: 1, background: "#4A4234", margin: "22px 0 16px" }} />
+          {/*
+            소재를 나열하지 않는다. 소재는 매번 바뀌고 이건 안 바뀐다.
+
+            '기록에 있는 값과 채운 값을 구분해서 씁니다'라고 적었다가 고쳤다.
+            배너는 누구한테 해명하는 자리가 아니라 이 채널이 어떤 채널인지
+            한눈에 보여주는 자리다. 설명문이 아니라 표어여야 한다.
+            본편 자막이 전부 평서형인데 채널 얼굴만 존댓말이면 목소리가
+            따로 논다.
+          */}
+          <div
+            style={{
+              color: "#BDB3A0",
+              fontSize: 40,
+              fontWeight: 600,
+              letterSpacing: 1,
+            }}
+          >
+            기록은 기록대로, 추정은 추정대로
           </div>
         </div>
       </AbsoluteFill>
