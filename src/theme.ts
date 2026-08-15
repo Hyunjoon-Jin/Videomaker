@@ -43,6 +43,9 @@ export const INK = {
   indigoHot: "#7FA8C4",
   brass: "#C09240",   // 놋쇠
   olive: "#7C8B52",   // 국방색
+  /** 봉수 편 — 밤에 켜진 불과 그 잔불 */
+  flame: "#FFC96B",
+  ember: "#D9741F",
   bone: "#EDE5D4",
   ash: "#8E8474",
 } as const;

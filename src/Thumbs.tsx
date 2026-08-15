@@ -6,6 +6,7 @@ import { makePolyFront } from "./polyfront";
 import { FRONT_TRACE } from "./data/korean-war";
 import { LINES, cutLatAt, partialPath, splitAt } from "./data/rail";
 import { EA_LANDS, TYPHOONS, eaProject, trackPathTo } from "./data/typhoon";
+import { BEACON_XY } from "./data/bongsu";
 import { C, INK } from "./theme";
 import { Grain } from "./Grain";
 import { useFonts } from "./fonts";
@@ -290,3 +291,45 @@ export const ThumbRail: React.FC = () => {
     </Frame>
   );
 };
+
+/* ── 5. 봉수 ──────────────────────────────────────────
+   불이 다 붙은 상태. 부산에서 남산까지 한 줄로 이어진 그림이 이 편의 전부다.
+   반도 전체가 아니라 그 줄만 담기게 남부로 내려 잡는다. */
+export const ThumbBongsu: React.FC = () => (
+  <Frame>
+    <AbsoluteFill style={{ opacity: 0.95 }}>
+      <svg
+        // 봉수 사슬(x 453~625, y 556~811)만 담기게 바짝 당긴다.
+        // 반도 전체를 잡으면 줄이 손톱만 해져서 이 편의 그림이 사라진다.
+        viewBox="342 473 394 700"
+        preserveAspectRatio="xMidYMid slice"
+        style={{ width: "100%", height: "100%", display: "block" }}
+      >
+        {PROVINCES.map((p) => (
+          <path key={p.id} d={p.d} fill="#1B1810" stroke="#4C432E" strokeWidth={1.1} />
+        ))}
+        <path
+          d={BEACON_XY.map((b, i) => `${i ? "L" : "M"}${b.x.toFixed(1)} ${b.y.toFixed(1)}`).join("")}
+          fill="none"
+          stroke={INK.ember}
+          strokeWidth={4.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        {BEACON_XY.map((b) => (
+          <g key={b.name}>
+            <circle cx={b.x} cy={b.y} r={7} fill={INK.flame} opacity={0.55} />
+            <circle cx={b.x} cy={b.y} r={3.2} fill="#FFF3D6" />
+          </g>
+        ))}
+      </svg>
+    </AbsoluteFill>
+    <Face
+      kicker="조선 봉수 · 제2로 직봉"
+      big="12"
+      unit="시간"
+      label="실제로는 닷새가 걸렸다"
+      color={INK.flame}
+    />
+  </Frame>
+);
