@@ -25,8 +25,30 @@ const HOOK = Math.round(4.5 * FPS);
  */
 const BEATS = WAR_EVENTS.map((e) => beatOf(e.month, e.impact ?? 0.4, FPS));
 const SPANS = layoutBeats(BEATS, HOOK, 0.22);
-const TAIL = Math.round(1.6 * FPS);
-export const WAR_DURATION = SPANS[SPANS.length - 1].t2 + TAIL;
+/**
+ * 마무리.
+ *
+ * 노량 자막이 끝나자마자 화면이 꺼졌다. 7년을 따라온 사람 입장에서는
+ * 끝난 게 아니라 끊긴 것이다. 나머지 세 편과 같이, 카메라를 반도 전체로
+ * 빼고 지금까지 본 것을 한 장으로 세운 뒤 닫는다.
+ */
+const BODY_END = SPANS[SPANS.length - 1].t2;
+const OUTRO = Math.round(9.5 * FPS);
+export const WAR_DURATION = BODY_END + OUTRO;
+
+/**
+ * 전쟁의 방향이 바뀐 날 — 마무리에 세운다.
+ * 날짜는 본편과 같이 전부 음력이다. 한양 함락(5.3)과 한양 수복(4.18)을
+ * 같이 둔 것은 훅의 '11개월'이 어디서 나온 값인지 여기서 닫히게 하려는 것이다.
+ */
+const TURNS: Array<[string, string]> = [
+  ["1592. 4. 13", "부산 상륙"],
+  ["1592. 5. 3", "한양 함락"],
+  ["1592. 7. 8", "한산도"],
+  ["1593. 4. 18", "한양 수복"],
+  ["1597. 9. 16", "명량"],
+  ["1598. 11. 19", "노량"],
+];
 
 /** 프레임 → 개월 */
 function monthAt(frame: number): number {
@@ -55,6 +77,13 @@ const SHOTS: Shot[] = [
       { at: sp.t2, cx: q.x, cy: q.y, z },
     ];
   }),
+  // 마무리 — 남부로 뺀다.
+  //
+  // 처음에는 다른 편처럼 반도 전체를 잡았는데, 마무리 문장이 전라도
+  // 얘기인 반면 전라도는 화면 아래 70% 지점이라 글자 그늘에 완전히
+  // 묻혔다. 글은 전라도를 말하는데 화면에는 평안도가 떠 있는 꼴이다.
+  // 한양은 목록에 글로 남으므로 화면에서 빠져도 된다.
+  { at: BODY_END + Math.round(1.8 * FPS), cx: 480, cy: 880, z: 2.2 },
 ];
 
 export const ShortsWar: React.FC = () => {
@@ -69,6 +98,12 @@ export const ShortsWar: React.FC = () => {
   // 사건 직후에만 충격이 실린다
   const near = bi >= 0 ? Math.max(0, 1 - (frame - SPANS[bi].t1) / 26) : 0;
   const impact = (ev?.impact ?? 0) * near;
+
+  const inOutro = frame >= BODY_END;
+  const outroIn = interpolate(frame, [BODY_END, BODY_END + 22], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
 
   const hookOut = interpolate(frame, [HOOK - 14, HOOK], [1, 0], {
     extrapolateLeft: "clamp",
@@ -94,7 +129,7 @@ export const ShortsWar: React.FC = () => {
 
       {/* ── 지도 ── */}
       <AbsoluteFill style={{ opacity: mapIn }}>
-        <WarMap month={month} reveal={mapIn} viewBox={cam.viewBox} u={u} />
+        <WarMap month={month} reveal={mapIn} viewBox={cam.viewBox} u={u} markJeolla={inOutro} />
       </AbsoluteFill>
 
       {/* 글자 자리 어둠 — 지도가 전면이라 이게 없으면 글자가 지도에 묻힌다 */}
@@ -116,7 +151,7 @@ export const ShortsWar: React.FC = () => {
       />
 
       {/* ── 연월 ── */}
-      {mapIn > 0.5 && (
+      {mapIn > 0.5 && !inOutro && (
         <div style={{ position: "absolute", top: 108, left: 60, right: 60 }}>
           <div style={{ color: C.dim, fontSize: 30, fontWeight: 700, letterSpacing: 2 }}>
             임진왜란과 정유재란
@@ -136,7 +171,7 @@ export const ShortsWar: React.FC = () => {
       )}
 
       {/* ── 사건 ── */}
-      {ev && mapIn > 0.5 && (
+      {ev && mapIn > 0.5 && !inOutro && (
         <div style={{ position: "absolute", bottom: 306, left: 60, right: 60 }}>
           <div style={{ color: accent, fontSize: 34, fontWeight: 900 }}>
             {ev.win ? "조선 승전" : ev.date}
@@ -173,8 +208,69 @@ export const ShortsWar: React.FC = () => {
         </div>
       )}
 
+      {/* ── 마무리 ── */}
+      {inOutro && (
+        <>
+          {/* 마무리 글이 여섯 줄이라 본문용 그라데이션보다 위까지 올라온다.
+              그 위로 지도가 그대로 비쳐 글자가 안 읽혀서 한 겹 더 깐다. */}
+          <AbsoluteFill
+            style={{
+              background:
+                "linear-gradient(180deg, rgba(12,10,8,0) 32%, rgba(12,10,8,0.70) 48%, rgba(12,10,8,0.95) 58%)",
+              opacity: outroIn,
+              pointerEvents: "none",
+            }}
+          />
+          <AbsoluteFill
+            style={{
+              justifyContent: "flex-end",
+              padding: "0 60px 232px",
+              opacity: outroIn,
+            }}
+          >
+            <div style={{ color: C.dim, fontSize: 30, fontWeight: 700, marginBottom: 12 }}>
+              전쟁의 방향이 바뀐 날 (음력)
+            </div>
+            {TURNS.map(([d, what], i) => (
+              <div
+                key={d}
+                style={{ display: "flex", alignItems: "baseline", gap: 22, marginTop: 2 }}
+              >
+                <span
+                  style={{
+                    color: C.dim,
+                    fontSize: 36,
+                    fontWeight: 700,
+                    fontVariantNumeric: "tabular-nums",
+                    minWidth: 226,
+                  }}
+                >
+                  {d}
+                </span>
+                <span
+                  style={{
+                    // 조선이 이긴 날은 푸른색, 밀린 날은 붉은색
+                    color: i === 2 || i === 3 || i === 4 || i === 5 ? "#7FA8C4" : "#D4694F",
+                    fontSize: 44,
+                    fontWeight: 900,
+                  }}
+                >
+                  {what}
+                </span>
+              </div>
+            ))}
+            <div style={{ height: 1, background: "#3B342A", margin: "24px 0 16px" }} />
+            <div style={{ color: C.text, fontSize: 50, fontWeight: 800, lineHeight: 1.34 }}>
+              전라도는 1차 침공을 끝까지 버텼다
+              <br />
+              1597년 남원이 함락되고서야 열렸다
+            </div>
+          </AbsoluteFill>
+        </>
+      )}
+
       {/* ── 범례 · 고지 ── */}
-      {mapIn > 0.5 && (
+      {mapIn > 0.5 && !inOutro && (
         <div style={{ position: "absolute", bottom: 62, left: 60, right: 60 }}>
           <div style={{ display: "flex", gap: 22, marginBottom: 10, flexWrap: "wrap" }}>
             <Key color="#7A2A20" label="일본군 점령" />

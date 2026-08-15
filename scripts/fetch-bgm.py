@@ -49,7 +49,7 @@ CREDIT = (
 # (출력, 곡 이름, 시작 초, 길이 초, 왜 이 곡인지)
 TRACKS = [
     (
-        "public/bgm.wav", "The Descent", 33.0, 72.9,
+        "public/bgm.wav", "The Descent", 33.0, 80.8,
         "임진왜란 — 어둡게 조여드는 진행. Clash Defiant가 더 웅장했지만 "
         "고른 구간이 저역 76%라 휴대폰에서 뭉근하게만 들렸다.",
     ),

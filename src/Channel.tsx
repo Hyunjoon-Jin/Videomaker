@@ -1,7 +1,7 @@
 import React from "react";
 import { AbsoluteFill } from "remotion";
 import provinces from "./data/provinces.json";
-import { LINES } from "./data/rail";
+import { LINES, partialPath } from "./data/rail";
 import { project } from "./data/places";
 import { C, INK } from "./theme";
 import { Grain } from "./Grain";
@@ -22,64 +22,79 @@ const VIEWBOX: string = provinces.viewBox;
  */
 export const ChannelIcon: React.FC = () => {
   useFonts();
-  // 반도의 대략적인 중심과 크기 — 아이콘 안에서 꽉 차게 키운다
-  const CX = 440;
-  const CY = 475;
-  const K = 1.05;
+  /*
+    담기는 크기.
+
+    지도 좌표는 0..1000을 꽉 채우고 제주는 y 962~1000, 반도 북단은 y 0에
+    닿아 있다. 그대로 그리면 위아래가 액자에 잘린다 — 실제로 제주가 밑변에
+    걸려 반쯤 잘려 있었다. 게다가 유튜브는 프로필을 원으로 오려내므로
+    네 귀퉁이는 버려지고, 위아래 끝은 원이 좁아지는 자리라 더 위험하다.
+
+    지도 1000단위를 아이콘 800px 중 640px에만 넣는다. 위아래로 80px씩
+    남으므로 원에 잘리지 않는다. viewBox를 1250으로 키우면 그 배율이 된다.
+  */
+  const PAD = (1000 * 800) / 640 / 2 - 500; // = 125
+  const box = `${-PAD} ${-PAD} ${1000 + PAD * 2} ${1000 + PAD * 2}`;
+  const y38 = project(127, 38).y;
   return (
     <AbsoluteFill style={{ backgroundColor: C.bg, fontFamily: "Pretendard" }}>
       {/* 원형 바탕 — 유튜브가 원으로 잘라내므로 모서리는 버려진다 */}
       <AbsoluteFill
         style={{
-          background: `radial-gradient(circle at 50% 44%, #241F19 0%, ${C.bg} 74%)`,
+          background: `radial-gradient(circle at 50% 46%, #2A2319 0%, ${C.bg} 76%)`,
         }}
       />
-      <AbsoluteFill style={{ padding: 70 }}>
-        <svg viewBox={VIEWBOX} style={{ width: "100%", height: "100%" }}>
-          <g transform={`translate(${CX} ${CY}) scale(${K}) translate(${-CX} ${-CY})`}>
-            {/*
-              도 경계선을 그대로 두면 48px에서 뭉개져 얼룩으로 보인다.
-              같은 path를 두 번 그려 실루엣만 남긴다. 아래층은 굵은 놋쇠선으로
-              바깥에 테를 만들고, 위층이 안쪽을 도로 덮어 내부 경계를 지운다.
-            */}
-            {PROVINCES.map((p) => (
-              <path
-                key={`o${p.id}`}
-                d={p.d}
-                fill={INK.brass}
-                stroke={INK.brass}
-                strokeWidth={16}
-                strokeLinejoin="round"
-              />
-            ))}
-            {PROVINCES.map((p) => (
-              <path
-                key={p.id}
-                d={p.d}
-                fill="#3A342A"
-                stroke="#3A342A"
-                strokeWidth={5}
-                strokeLinejoin="round"
-              />
-            ))}
-            {/*
-              때 — 반도를 가로지르는 선 하나.
-              화면 끝까지 늘이면 원형으로 잘렸을 때 뜬금없는 줄무늬가 된다.
-              반도를 조금 넘는 만큼만 긋는다.
-            */}
-            <line
-              x1={205}
-              y1={project(127, 38).y}
-              x2={675}
-              y2={project(127, 38).y}
-              stroke={INK.oxideHot}
-              strokeWidth={17}
-              strokeLinecap="round"
+      <AbsoluteFill>
+        <svg viewBox={box} style={{ width: "100%", height: "100%" }}>
+          {/*
+            48px에서도 읽혀야 한다.
+
+            전에는 어두운 면에 가는 놋쇠 테를 둘렀는데, 그 크기가 되면
+            테는 사라지고 배경과 비슷한 갈색 얼룩만 남았다. 아이콘은
+            그림이 아니라 표식이므로 면을 통째로 밝게 채운다. 같은 path를
+            두껍게 한 번 더 깔아 도와 도 사이 실틈을 메워 하나의 실루엣이
+            되게 한다.
+          */}
+          {PROVINCES.map((p) => (
+            <path
+              key={`o${p.id}`}
+              d={p.d}
+              fill={INK.brass}
+              stroke={INK.brass}
+              strokeWidth={9}
+              strokeLinejoin="round"
             />
-          </g>
+          ))}
+
+          {/*
+            때 — 반도를 가로지르는 선 하나. 채널 이름이 '땅과 때'라
+            땅은 반도가, 때는 이 선이 맡는다. 38선이자 위도선이고 시간 축이다.
+
+            놋쇠 위에 붉은 선을 그냥 얹으면 둘 다 따뜻한 색이라 작은 크기에서
+            뭉갠다. 바탕색으로 먼저 굵게 그어 홈을 파고 그 안에 붉은 선을
+            넣으면, 색이 아니라 형태로 갈라져 48px에서도 살아남는다.
+          */}
+          <line
+            x1={185}
+            y1={y38}
+            x2={700}
+            y2={y38}
+            stroke={C.bg}
+            strokeWidth={44}
+            strokeLinecap="round"
+          />
+          <line
+            x1={195}
+            y1={y38}
+            x2={690}
+            y2={y38}
+            stroke={INK.oxideHot}
+            strokeWidth={22}
+            strokeLinecap="round"
+          />
         </svg>
       </AbsoluteFill>
-      <Grain opacity={0.4} vignette={0.3} />
+      <Grain opacity={0.3} vignette={0.28} />
     </AbsoluteFill>
   );
 };
@@ -105,30 +120,33 @@ export const ChannelBanner: React.FC = () => {
           preserveAspectRatio="xMidYMid meet"
           style={{ width: "100%", height: "100%" }}
         >
-          <g transform="translate(430 0)">
+          {/* 0.9배로 줄여 제주가 밑변에 걸리지 않게 한다.
+              그대로 두면 지도 y가 0~1000을 꽉 채워 제주가 잘려 나간다. */}
+          <g transform="translate(430 0) translate(500 500) scale(0.9) translate(-500 -500)">
             {PROVINCES.map((p) => (
               <path
                 key={p.id}
                 d={p.d}
-                fill="#252118"
-                stroke="#5A5344"
+                fill="#282318"
+                stroke="#645C4A"
                 strokeWidth={2.2}
               />
             ))}
+            {/*
+              본편과 같은 곡선을 쓴다.
+              정차역 좌표를 직선으로 이으면 역마다 각이 져서 철길이 아니라
+              접은 종이가 된다. 경의선과 함경선에서 특히 티가 났다.
+            */}
             {LINES.map((l) => (
               <path
                 key={l.id}
-                d={l.pts
-                  .map(([lo, la], i) => {
-                    const q = project(lo, la);
-                    return `${i ? "L" : "M"}${q.x} ${q.y}`;
-                  })
-                  .join("")}
+                d={partialPath(l.pts, 1)}
                 fill="none"
                 stroke={l.fast ? "#4C7A9B" : INK.brass}
-                strokeWidth={3.2}
+                strokeWidth={3.4}
                 strokeLinecap="round"
-                opacity={0.8}
+                strokeLinejoin="round"
+                opacity={0.85}
               />
             ))}
           </g>
@@ -174,7 +192,7 @@ export const ChannelBanner: React.FC = () => {
           >
             땅과 때
           </div>
-          <div style={{ height: 1, background: "#3B342A", margin: "22px 0 16px" }} />
+          <div style={{ width: 620, height: 1, background: "#4A4234", margin: "22px 0 16px" }} />
           <div style={{ color: "#BDB3A0", fontSize: 38, fontWeight: 500 }}>
             임진왜란 · 6·25 · 태풍 · 철도
           </div>

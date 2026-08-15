@@ -29,6 +29,8 @@ interface Props {
    * 글자 크기를 그대로 두면 줌인할 때 크레용으로 그린 것처럼 굵어진다.
    */
   u?: (px: number) => number;
+  /** 마무리에서 전라도를 다시 둘러 글과 화면을 맞춘다 */
+  markJeolla?: boolean;
   children?: React.ReactNode;
 }
 
@@ -71,11 +73,20 @@ export const WarMap: React.FC<Props> = ({
   reveal = 1,
   viewBox,
   u = (px: number) => px,
+  markJeolla = false,
   children,
 }) => {
   const fought = battlesUpTo(month);
   const jeollaA = JEOLLA.alphaAt(month);
   const jeollaD = jeollaA > 0 ? JEOLLA.pathAt(month) : "";
+  /**
+   * 마무리에서 전라도를 다시 두른다.
+   *
+   * 마무리 문장이 전라도 얘기인데 그때는 전쟁이 끝나 미점령 표시가 이미
+   * 꺼져 있다. 글은 전라도를 말하는데 화면에는 아무것도 없는 상태가 된다.
+   * 라벨은 '미점령'이 아니라 도 이름만 — 1597년에 뚫렸으므로.
+   */
+  const jeollaMark = markJeolla ? 1 : jeollaA;
 
   return (
     <svg
@@ -112,14 +123,14 @@ export const WarMap: React.FC<Props> = ({
             strokeWidth={u(4)}
             opacity={0.85}
           />
-          {jeollaA > 0 && (
+          {jeollaMark > 0 && (
             <path
               d={JEOLLA_PATH}
               fill="none"
               stroke={JOSEON_C}
               strokeWidth={u(4)}
               strokeDasharray={`${u(11)} ${u(8)}`}
-              opacity={jeollaA * 0.9}
+              opacity={jeollaMark * 0.9}
             />
           )}
         </g>
@@ -239,7 +250,7 @@ export const WarMap: React.FC<Props> = ({
         })}
 
         {/* 전라도 라벨 — 지켜낸 도라는 것이 읽혀야 한다 */}
-        {jeollaA > 0 && (
+        {jeollaMark > 0 && (
           <text
             x={330}
             y={800}
@@ -247,10 +258,10 @@ export const WarMap: React.FC<Props> = ({
             fontSize={u(28)}
             fontWeight={900}
             fill={JOSEON_C}
-            opacity={jeollaA}
+            opacity={jeollaMark}
             style={{ paintOrder: "stroke", stroke: "#151310", strokeWidth: u(6) }}
           >
-            전라도 미점령
+            {markJeolla ? "전라도" : "전라도 미점령"}
           </text>
         )}
 
