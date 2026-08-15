@@ -7,6 +7,7 @@ import { FRONT_TRACE } from "./data/korean-war";
 import { LINES, cutLatAt, partialPath, splitAt } from "./data/rail";
 import { EA_LANDS, TYPHOONS, eaProject, trackPathTo } from "./data/typhoon";
 import { BEACON_XY } from "./data/bongsu";
+import { FEEDS, PLANT_XY, radiusOf } from "./data/power";
 import { C, INK } from "./theme";
 import { Grain } from "./Grain";
 import { useFonts } from "./fonts";
@@ -329,6 +330,54 @@ export const ThumbBongsu: React.FC = () => (
       big="12"
       unit="시간"
       label="실제로는 닷새가 걸렸다"
+      color={INK.flame}
+    />
+  </Frame>
+);
+
+/* ── 6. 5·14 단전 ─────────────────────────────────────
+   단전 직후. 북쪽 큰 원 넷이 꺼지고 남쪽 작은 원 셋만 남은 그림이
+   이 편의 전부다. 원 크기 차이가 200px에서도 읽힌다. */
+export const ThumbPower: React.FC = () => (
+  <Frame>
+    <AbsoluteFill style={{ opacity: 0.95 }}>
+      <svg
+        viewBox={PENINSULA_VB}
+        preserveAspectRatio="xMidYMid slice"
+        style={{ width: "100%", height: "100%", display: "block" }}
+      >
+        {PROVINCES.map((p) => (
+          <path key={p.id} d={p.d} fill="#221E16" stroke="#4E4736" strokeWidth={2} />
+        ))}
+        {FEEDS.map((f) => (
+          <path
+            key={f.id}
+            d={f.d}
+            fill="none"
+            stroke="#6A6252"
+            strokeWidth={3}
+            strokeDasharray="12 14"
+            opacity={0.55}
+          />
+        ))}
+        {PLANT_XY.filter((p) => !p.ship).map((p) => {
+          const off = p.north;
+          const col = off ? "#6A6252" : INK.flame;
+          const r = radiusOf(p.kw);
+          return (
+            <g key={p.name}>
+              <circle cx={p.x} cy={p.y} r={r} fill={col} opacity={off ? 0.18 : 0.3} />
+              <circle cx={p.x} cy={p.y} r={r} fill="none" stroke={col} strokeWidth={3.4} />
+            </g>
+          );
+        })}
+      </svg>
+    </AbsoluteFill>
+    <Face
+      kicker="1948년 5월 14일 정오"
+      big="11.5"
+      unit="%"
+      label="남한에 있던 발전설비의 몫"
       color={INK.flame}
     />
   </Frame>
