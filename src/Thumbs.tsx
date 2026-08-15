@@ -8,6 +8,7 @@ import { LINES, cutLatAt, partialPath, splitAt } from "./data/rail";
 import { EA_LANDS, TYPHOONS, eaProject, trackPathTo } from "./data/typhoon";
 import { BEACON_XY } from "./data/bongsu";
 import { FEEDS, PLANT_XY, radiusOf } from "./data/power";
+import { XY as TS_XY, traveled } from "./data/tongsinsa";
 import { C, INK } from "./theme";
 import { Grain } from "./Grain";
 import { useFonts } from "./fonts";
@@ -382,3 +383,49 @@ export const ThumbPower: React.FC = () => (
     />
   </Frame>
 );
+
+/* ── 7. 조선통신사 ────────────────────────────────────
+   한 줄이 한반도에서 일본 동쪽 끝까지 건너간 그림. 200px에서 읽히는
+   것은 그 길이뿐이고, 그 길이가 이 편의 답이다. 뭍길과 바닷길을
+   본편과 같은 색으로 나눠 그린다 — 걸어간 길보다 배로 간 길이 길다. */
+export const ThumbTongsinsa: React.FC = () => {
+  const t = traveled(1);
+  return (
+    <Frame>
+      <AbsoluteFill style={{ opacity: 0.95 }}>
+        <svg
+          // 노정 전체(x 362~864, y 375~560)가 위쪽 3분의 1에 들어오게 잡는다.
+          viewBox="318 44 604 1074"
+          preserveAspectRatio="xMidYMid slice"
+          style={{ width: "100%", height: "100%", display: "block" }}
+        >
+          {EA_LANDS.map((l, i) => (
+            <path key={i} d={l.d} fill="#2A241B" stroke="#645B4B" strokeWidth={2.2} />
+          ))}
+          <path d={t.land} fill="none" stroke={INK.brass} strokeWidth={7} strokeLinejoin="round" />
+          <path
+            d={t.sea}
+            fill="none"
+            stroke={INK.indigoHot}
+            strokeWidth={7}
+            strokeDasharray="15 11"
+            strokeLinecap="round"
+          />
+          {TS_XY.filter((s) => s.name === "한양" || s.name === "에도").map((s) => (
+            <g key={s.name}>
+              <circle cx={s.x} cy={s.y} r={16} fill="none" stroke={INK.bone} strokeWidth={5} />
+              <circle cx={s.x} cy={s.y} r={6} fill={INK.bone} />
+            </g>
+          ))}
+        </svg>
+      </AbsoluteFill>
+      <Face
+        kicker="1763년 · 한양에서 에도까지"
+        big="24"
+        unit="일"
+        label="여섯 달을 가서 머문 날"
+        color={INK.brass}
+      />
+    </Frame>
+  );
+};
