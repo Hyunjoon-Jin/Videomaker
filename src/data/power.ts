@@ -39,6 +39,15 @@ export const SOUTH_KW = 199_000;
 
 export interface Plant {
   name: string;
+  /**
+   * 지도에 그리지 않고 합계에만 넣는다.
+   *
+   * 이름을 아는 발전소만 더하면 172만 3천kW가 안 나온다. 작은 발전소가
+   * 남북 양쪽에 흩어져 있었기 때문이다. 그 차액을 '기타'로 넣어야 화면의
+   * 비율이 기록값(남한 11.5%)과 정확히 맞는다. 안 넣으면 9.9%가 떠서,
+   * 자막이 말하는 숫자와 막대가 서로 다른 말을 하게 된다.
+   */
+  hidden?: boolean;
   where: string;
   lon: number;
   lat: number;
@@ -68,9 +77,35 @@ export const PLANTS: Plant[] = [
   // 배에 실린 발전소. 단전에 대한 미군정의 임시 대응이다.
   { name: "자코나", where: "부산항 · 발전함", lon: 129.04, lat: 35.10, kw: 20_000, from: 1948.2, north: false, ship: true, side: "left", dy: 22 },
   { name: "엘렉트라", where: "인천항 · 발전함", lon: 126.61, lat: 37.46, kw: 6_900, from: 1948.5, north: false, ship: true, side: "left" },
+
+  // 이름을 적지 않은 나머지. 172만 3천kW / 남한 19만 9천kW에 맞춘 차액이다.
+  //   북한 152만 4천 − 명시분 147만 2천 80 = 5만 1천 920
+  //   남한  19만 9천 − 명시분  16만 2천 100 = 3만 6천 900
+  { name: "기타(북)", where: "", lon: 0, lat: 0, kw: 51_920, from: 1929, north: true, hidden: true },
+  { name: "기타(남)", where: "", lon: 0, lat: 0, kw: 36_900, from: 1929, north: false, hidden: true },
 ];
 
-export const PLANT_XY = PLANTS.map((p) => ({ ...p, ...project(p.lon, p.lat) }));
+/** 그 해까지 들어선 설비를 남북으로 나눠 합친다 */
+export function capacityAt(year: number): { north: number; south: number; total: number } {
+  let north = 0;
+  let south = 0;
+  for (const p of PLANTS) {
+    if (year < p.from) continue;
+    // 발전함은 배에 실려 온 것이라 '한반도에 있던 설비'에 넣지 않는다
+    if (p.ship) continue;
+    if (p.north) north += p.kw;
+    else south += p.kw;
+  }
+  return { north, south, total: north + south };
+}
+
+/** 172만 3천kW를 100으로 봤을 때 이 발전소의 몫 */
+export function shareLabel(kw: number): string {
+  const pct = (kw / TOTAL_KW) * 100;
+  return pct >= 1 ? `${Math.round(pct)}%` : `${pct.toFixed(1)}%`;
+}
+
+export const PLANT_XY = PLANTS.filter((p) => !p.hidden).map((p) => ({ ...p, ...project(p.lon, p.lat) }));
 
 /** 단전 시각 — 1948년 5월 14일 정오 */
 export const CUT = 1948 + (31 + 29 + 31 + 30 + 14) / 366;
@@ -100,7 +135,7 @@ export function yearLabel(y: number): string {
  * 것이 아니라 전기가 안 온 것이기 때문이다.
  */
 const SEOUL = project(126.98, 37.55);
-export const FEEDS = PLANTS.filter((p) => p.north).map((p) => {
+export const FEEDS = PLANTS.filter((p) => p.north && !p.hidden).map((p) => {
   const a = project(p.lon, p.lat);
   return { id: p.name, from: p.from, d: `M${a.x.toFixed(1)} ${a.y.toFixed(1)}L${SEOUL.x.toFixed(1)} ${SEOUL.y.toFixed(1)}` };
 });

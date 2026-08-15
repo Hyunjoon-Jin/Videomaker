@@ -14,7 +14,9 @@ import {
   P_EVENTS,
   SOUTH_KW,
   TOTAL_KW,
+  capacityAt,
   radiusOf,
+  shareLabel,
   yearLabel,
 } from "./data/power";
 import { project } from "./data/places";
@@ -165,7 +167,9 @@ export const ShortsPower: React.FC = () => {
                     fill={off ? "#8E8474" : p.ship ? "#9FC2DA" : "#FFE0A0"}
                     style={{ paintOrder: "stroke", stroke: "#100E0A", strokeWidth: u(6) }}
                   >
-                    {p.name}
+                    {/* "커 보인다"까지는 원 크기가 하고, "몇 퍼센트인지"는
+                        숫자가 해야 한다. 이 편의 주제가 비율이다. */}
+                    {p.ship ? p.name : `${p.name} ${shareLabel(p.kw)}`}
                   </text>
                 )}
               </g>
@@ -220,6 +224,7 @@ export const ShortsPower: React.FC = () => {
           >
             {yearLabel(year)}
           </div>
+          <ShareBar year={year} cut={cut} />
         </div>
       )}
 
@@ -392,6 +397,75 @@ export const ShortsPower: React.FC = () => {
       )}
       <Grain />
     </AbsoluteFill>
+  );
+};
+
+/**
+ * 남북 비율 막대.
+ *
+ * 원 크기만으로는 "북쪽이 크다"까지밖에 안 간다. 이 편의 질문은
+ * "전기를 만드는 곳이 어느 쪽에 얼마나 있었나"이므로 그 비율 자체가
+ * 화면에 상주해야 한다. 발전소가 하나 들어설 때마다 막대가 움직인다.
+ *
+ * 합계는 기록값(172만 3천kW)과 맞춘 값이라 1944년에 정확히 88.5 : 11.5가
+ * 된다. 자막이 말하는 숫자와 막대가 서로 다른 말을 하면 안 된다.
+ */
+const ShareBar: React.FC<{ year: number; cut: boolean }> = ({ year, cut }) => {
+  const { north, south, total } = capacityAt(year);
+  if (total <= 0) return null;
+  // 분모는 항상 172만 3천kW다. 그래야 발전소 라벨의 퍼센트와 같은 자를 쓴다.
+  // 막대의 빈 부분은 아직 안 지어진 설비고, 1944년에 꽉 찬다.
+  const ns = (north / TOTAL_KW) * 100;
+  const ss = (south / TOTAL_KW) * 100;
+  return (
+    <div style={{ marginTop: 14 }}>
+      <div
+        style={{
+          display: "flex",
+          height: 26,
+          borderRadius: 4,
+          overflow: "hidden",
+          border: "1px solid #4A4234",
+          background: "#241F17",
+        }}
+      >
+        <div style={{ width: `${ns}%`, background: cut ? DEAD : LIVE, opacity: cut ? 0.5 : 0.95 }} />
+        <div style={{ width: `${ss}%`, background: C.text, opacity: 0.9 }} />
+      </div>
+      <div style={{ display: "flex", gap: 20, marginTop: 8, alignItems: "baseline" }}>
+        <span
+          style={{
+            color: cut ? "#8E8474" : INK.flame,
+            fontSize: 30,
+            fontWeight: 900,
+            fontVariantNumeric: "tabular-nums",
+          }}
+        >
+          북 {ns.toFixed(1)}%
+        </span>
+        <span
+          style={{
+            color: C.text,
+            fontSize: 30,
+            fontWeight: 900,
+            fontVariantNumeric: "tabular-nums",
+          }}
+        >
+          남 {ss.toFixed(1)}%
+        </span>
+        <span
+          style={{
+            color: C.dim,
+            fontSize: 25,
+            fontWeight: 700,
+            marginLeft: "auto",
+            fontVariantNumeric: "tabular-nums",
+          }}
+        >
+          {(total / 10_000).toFixed(0)} / 172만kW
+        </span>
+      </div>
+    </div>
   );
 };
 
