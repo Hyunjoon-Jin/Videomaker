@@ -144,8 +144,22 @@ export const ShortsPower: React.FC = () => {
             const off = p.north && cut;
             const r = u(radiusOf(p.kw)) * (off ? 1 : pulse);
             const col = off ? DEAD : p.ship ? INK.indigoHot : LIVE;
+            // 단전 뒤에는 배가 주역이다. 그냥 두면 6,900kW짜리 점이라
+            // 화면에서 아무 일도 안 일어난 것처럼 보인다.
+            const halo = p.ship && cut;
             return (
               <g key={p.name}>
+                {halo && (
+                  <circle
+                    cx={p.x}
+                    cy={p.y}
+                    r={r + u(10) + u(16) * (0.5 + 0.5 * Math.sin(frame / 6))}
+                    fill="none"
+                    stroke={INK.indigoHot}
+                    strokeWidth={u(2.4)}
+                    opacity={0.55}
+                  />
+                )}
                 <circle cx={p.x} cy={p.y} r={r} fill={col} opacity={off ? 0.22 : 0.28} />
                 <circle
                   cx={p.x}
@@ -334,7 +348,7 @@ export const ShortsPower: React.FC = () => {
           <div style={{ display: "flex", gap: 22, marginBottom: 10, flexWrap: "wrap" }}>
             <Key color={LIVE} label="가동 중" />
             <Key color={DEAD} label="끊긴 공급" />
-            <Key color={INK.indigoHot} label="발전함" />
+            <Key color={INK.indigoHot} label="발전함 (8척 중 둘)" />
             <span style={{ color: C.dim, fontSize: 23, fontWeight: 700 }}>
               원 크기 = 설비용량
             </span>
