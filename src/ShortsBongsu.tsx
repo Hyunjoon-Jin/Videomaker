@@ -33,7 +33,14 @@ const HOOK = Math.round(4.5 * FPS);
  * 값은 개월도 연도도 아니고 시(hour)다. beats는 단조 증가하는 스칼라면
  * 무엇이든 받으므로 엔진은 그대로 쓴다.
  */
-const BEATS = B_EVENTS.map((e) => beatOf(e.at, e.impact ?? 0.4, FPS));
+/**
+ * 둘째 줄이 없는 봉수는 짧게 끊는다.
+ * 지명 한 줄만 읽으면 되는데 2.4초를 세우면 화면이 선다. 불이 달려가는
+ * 편이라 그 정지가 더 크게 걸린다.
+ */
+const BEATS = B_EVENTS.map((e) =>
+  beatOf(e.at, e.impact ?? 0.4, FPS, e.detail ? {} : { hold: 1.9, travel: 0.7 })
+);
 const SPANS = layoutBeats(BEATS, HOOK, 0.22);
 const BODY_END = SPANS[SPANS.length - 1].t2;
 const OUTRO = Math.round(10 * FPS);
@@ -261,18 +268,20 @@ export const ShortsBongsu: React.FC = () => {
               transformOrigin: "left bottom",
             }}
           />
-          <Typed
-            text={ev.detail}
-            start={frameOfEvent(bi) + Math.ceil((ev.title.length * 30) / 14) + 5}
-            cps={26}
-            style={{
-              display: "block",
-              color: "#BDB3A0",
-              fontSize: 38,
-              fontWeight: 500,
-              marginTop: 8,
-            }}
-          />
+          {ev.detail && (
+            <Typed
+              text={ev.detail}
+              start={frameOfEvent(bi) + Math.ceil((ev.title.length * 30) / 14) + 5}
+              cps={26}
+              style={{
+                display: "block",
+                color: "#BDB3A0",
+                fontSize: 38,
+                fontWeight: 500,
+                marginTop: 8,
+              }}
+            />
+          )}
         </div>
       )}
 

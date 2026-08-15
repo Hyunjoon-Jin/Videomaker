@@ -470,6 +470,9 @@ https://creativecommons.org/licenses/by/4.0/
 이 영상의 시계는 규정 12시간을 경로 길이로 나눈 값입니다. 봉수마다 몇
 시에 닿았다는 기록은 없습니다.
 
+봉수 이름만 뜨고 설명이 없는 구간이 있습니다. 지도가 이미 보여주는
+것을 글로 또 쓰지 않으려는 것입니다.
+
 음악: "Killers" — Kevin MacLeod (incompetech.com)
 Licensed under Creative Commons: By Attribution 4.0
 https://creativecommons.org/licenses/by/4.0/

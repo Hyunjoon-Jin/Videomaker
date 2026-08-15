@@ -145,11 +145,33 @@ export interface BEvent {
   /** 불이 붙는 시각(시간) — 봉수 인덱스와 1:1 */
   at: number;
   title: string;
-  detail: string;
+  /**
+   * 둘째 줄. 없어도 된다.
+   *
+   * 처음에는 봉수마다 "다음 봉수가 이 불을 보고 자기 불을 올린다"를
+   * 붙였는데, 열넷 중 여덟이 같은 문장이었다. 그건 정보가 아니라 자리
+   * 채우기고, 게다가 화면에서 이미 벌어지고 있는 일을 말로 또 하는 것이다.
+   * '국가 사적'도 위 작은 글자가 이미 말하고 있어 중복이었다.
+   *
+   * 지금은 지도가 말해주지 않는 것이 있을 때만 붙인다. 나머지는 지명만
+   * 띄우고 만다.
+   */
+  detail?: string;
   impact?: number;
   focus?: LonLat;
   zoom?: number;
 }
+
+/**
+ * 둘째 줄을 붙일 곳.
+ * 신호가 무엇인지(시작), 길이 꺾이는 곳, 산맥을 넘는 곳, 받는 곳.
+ */
+const NOTES: Record<number, string> = {
+  0: "봉수 둘 — 적이 나타났다는 뜻이다",
+  5: "여기서 해안을 떠나 내륙으로 꺾는다",
+  8: "소백산맥을 넘는다",
+  13: "여기서 병조가 받는다",
+};
 
 export const B_EVENTS: BEvent[] = BEACONS.map((b, i) => {
   const first = i === 0;
@@ -162,14 +184,10 @@ export const B_EVENTS: BEvent[] = BEACONS.map((b, i) => {
       : last
         ? "목멱산 도착"
         : `${b.where} ${b.name}`,
-    detail: first
-      ? "봉수 둘 — 적이 나타났다는 뜻이다"
-      : last
-        ? "여기서 병조가 받는다. 부산에서 서울까지 규정 12시간"
-        : b.heritage
-          ? "국가 사적으로 지정된 제2로 직봉 봉수 유적"
-          : "다음 봉수가 이 불을 보고 자기 불을 올린다",
-    impact: first || last ? 1 : i === 8 ? 0.9 : 0.5,
+    detail: NOTES[i],
+    // 읽을 것이 지명뿐인 봉수는 오래 세울 이유가 없다. 짧게 끊어
+    // 넘기면 불이 실제로 달려가는 느낌이 난다.
+    impact: first || last ? 1 : i === 8 ? 0.9 : i === 5 ? 0.6 : 0.2,
     focus: [b.lon, b.lat] as LonLat,
     zoom: first ? 3.2 : last ? 3.0 : i === 8 ? 2.8 : 2.6,
   };
