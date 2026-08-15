@@ -7,6 +7,7 @@ import { ShortsKoreanWar, KW_DURATION } from "./ShortsKoreanWar";
 import { ShortsTyphoon, TY_DURATION } from "./ShortsTyphoon";
 import { ShortsRail, RAIL_DURATION } from "./ShortsRail";
 import { ChannelBanner, ChannelIcon, ChannelWatermark } from "./Channel";
+import { ThumbKoreanWar, ThumbRail, ThumbTyphoon, ThumbWar } from "./Thumbs";
 import { FPS, SHORT_H, SHORT_W } from "./theme";
 
 export const RemotionRoot: React.FC = () => (
@@ -65,6 +66,23 @@ export const RemotionRoot: React.FC = () => (
       width={SHORT_W}
       height={SHORT_H}
     />
+    {/* 썸네일 — 쇼츠와 같은 9:16 */}
+    {([
+      ["ThumbWar", ThumbWar],
+      ["ThumbKoreanWar", ThumbKoreanWar],
+      ["ThumbTyphoon", ThumbTyphoon],
+      ["ThumbRail", ThumbRail],
+    ] as const).map(([id, comp]) => (
+      <Composition
+        key={id}
+        id={id}
+        component={comp}
+        durationInFrames={1}
+        fps={FPS}
+        width={SHORT_W}
+        height={SHORT_H}
+      />
+    ))}
     {/* 채널 자산 — 영상이 아니라 정지 이미지로 뽑는다 */}
     <Composition
       id="ChannelIcon"

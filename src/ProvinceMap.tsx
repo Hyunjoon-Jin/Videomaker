@@ -31,6 +31,14 @@ interface Props {
   u?: (px: number) => number;
   /** 마무리에서 전라도를 다시 둘러 글과 화면을 맞춘다 */
   markJeolla?: boolean;
+  /**
+   * 라벨과 표식을 전부 끄고 면과 선만 남긴다.
+   *
+   * 썸네일용이다. 썸네일은 그리드에서 폭 200px으로 뜨는데, 그 크기에서
+   * 지명·전투명·의병 표식은 읽히는 게 아니라 얼룩으로 보인다. 점령면과
+   * 전선만 남기면 '어디까지 밀렸나'가 한눈에 들어온다.
+   */
+  bare?: boolean;
   children?: React.ReactNode;
 }
 
@@ -74,6 +82,7 @@ export const WarMap: React.FC<Props> = ({
   viewBox,
   u = (px: number) => px,
   markJeolla = false,
+  bare = false,
   children,
 }) => {
   const fought = battlesUpTo(month);
@@ -141,7 +150,7 @@ export const WarMap: React.FC<Props> = ({
         ))}
 
         {/* 지명 */}
-        {CITIES.filter((c) => c.from <= month).map((c) => (
+        {!bare && CITIES.filter((c) => c.from <= month).map((c) => (
           <g key={c.name}>
             <circle cx={c.x} cy={c.y} r={u(5)} fill="#C09240" />
             <text
@@ -159,7 +168,7 @@ export const WarMap: React.FC<Props> = ({
         ))}
 
         {/* 이동 경로 — 선조 파천 · 명군 남하 */}
-        {ROUTES.map((r) => {
+        {!bare && ROUTES.map((r) => {
           const prog = routeProgress(r, month);
           if (prog <= 0) return null;
           // 도착하고 나면 서서히 지운다. 남겨두면 몇 년 뒤 화면에도
@@ -195,7 +204,7 @@ export const WarMap: React.FC<Props> = ({
         })}
 
         {/* 왜성 — 남해안 벨트. 교착기의 실체 */}
-        {month >= FORT_FROM && month < FORT_TO &&
+        {!bare && month >= FORT_FROM && month < FORT_TO &&
           FORTS.map((f) => (
             <g key={f.name}>
               <rect
@@ -211,7 +220,7 @@ export const WarMap: React.FC<Props> = ({
           ))}
 
         {/* 의병 */}
-        {MILITIA.filter((m) => m.month <= month).map((m) => {
+        {!bare && MILITIA.filter((m) => m.month <= month).map((m) => {
           const fresh = Math.max(0, 1 - (month - m.month) / 1.2);
           return (
             <g key={m.leader}>
@@ -250,7 +259,7 @@ export const WarMap: React.FC<Props> = ({
         })}
 
         {/* 전라도 라벨 — 지켜낸 도라는 것이 읽혀야 한다 */}
-        {jeollaMark > 0 && (
+        {!bare && jeollaMark > 0 && (
           <text
             x={330}
             y={800}
@@ -266,7 +275,7 @@ export const WarMap: React.FC<Props> = ({
         )}
 
         {/* 전투 */}
-        {fought.map((b) => (
+        {!bare && fought.map((b) => (
           <BattleMark key={b.name} b={b} month={month} u={u} />
         ))}
       </g>
