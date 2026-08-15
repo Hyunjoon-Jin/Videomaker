@@ -54,7 +54,8 @@ const BEATS = T_EVENTS.map((e, i) => {
  */
 const SPANS = layoutBeats(BEATS, HOOK, 0.03);
 const BODY_END = SPANS[SPANS.length - 1].t2;
-const OUTRO = Math.round(10 * FPS);
+// 마무리에 1876년 한 줄이 늘어서 읽을 것이 많아졌다
+const OUTRO = Math.round(12.5 * FPS);
 export const TONGSINSA_DURATION = BODY_END + OUTRO;
 
 function dayAtFrame(frame: number): number {
@@ -371,7 +372,7 @@ export const ShortsTongsinsa: React.FC = () => {
                 </span>
                 <span
                   style={{
-                    color: i === 3 ? INK.oxideHot : INK.brass,
+                    color: i === 3 ? INK.oxideHot : i === 4 ? INK.indigoHot : INK.brass,
                     fontSize: 42,
                     fontWeight: 900,
                   }}
@@ -382,9 +383,9 @@ export const ShortsTongsinsa: React.FC = () => {
             ))}
             <div style={{ height: 1, background: "#3B342A", margin: "24px 0 16px" }} />
             <div style={{ color: C.text, fontSize: 50, fontWeight: 800, lineHeight: 1.34 }}>
-              열두 번째는 에도를 못 봤다
+              부산에서 도쿄까지 8일이 걸렸다
               <br />
-              그리고 다시는 가지 않았다
+              방금 본 그 길은 129일이었다
             </div>
           </AbsoluteFill>
         </>
@@ -427,7 +428,7 @@ export const ShortsTongsinsa: React.FC = () => {
               />
             </div>
             <Typed
-              text="에도에 머문 날"
+              text="여섯 달을 가서 머문 날"
               start={70}
               cps={22}
               style={{

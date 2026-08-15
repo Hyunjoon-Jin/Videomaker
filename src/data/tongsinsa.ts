@@ -287,23 +287,46 @@ export interface TEvent {
   back?: boolean;
 }
 
+/**
+ * 자막은 사실을 적는 자리가 아니라 앞의 기대를 뒤집는 자리다.
+ *
+ * 처음엔 '쓰시마까지 하루 / 부산에서 배로 24시간이다'처럼 일어난 일만
+ * 적었다. 틀린 데는 없는데 아무 데서도 걸리지 않는다. 연표를 소리내
+ * 읽는 것과 같다.
+ *
+ * 둘째 줄을 전부 바꿨다. 하는 일은 하나다 — 방금 나온 숫자를 앞의 숫자
+ * 옆에 세워 어긋나게 둔다. 42일을 기다렸다는 사실보다 '걸어온 날의
+ * 두 배'가 세고, 하루면 건넌다는 사실보다 '42일 기다려 하루를 건넌다'가
+ * 세다. 숫자는 그대로고 배치만 바꿨다.
+ */
 export const T_EVENTS: TEvent[] = [
-  { day: 0, title: "한양을 떠났다", detail: "정사 조엄 이하 477명", impact: 0.9, zoom: 3.2 },
-  { day: 20, title: "걸어서 부산, 20일", detail: "440km · 서른 고을을 지났다", impact: 0.7, zoom: 3.0 },
-  { day: 62, title: "배를 기다린 42일", detail: "바다는 바람이 있어야 건넌다", impact: 1, zoom: 3.4 },
-  { day: 63, title: "쓰시마까지 하루", detail: "부산에서 배로 24시간이다", impact: 0.7, zoom: 3.0 },
-  { day: 166, title: "오사카까지 103일", detail: "포구마다 바람을 기다렸다", impact: 0.9, zoom: 1.9 },
-  { day: 191, title: "에도 입성", detail: "오사카에 106명을 두고 371명이 들어갔다", impact: 1, zoom: 2.6 },
-  { day: 215, title: "에도를 떠났다", detail: "머문 날은 24일이다", impact: 1, zoom: 2.6 },
-  { day: 241, title: "오사카에서 사람이 죽었다", detail: "도훈도 최천종, 쓰시마 통사에게 피살", impact: 0.9, zoom: 2.4, back: true },
-  { day: 266, title: "범인이 처형됐다", detail: "통신사 쪽 54명이 지켜봤다", impact: 0.8, zoom: 2.4, back: true },
-  { day: TOTAL_DAYS, title: "한양 복명", detail: "떠난 지 331일이다", impact: 1, zoom: 1.5, back: true },
+  { day: 0, title: "477명이 한양을 떠났다", detail: "국서 한 통을 전하러 간다", impact: 0.9, zoom: 3.2 },
+  { day: 20, title: "걸어서 부산, 20일", detail: "440km · 서른 고을", impact: 0.7, zoom: 3.0 },
+  { day: 62, title: "여기서 42일을 더 기다렸다", detail: "걸어온 날의 두 배다", impact: 1, zoom: 3.4 },
+  { day: 63, title: "쓰시마까지는 하루였다", detail: "42일 기다려 하루를 건넌다", impact: 0.8, zoom: 3.0 },
+  { day: 166, title: "오사카까지 103일", detail: "걸은 20일의 다섯 배를 바다에서", impact: 0.9, zoom: 1.9 },
+  { day: 191, title: "에도, 6개월 13일 만이다", detail: "106명을 오사카에 두고 371명이", impact: 1, zoom: 2.6 },
+  { day: 215, title: "24일 만에 에도를 떠났다", detail: "여섯 달을 와서 스무나흘", impact: 1, zoom: 2.6 },
+  { day: 241, title: "돌아가는 길에 사람이 죽었다", detail: "오사카 · 도훈도 최천종 피살", impact: 0.9, zoom: 2.4, back: true },
+  { day: 266, title: "범인이 처형될 때까지 못 떠났다", detail: "5월 2일 · 54명이 지켜봤다", impact: 0.8, zoom: 2.4, back: true },
+  { day: TOTAL_DAYS, title: "331일 만에 한양이다", detail: "국서를 주고 회답을 받아 왔다", impact: 1, zoom: 1.5, back: true },
 ];
 
-/** 마무리 — 열두 번 */
+/**
+ * 마무리.
+ *
+ * 열두 번을 세고 끝내면 '옛날에 이런 게 있었다'로 닫힌다. 마지막 줄
+ * 하나가 이 편 전체를 뒤집는다 — 통신사가 끊기고 65년 뒤, 조선은 다시
+ * 사절을 보냈고 부산에서 도쿄까지 여드레가 걸렸다. 방금 70초 동안
+ * 기어간 129일짜리 길이다.
+ *
+ * 1876년 제1차 수신사 김기수는 음력 4월 29일 부산에서 일본 기선을 타고
+ * 5월 7일 도쿄에 닿았다. 여드레다(scripts/lunar.py로 확인).
+ */
 export const MISSIONS: Array<[string, string]> = [
   ["1607", "1차 — 회답겸쇄환사"],
   ["1636", "4차 — '통신사'로 부르기 시작"],
   ["1763", "11차 — 에도까지 간 마지막"],
   ["1811", "12차 — 쓰시마에서 돌아섰다"],
+  ["1876", "수신사 — 65년 만에 다시"],
 ];
