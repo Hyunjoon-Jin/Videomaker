@@ -204,8 +204,10 @@ export const ShortsPower: React.FC = () => {
 
       {mapIn > 0.5 && !inOutro && (
         <div style={{ position: "absolute", top: 104, left: 60, right: 60 }}>
+          {/* 이 자리는 이 영상이 무엇을 보는 중인지 계속 말해준다.
+              전에는 '한반도 발전설비'라고만 적혀 있어 연표처럼 읽혔다. */}
           <div style={{ color: C.dim, fontSize: 30, fontWeight: 700, letterSpacing: 2 }}>
-            한반도 발전설비
+            {cut ? "북에서 오던 전기가 끊긴 뒤" : "전기를 만드는 곳"}
           </div>
           <div
             style={{
@@ -224,7 +226,15 @@ export const ShortsPower: React.FC = () => {
       {ev && mapIn > 0.5 && !inOutro && (
         <div style={{ position: "absolute", bottom: 306, left: 60, right: 60 }}>
           <div style={{ color: ev.cut ? "#D4694F" : INK.flame, fontSize: 34, fontWeight: 900 }}>
-            {ev.cut ? "1948년 5월 14일 정오" : year >= CUT ? "단전 이후" : "설비가 늘어난다"}
+            {ev.cut
+              ? "1948년 5월 14일 정오"
+              : year >= CUT
+                ? "단전 이후"
+                : ev.side === "north"
+                  ? "북쪽"
+                  : ev.side === "south"
+                    ? "남쪽"
+                    : "남과 북"}
           </div>
           <Typed
             text={ev.title}

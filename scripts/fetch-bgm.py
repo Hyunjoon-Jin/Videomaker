@@ -63,7 +63,7 @@ TRACKS = [
         "중역이 37%뿐이라 휴대폰에서 힘이 없었다. 이쪽이 76%다.",
     ),
     (
-        "public/bgm-pw.wav", "Static Motion", 42.0, 56.4,
+        "public/bgm-pw.wav", "Static Motion", 42.0, 47.9,
         "5·14 단전 — 조여들다 끊기는 편. 고른 구간을 자동으로 훑어 골랐다"
         "(고르기 4.65, 중역 43%). Industrial Music Box가 점수는 더 높았지만 "
         "중역 100%라 저역이 통째로 비어 오르골처럼 얇았다.",

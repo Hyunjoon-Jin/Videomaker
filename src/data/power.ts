@@ -114,21 +114,36 @@ export interface PEvent {
   impact?: number;
   /** 이 사건이 단전이면 화면이 한 번 꺼진다 */
   cut?: boolean;
+  /** 이 비트가 남쪽 얘기인지 북쪽 얘기인지 — 화면에 항상 밝힌다 */
+  side?: "north" | "south";
   focus?: [number, number];
   zoom?: number;
 }
 
+/**
+ * 연표 — 질문 하나에 답하는 순서로만 세운다.
+ *
+ * 처음에는 비트가 열둘이었는데 그중 여섯이 발전소 건설 연표였다.
+ * 부전강 1929, 당인리 1930, 장진강 1935, 허천강 1940, 영월 1941,
+ * 수풍 1944… 그건 이 편의 주제가 아니라 배경이다. 배경을 절반이나
+ * 틀면 보는 사람은 이 영상이 무엇을 말하려는지 알 수 없다.
+ *
+ * 이 편의 질문은 하나다 — 1948년 5월 14일에 전기가 끊긴 것이
+ * 왜 그렇게 큰일이었나. 답은 지도에 있다. 전기를 만드는 곳이 전부
+ * 북쪽에 있었기 때문이다.
+ *
+ * 그래서 건설사는 셋으로 줄이고(북·남·수풍), 나머지는 끊긴 뒤에 쓴다.
+ * 영월화력과 청평은 지도에 뜨되 따로 세우지 않는다 — 남쪽 몫은
+ * 1945년 비트가 숫자 하나로 말한다.
+ */
 export const P_EVENTS: PEvent[] = [
-  { year: 1929, title: "부전강 20만kW", detail: "함경도 산속에 대형 수력이 들어서기 시작한다", impact: 0.6, focus: [127.45, 40.20], zoom: 2.4 },
-  { year: 1930, title: "당인리 2만kW", detail: "남쪽은 화력이다. 수력을 놓을 강이 마땅치 않다", impact: 0.5, focus: [126.95, 37.55], zoom: 3.0 },
-  { year: 1935, title: "장진강 33만kW", impact: 0.6, focus: [127.25, 40.32], zoom: 2.4 },
-  { year: 1940, title: "허천강 33만kW", impact: 0.6, focus: [128.35, 40.58], zoom: 2.4 },
-  { year: 1941, title: "영월화력 10만kW", detail: "남한에서 제일 큰 발전소가 이것이었다", impact: 0.5, focus: [128.47, 37.185], zoom: 2.8 },
-  { year: 1944, title: "수풍 60만kW", detail: "이 하나가 남한 전체 발전설비의 세 배다", impact: 1, focus: [125.70, 40.20], zoom: 2.2 },
-  { year: 1945, title: "해방", detail: "172만kW 가운데 남한에 남은 것은 19만kW", impact: 0.9, focus: [127.30, 38.60], zoom: 1.6 },
-  { year: 1948.2, title: "발전함 자코나", detail: "미 해군 발전함이 부산항에 닿아 2만kW를 낸다", impact: 0.6, focus: [129.04, 35.10], zoom: 3.0 },
-  { year: CUT, title: "5·14 단전", detail: "북조선인민위원회, 전기요금을 구실로 송전을 끊다", impact: 1, cut: true, focus: [127.00, 38.40], zoom: 1.8 },
+  { year: 1929, title: "북쪽에 수력이 들어선다", detail: "부전강 20만kW. 함경도 산속이다", impact: 0.7, side: "north", focus: [127.45, 40.20], zoom: 2.3 },
+  { year: 1930, title: "남쪽은 화력이다", detail: "당인리 2만kW. 이게 남쪽에서 제일 컸다", impact: 0.6, side: "south", focus: [126.95, 37.55], zoom: 2.8 },
+  { year: 1941, title: "북쪽에 67만kW가 더", detail: "장진강 33만, 허천강 33만", impact: 0.7, side: "north", focus: [127.80, 40.42], zoom: 2.1 },
+  { year: 1944, title: "수풍 60만kW", detail: "이 하나가 남한 전체 발전설비의 세 배다", impact: 1, side: "north", focus: [125.70, 40.20], zoom: 2.2 },
+  { year: 1945, title: "해방", detail: "172만kW 가운데 남한 몫은 19만kW, 11.5%", impact: 0.9, focus: [127.30, 38.60], zoom: 1.55 },
+  { year: CUT, title: "5·14 단전", detail: "정오, 북에서 오던 전기가 끊기다", impact: 1, cut: true, focus: [127.00, 38.40], zoom: 1.7 },
   { year: 1948.45, title: "전차가 길에 섰다", detail: "공장이 멈추고 격일제 송전이 시작된다", impact: 0.9, focus: [126.98, 37.55], zoom: 2.6 },
-  { year: 1948.55, title: "쌀 55만 석", detail: "모내기철과 겹쳐 관개용 전기가 가지 못했다", impact: 0.9, focus: [127.10, 36.60], zoom: 2.0 },
-  { year: 1948.7, title: "발전함 엘렉트라", detail: "인천항에서 6,900kW. 수풍 하나의 1퍼센트다", impact: 0.7, focus: [126.61, 37.46], zoom: 3.0 },
+  { year: 1948.55, title: "쌀 55만 석", detail: "모내기철과 겹쳐 관개용 전기가 가지 못했다", impact: 0.9, focus: [127.10, 36.60], zoom: 1.9 },
+  { year: 1948.7, title: "발전함 두 척", detail: "부산 2만kW와 인천 6,900kW. 수풍 하나의 5퍼센트가 안 된다", impact: 0.7, focus: [127.80, 36.30], zoom: 1.5 },
 ];
