@@ -20,7 +20,7 @@ import {
 } from "./data/rail";
 import { project } from "./data/places";
 import { Shot, cameraAt } from "./mapcam";
-import { beatIndexAt, beatOf, layoutBeats, valueAtBeats } from "./beats";
+import { beatFor, beatIndexAt, layoutBeats, valueAtBeats } from "./beats";
 import { C, FPS, INK } from "./theme";
 import { Grain } from "./Grain";
 import { Typed } from "./Typed";
@@ -36,7 +36,10 @@ const HOOK = Math.round(4.5 * FPS);
  * 연도 구간에 초를 배분하면 도라산(2002)과 KTX(2004)가 0.6초 간격으로
  * 지나간다. 자막을 읽을 시간이 없다.
  */
-const BEATS = RAIL_EVENTS.map((e) => beatOf(e.year, e.impact ?? 0.4, FPS));
+/** 체류 시간은 자막 길이가 정한다 — beats.ts의 beatFor 주석 참고 */
+const BEATS = RAIL_EVENTS.map((e) =>
+  beatFor(e.year, { title: e.title, detail: e.detail }, e.impact ?? 0.4, FPS)
+);
 const SPANS = layoutBeats(BEATS, HOOK, 0.22);
 /**
  * 마무리.

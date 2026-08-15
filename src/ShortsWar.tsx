@@ -5,7 +5,7 @@ import { TOTAL_MONTHS, WAR_EVENTS, monthLabel, warEventAt } from "./data/war";
 import { battlesUpTo } from "./data/battles";
 import { project } from "./data/places";
 import { Shot, cameraAt } from "./mapcam";
-import { beatIndexAt, beatOf, layoutBeats, valueAtBeats } from "./beats";
+import { beatFor, beatIndexAt, layoutBeats, valueAtBeats } from "./beats";
 import { C, FPS } from "./theme";
 import { Grain } from "./Grain";
 import { Typed } from "./Typed";
@@ -23,7 +23,10 @@ const HOOK = Math.round(4.5 * FPS);
  * 지금은 사건 하나가 체류 시간을 갖고, 영상 길이는 사건 수가 정한다.
  * 길이를 먼저 정하고 사건을 우겨넣는 게 애초에 순서가 틀렸다.
  */
-const BEATS = WAR_EVENTS.map((e) => beatOf(e.month, e.impact ?? 0.4, FPS));
+/** 체류 시간은 자막 길이가 정한다 — beats.ts의 beatFor 주석 참고 */
+const BEATS = WAR_EVENTS.map((e) =>
+  beatFor(e.month, { title: e.title, detail: e.detail }, e.impact ?? 0.4, FPS)
+);
 const SPANS = layoutBeats(BEATS, HOOK, 0.22);
 /**
  * 마무리.

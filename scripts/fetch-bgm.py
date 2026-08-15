@@ -49,12 +49,12 @@ CREDIT = (
 # (출력, 곡 이름, 시작 초, 길이 초, 왜 이 곡인지)
 TRACKS = [
     (
-        "public/bgm.wav", "The Descent", 33.0, 80.8,
+        "public/bgm.wav", "The Descent", 33.0, 94.3,
         "임진왜란 — 어둡게 조여드는 진행. Clash Defiant가 더 웅장했지만 "
         "고른 구간이 저역 76%라 휴대폰에서 뭉근하게만 들렸다.",
     ),
     (
-        "public/bgm-kw.wav", "Volatile Reaction", 25.0, 84.0,
+        "public/bgm-kw.wav", "Volatile Reaction", 25.0, 100.8,
         "6·25 — 어둡고 밀어붙이는 진행. 전선이 네 번 뒤집히는 편에 맞는다.",
     ),
     (
@@ -63,19 +63,19 @@ TRACKS = [
         "중역이 37%뿐이라 휴대폰에서 힘이 없었다. 이쪽이 76%다.",
     ),
     (
-        "public/bgm-pw.wav", "Static Motion", 42.0, 48.7,
+        "public/bgm-pw.wav", "Static Motion", 42.0, 67.0,
         "5·14 단전 — 조여들다 끊기는 편. 고른 구간을 자동으로 훑어 골랐다"
         "(고르기 4.65, 중역 43%). Industrial Music Box가 점수는 더 높았지만 "
         "중역 100%라 저역이 통째로 비어 오르골처럼 얇았다.",
     ),
     (
-        "public/bgm-bs.wav", "Killers", 228.0, 56.0,
+        "public/bgm-bs.wav", "Killers", 228.0, 67.3,
         "봉수 — 밤에 불이 한 줄로 올라오는 편이라 밀어붙이는 진행이 맞는다. "
         "고른 구간을 자동으로 훑어 골랐다(고르기 3.93, 중역 70%). Echoes of Time이 "
         "분위기는 맞았지만 중역이 3%뿐이라 휴대폰에서 아무것도 안 들렸다.",
     ),
     (
-        "public/bgm-rail.wav", "Lost Frontier", 9.0, 96.7,
+        "public/bgm-rail.wav", "Lost Frontier", 9.0, 142.3,
         "철도 — 넓고 계속 나아가는 느낌. 200~4000Hz 비중이 84%로 후보 중 "
         "가장 또렷하다. 전쟁 편들과 톤도 달라야 한다.",
     ),

@@ -22,7 +22,7 @@ import {
 } from "./data/korean-war";
 import { project } from "./data/places";
 import { Shot, cameraAt } from "./mapcam";
-import { beatIndexAt, beatOf, layoutBeats, valueAtBeats } from "./beats";
+import { beatFor, beatIndexAt, layoutBeats, valueAtBeats } from "./beats";
 import { C, FPS } from "./theme";
 import { Grain } from "./Grain";
 import { Typed } from "./Typed";
@@ -53,7 +53,10 @@ const HOOK = Math.round(4.5 * FPS);
  * 날짜 구간에 초를 배분하면 중국군 참전과 장진호처럼 열흘 차이 나는
  * 사건들이 1초 만에 지나간다. 자막을 다 읽기 전에 다음 자막이 온다.
  */
-const BEATS = KW_EVENTS.map((e) => beatOf(e.day, e.impact ?? 0.4, FPS));
+/** 체류 시간은 자막 길이가 정한다 — beats.ts의 beatFor 주석 참고 */
+const BEATS = KW_EVENTS.map((e) =>
+  beatFor(e.day, { title: e.title, detail: e.detail }, e.impact ?? 0.4, FPS)
+);
 const SPANS = layoutBeats(BEATS, HOOK, 0.22);
 /**
  * 마무리.

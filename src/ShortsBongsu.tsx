@@ -18,7 +18,7 @@ import {
 } from "./data/bongsu";
 import { project } from "./data/places";
 import { Shot, cameraAt } from "./mapcam";
-import { beatIndexAt, beatOf, layoutBeats, valueAtBeats } from "./beats";
+import { beatFor, beatIndexAt, layoutBeats, valueAtBeats } from "./beats";
 import { C, FPS, INK } from "./theme";
 import { Grain } from "./Grain";
 import { Typed } from "./Typed";
@@ -39,7 +39,7 @@ const HOOK = Math.round(4.5 * FPS);
  * 편이라 그 정지가 더 크게 걸린다.
  */
 const BEATS = B_EVENTS.map((e) =>
-  beatOf(e.at, e.impact ?? 0.4, FPS, e.detail ? {} : { hold: 1.9, travel: 0.7 })
+  beatFor(e.at, { title: e.title, detail: e.detail }, e.impact ?? 0.4, FPS)
 );
 const SPANS = layoutBeats(BEATS, HOOK, 0.22);
 const BODY_END = SPANS[SPANS.length - 1].t2;

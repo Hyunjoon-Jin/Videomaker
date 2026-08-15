@@ -87,6 +87,45 @@ export function beatIndexAt(spans: Span[], frame: number): number {
   return spans.length - 1;
 }
 
+/**
+ * 자막 길이에서 체류 시간을 뽑는다.
+ *
+ * beatOf는 사건의 무게(impact)만 보고 2.4초 또는 3.0초를 준다. 그런데
+ * 실제로 필요한 시간은 무게가 아니라 글자 수가 정한다. 40자짜리 자막에
+ * 2.4초를 주면 타자가 끝나는 데 2초가 걸려 읽을 시간이 0.4초밖에 안 남는다.
+ *
+ * 타자 속도가 사람이 읽는 속도보다 훨씬 빠른 것도 함정이다. 둘째 줄은
+ * 초당 26자로 찍히는데 사람은 초당 6자 남짓 읽는다. 다 써졌다고 읽힌
+ * 것이 아니다.
+ *
+ * 그래서 둘 중 큰 쪽을 쓴다 — 다 써지는 데 걸리는 시간과, 그만큼을
+ * 읽는 데 걸리는 시간. 거기에 넘어가기 전 숨돌릴 틈을 더한다.
+ */
+export function beatFor(
+  value: number,
+  text: { title: string; detail?: string },
+  impact = 0.4,
+  fps = 30,
+  opts: { cps?: number; detailCps?: number; read?: number; tail?: number } = {}
+): Beat {
+  const big = impact >= 0.85;
+  const cps = opts.cps ?? 14;
+  const dcps = opts.detailCps ?? 26;
+  const chars = text.title.length + (text.detail?.length ?? 0);
+
+  const typing =
+    text.title.length / cps + (text.detail ? 5 / fps + text.detail.length / dcps : 0);
+  // 초당 몇 자를 읽는가. 숫자와 단위가 섞인 짧은 문장 기준으로 잡았다.
+  const reading = chars / (opts.read ?? 6.5);
+  const need = Math.max(typing, reading) + (opts.tail ?? 0.55);
+
+  return {
+    value,
+    travel: Math.round((big ? 1.05 : 0.85) * fps),
+    hold: Math.round(Math.max(big ? 3.0 : 2.4, need) * fps),
+  };
+}
+
 /** 사건별 체류 길이. 큰 사건에 더 준다. */
 export function beatOf(
   value: number,

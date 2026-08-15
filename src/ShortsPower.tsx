@@ -22,7 +22,7 @@ import {
 } from "./data/power";
 import { project } from "./data/places";
 import { Shot, cameraAt } from "./mapcam";
-import { beatIndexAt, beatOf, layoutBeats, valueAtBeats } from "./beats";
+import { beatFor, beatIndexAt, layoutBeats, valueAtBeats } from "./beats";
 import { C, FPS, INK } from "./theme";
 import { Grain } from "./Grain";
 import { Typed } from "./Typed";
@@ -32,8 +32,13 @@ const PROVINCES: Array<{ id: string; d: string }> = provinces.provinces;
 
 const HOOK = Math.round(4.5 * FPS);
 
+/**
+ * 체류 시간을 자막 길이에서 뽑는다.
+ * impact만 보고 2.4초를 주면 40자짜리 자막에서 읽을 시간이 0.4초밖에
+ * 안 남는다. beatFor가 타자 시간과 읽는 시간 중 큰 쪽을 쓴다.
+ */
 const BEATS = P_EVENTS.map((e) =>
-  beatOf(e.year, e.impact ?? 0.4, FPS, e.detail ? {} : { hold: 1.9, travel: 0.7 })
+  beatFor(e.year, { title: e.title, detail: e.detail }, e.impact ?? 0.4, FPS)
 );
 const SPANS = layoutBeats(BEATS, HOOK, 0.22);
 const BODY_END = SPANS[SPANS.length - 1].t2;
