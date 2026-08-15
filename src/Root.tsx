@@ -6,7 +6,7 @@ import { ShortsWar, WAR_DURATION } from "./ShortsWar";
 import { ShortsKoreanWar, KW_DURATION } from "./ShortsKoreanWar";
 import { ShortsTyphoon, TY_DURATION } from "./ShortsTyphoon";
 import { ShortsRail, RAIL_DURATION } from "./ShortsRail";
-import { ChannelBanner, ChannelIcon } from "./Channel";
+import { ChannelBanner, ChannelIcon, ChannelWatermark } from "./Channel";
 import { FPS, SHORT_H, SHORT_W } from "./theme";
 
 export const RemotionRoot: React.FC = () => (
@@ -81,6 +81,15 @@ export const RemotionRoot: React.FC = () => (
       fps={FPS}
       width={2560}
       height={1440}
+    />
+    {/* 워터마크는 배경 없이 뽑아야 한다 — 렌더할 때 --image-format=png */}
+    <Composition
+      id="ChannelWatermark"
+      component={ChannelWatermark}
+      durationInFrames={1}
+      fps={FPS}
+      width={150}
+      height={150}
     />
   </>
 );

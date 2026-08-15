@@ -248,3 +248,66 @@ export const ChannelBanner: React.FC = () => {
     </AbsoluteFill>
   );
 };
+
+/**
+ * 동영상 워터마크 150×150.
+ *
+ * 플레이어 오른쪽 아래에 얹히는 구독 버튼이다. 프로필과는 조건이 두 가지
+ * 다르다.
+ *
+ * 하나, 배경이 없어야 한다. 여기는 오려낸 원이 아니라 영상 위에 그대로
+ * 얹히는 자리라, 어두운 사각형을 깔면 스티커를 붙여놓은 것처럼 보인다.
+ * 그래서 AbsoluteFill에 배경색을 주지 않는다 — 투명 PNG로 뽑힌다.
+ *
+ * 둘, 실제로 뜨는 크기가 60px 안팎이다. 프로필(48px)보다는 크지만 격자가
+ * 살아남을 크기는 아니므로 더 줄인다. 테두리 원과 가로선과 점, 셋만 남기고
+ * 격자는 아주 옅게 깔아 150px에서 들여다볼 때만 보이게 한다.
+ *
+ * 홈은 반투명 검정으로 판다. 프로필에서는 바탕색으로 팠지만 여기는 바탕이
+ * 없다. 우리 영상이 전부 어두워서 검정 홈이 영상에 묻히긴 하는데, 그래도
+ * 넣어두면 밝은 장면에서 두 색이 붙는 것을 막아준다.
+ */
+export const ChannelWatermark: React.FC = () => {
+  const R = 58;
+  const CX = 75;
+  const CY = 75;
+  const BAR_Y = CY - R * 0.2;
+  return (
+    <AbsoluteFill>
+      <svg viewBox="0 0 150 150" style={{ width: "100%", height: "100%" }}>
+        <g
+          stroke={INK.brass}
+          strokeWidth={1.1}
+          fill="none"
+          opacity={0.4}
+          strokeLinecap="round"
+        >
+          {graticule(R, CX, CY, 30).map((d, i) => (
+            <path key={i} d={d} />
+          ))}
+        </g>
+        <circle cx={CX} cy={CY} r={R} fill="none" stroke={INK.brass} strokeWidth={7} />
+        <line
+          x1={CX - R - 11}
+          y1={BAR_Y}
+          x2={CX + R + 11}
+          y2={BAR_Y}
+          stroke="rgba(8,7,5,0.85)"
+          strokeWidth={15}
+          strokeLinecap="round"
+        />
+        <line
+          x1={CX - R - 9}
+          y1={BAR_Y}
+          x2={CX + R + 9}
+          y2={BAR_Y}
+          stroke={INK.oxideHot}
+          strokeWidth={8}
+          strokeLinecap="round"
+        />
+        <circle cx={CX + R * 0.34} cy={BAR_Y} r={7.5} fill="rgba(8,7,5,0.85)" />
+        <circle cx={CX + R * 0.34} cy={BAR_Y} r={4.2} fill={C.text} />
+      </svg>
+    </AbsoluteFill>
+  );
+};
