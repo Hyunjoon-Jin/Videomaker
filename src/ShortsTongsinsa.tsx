@@ -354,56 +354,84 @@ export const ShortsTongsinsa: React.FC = () => {
           <AbsoluteFill
             style={{ justifyContent: "flex-end", padding: "0 60px 232px", opacity: outroIn }}
           >
-            <div style={{ color: C.dim, fontSize: 30, fontWeight: 700, marginBottom: 18 }}>
-              1607년부터 1811년까지 열두 번 갔다
-            </div>
-            <div style={{ color: C.text, fontSize: 46, fontWeight: 800, marginBottom: 26 }}>
-              마지막 열두 번째는 에도에 못 갔다
-            </div>
+            {/*
+              한꺼번에 깔지 않고 하나씩 올린다.
 
-            {/* 같은 출발지, 같은 형식, 다른 숫자. 읽는 게 아니라 보면 된다. */}
-            {VOYAGES.map((v) => (
-              <div
-                key={v.year}
-                style={{
-                  display: "flex",
-                  alignItems: "baseline",
-                  gap: 20,
-                  marginTop: 10,
-                  color: v.now ? INK.brass : INK.indigoHot,
-                }}
-              >
-                <span
+              전에는 열두 번 연표와 두 줄 비교와 닫는 문장을 마지막 12초에
+              한 화면으로 쏟았다. 읽을 것이 다섯 덩어리면 아무것도 안
+              읽힌다. 1763년 줄을 먼저 세워 129일을 눈에 박고, 1.4초 뒤에
+              1876년 줄이 그 아래로 들어오면 8일이 대비로 떨어진다.
+
+              '65년 뒤'도 뺐다. 1811년을 화면에서 지워놓고 65년 뒤라고
+              쓰면 어디서부터 센 65년인지 알 수가 없다. 두 줄에 연도가
+              적혀 있으니 113년은 보는 사람이 뺄셈할 필요도 없이 보인다.
+            */}
+            {VOYAGES.map((v, i) => {
+              const at = BODY_END + Math.round((0.6 + i * 1.4) * FPS);
+              const on = interpolate(frame, [at, at + 12], [0, 1], {
+                extrapolateLeft: "clamp",
+                extrapolateRight: "clamp",
+              });
+              return (
+                <div
+                  key={v.year}
                   style={{
-                    fontSize: 36,
-                    fontWeight: 700,
-                    fontVariantNumeric: "tabular-nums",
-                    minWidth: 106,
-                    color: C.dim,
+                    display: "flex",
+                    alignItems: "baseline",
+                    gap: 22,
+                    marginTop: i ? 22 : 0,
+                    opacity: on,
+                    transform: `translateY(${(1 - on) * 16}px)`,
+                    color: v.now ? INK.brass : INK.indigoHot,
                   }}
                 >
-                  {v.year}
-                </span>
-                <span style={{ fontSize: 40, fontWeight: 800, minWidth: 130 }}>{v.who}</span>
-                <span style={{ fontSize: 40, fontWeight: 700, color: C.text, minWidth: 250 }}>
-                  {v.from} → {v.to}
-                </span>
-                <span
-                  style={{
-                    fontSize: 62,
-                    fontWeight: 900,
-                    fontVariantNumeric: "tabular-nums",
-                    marginLeft: "auto",
-                  }}
-                >
-                  {v.days}
-                </span>
-              </div>
-            ))}
+                  <span
+                    style={{
+                      fontSize: 40,
+                      fontWeight: 700,
+                      fontVariantNumeric: "tabular-nums",
+                      minWidth: 116,
+                      color: C.dim,
+                    }}
+                  >
+                    {v.year}
+                  </span>
+                  <span style={{ fontSize: 46, fontWeight: 800, minWidth: 144 }}>{v.who}</span>
+                  <span style={{ fontSize: 46, fontWeight: 700, color: C.text, minWidth: 268 }}>
+                    {v.from} → {v.to}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: 76,
+                      fontWeight: 900,
+                      fontVariantNumeric: "tabular-nums",
+                      marginLeft: "auto",
+                    }}
+                  >
+                    {v.days}
+                  </span>
+                </div>
+              );
+            })}
 
-            <div style={{ height: 1, background: "#3B342A", margin: "30px 0 18px" }} />
-            <div style={{ color: C.text, fontSize: 48, fontWeight: 800, lineHeight: 1.34 }}>
-              65년 뒤, 같은 바다를 증기선이 건넜다
+            <div
+              style={{
+                color: C.text,
+                fontSize: 50,
+                fontWeight: 800,
+                lineHeight: 1.34,
+                marginTop: 40,
+                opacity: interpolate(
+                  frame,
+                  [BODY_END + Math.round(3.6 * FPS), BODY_END + Math.round(4.2 * FPS)],
+                  [0, 1],
+                  { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+                ),
+              }}
+            >
+              113년 사이에
+              <br />
+              바람을 기다릴 일이 없어졌다
             </div>
           </AbsoluteFill>
         </>
