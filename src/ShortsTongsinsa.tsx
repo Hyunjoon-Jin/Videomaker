@@ -28,6 +28,7 @@ import { C, FPS, INK } from "./theme";
 import { Grain } from "./Grain";
 import { Typed } from "./Typed";
 import { useFonts } from "./fonts";
+import { BOTTOM_INSET, SAFE_RIGHT, SAFE_TOP, SAFE_X } from "./safe";
 
 const HOOK = Math.round(4.5 * FPS);
 
@@ -267,7 +268,7 @@ export const ShortsTongsinsa: React.FC = () => {
 
       {/* ── 경과 일수 ── */}
       {mapIn > 0.5 && !inOutro && (
-        <div style={{ position: "absolute", top: 104, left: 60, right: 60 }}>
+        <div style={{ position: "absolute", top: SAFE_TOP, left: SAFE_X, right: SAFE_X }}>
           <div style={{ color: C.dim, fontSize: 30, fontWeight: 700, letterSpacing: 2 }}>
             한양을 떠난 지
           </div>
@@ -293,7 +294,7 @@ export const ShortsTongsinsa: React.FC = () => {
 
       {/* ── 사건 ── */}
       {ev && mapIn > 0.5 && !inOutro && (
-        <div style={{ position: "absolute", bottom: 306, left: 60, right: 60 }}>
+        <div style={{ position: "absolute", bottom: 330, left: SAFE_X, right: SAFE_RIGHT }}>
           <div style={{ color: ev.back ? INK.oxideHot : INK.brass, fontSize: 34, fontWeight: 900 }}>
             {ev.back ? "돌아오는 길" : head.sea ? "해로" : "육로"}
           </div>
@@ -329,7 +330,7 @@ export const ShortsTongsinsa: React.FC = () => {
 
       {/* ── 범례 · 고지 ── */}
       {mapIn > 0.5 && !inOutro && (
-        <div style={{ position: "absolute", bottom: 62, left: 60, right: 60 }}>
+        <div style={{ position: "absolute", bottom: BOTTOM_INSET, left: SAFE_X, right: SAFE_RIGHT }}>
           <div style={{ display: "flex", gap: 26, marginBottom: 10 }}>
             <Legend color={INK.brass} dashed={false} text="육로" />
             <Legend color={INK.indigoHot} dashed text="해로" />
@@ -352,7 +353,7 @@ export const ShortsTongsinsa: React.FC = () => {
             }}
           />
           <AbsoluteFill
-            style={{ justifyContent: "flex-end", padding: "0 60px 232px", opacity: outroIn }}
+            style={{ justifyContent: "flex-end", padding: `0 ${SAFE_X}px 200px`, opacity: outroIn }}
           >
             {/*
               한꺼번에 깔지 않고 하나씩 올린다.

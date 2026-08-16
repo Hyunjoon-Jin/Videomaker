@@ -23,6 +23,7 @@ import { C, FPS, INK } from "./theme";
 import { Grain } from "./Grain";
 import { Typed } from "./Typed";
 import { useFonts } from "./fonts";
+import { BOTTOM_INSET, SAFE_RIGHT, SAFE_TOP, SAFE_X } from "./safe";
 
 const PROVINCES: Array<{ id: string; d: string }> = provinces.provinces;
 
@@ -229,7 +230,7 @@ export const ShortsBongsu: React.FC = () => {
 
       {/* ── 경과 시간 ── */}
       {mapIn > 0.5 && !inOutro && (
-        <div style={{ position: "absolute", top: 104, left: 60, right: 60 }}>
+        <div style={{ position: "absolute", top: SAFE_TOP, left: SAFE_X, right: SAFE_X }}>
           <div style={{ color: C.dim, fontSize: 30, fontWeight: 700, letterSpacing: 2 }}>
             불을 올린 지
           </div>
@@ -249,7 +250,7 @@ export const ShortsBongsu: React.FC = () => {
 
       {/* ── 사건 ── */}
       {ev && mapIn > 0.5 && !inOutro && (
-        <div style={{ position: "absolute", bottom: 306, left: 60, right: 60 }}>
+        <div style={{ position: "absolute", bottom: 330, left: SAFE_X, right: SAFE_RIGHT }}>
           <div style={{ color: INK.flame, fontSize: 34, fontWeight: 900 }}>
             {BEACON_XY[bi]?.heritage ? "국가 사적" : "제2로 직봉"}
           </div>
@@ -299,7 +300,7 @@ export const ShortsBongsu: React.FC = () => {
           <AbsoluteFill
             style={{
               justifyContent: "flex-end",
-              padding: "0 60px 232px",
+              padding: `0 ${SAFE_X}px 200px`,
               opacity: outroIn,
             }}
           >
@@ -345,7 +346,7 @@ export const ShortsBongsu: React.FC = () => {
 
       {/* ── 거화법 · 고지 ── */}
       {mapIn > 0.5 && !inOutro && (
-        <div style={{ position: "absolute", bottom: 62, left: 60, right: 60 }}>
+        <div style={{ position: "absolute", bottom: BOTTOM_INSET, left: SAFE_X, right: SAFE_RIGHT }}>
           <div style={{ display: "flex", gap: 18, marginBottom: 10, flexWrap: "wrap" }}>
             {SIGNALS.map((s) => (
               <div

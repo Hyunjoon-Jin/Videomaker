@@ -26,6 +26,7 @@ import { C, FPS, INK } from "./theme";
 import { Grain } from "./Grain";
 import { Typed } from "./Typed";
 import { useFonts } from "./fonts";
+import { BOTTOM_INSET, SAFE_RIGHT, SAFE_TOP, SAFE_X } from "./safe";
 
 const HOOK = Math.round(4.5 * FPS);
 
@@ -221,7 +222,7 @@ export const ShortsTyphoon: React.FC = () => {
       {/* ── 태풍 정보 ── */}
       {mapIn > 0.5 && !inOutro && (
         <>
-          <div style={{ position: "absolute", top: 110, left: 60, right: 60 }}>
+          <div style={{ position: "absolute", top: SAFE_TOP, left: SAFE_X, right: SAFE_X }}>
             <div style={{ color: C.dim, fontSize: 31, fontWeight: 700 }}>
               {cur.period}
             </div>
@@ -238,7 +239,7 @@ export const ShortsTyphoon: React.FC = () => {
             </div>
           </div>
 
-          <div style={{ position: "absolute", bottom: 258, left: 60, right: 60 }}>
+          <div style={{ position: "absolute", bottom: 330, left: SAFE_X, right: SAFE_RIGHT }}>
             <Rule />
             <div style={{ display: "flex", alignItems: "flex-end", gap: 44 }}>
               {/* 바람 */}
@@ -351,7 +352,7 @@ export const ShortsTyphoon: React.FC = () => {
         <AbsoluteFill
           style={{
             justifyContent: "flex-end",
-            padding: "0 60px 272px",
+            padding: `0 ${SAFE_X}px 200px`,
             opacity: outroIn,
           }}
         >
@@ -421,7 +422,7 @@ export const ShortsTyphoon: React.FC = () => {
 
       {/* ── 범례와 고지 ── */}
       {mapIn > 0.5 && (
-        <div style={{ position: "absolute", bottom: 74, left: 60, right: 60 }}>
+        <div style={{ position: "absolute", bottom: BOTTOM_INSET, left: SAFE_X, right: SAFE_RIGHT }}>
           <div style={{ display: "flex", gap: 20, flexWrap: "wrap", marginBottom: 10 }}>
             {TYPHOONS.map((t, i) => (
               <div
