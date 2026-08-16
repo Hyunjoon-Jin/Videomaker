@@ -41,43 +41,47 @@ const PENINSULA_VB = "40 -50 900 1600";
 /**
  * 썸네일의 얼굴.
  *
- * 일곱 장을 200px으로 줄여 나란히 놓고 보니 전부 검은 사각형이었다
- * (scripts/grid.py). 1080에서는 근사한데 실제로 뜨는 크기에서는
- * 지도가 안 보이고, 위 kicker와 아래 label은 글자로 안 읽히고, 살아남는
- * 것은 숫자 하나뿐이었다. 어두운 화면은 피드에서 '내용이 없는 칸'으로
- * 보인다.
+ * 두 번 고쳤다.
  *
- * 고친 것 넷.
+ * 처음에는 어두운 지도 위에 밝은 글자였다. 200px으로 줄여보니
+ * (scripts/grid.py) 일곱 장이 전부 검은 사각형이고 살아남는 건 숫자
+ * 하나뿐이었다. 그래서 땅을 밝게 깔고 아래를 안료색 판으로 바꿨다.
  *
- *  1. **땅을 밝게.** 지도를 배경이 아니라 그림으로 만든다. 먹색 바다
- *     위에 뼈색 땅을 얹으면 100px에서도 반도가 형태로 읽힌다. 전에는
- *     땅(#2A241B)과 배경(#151310)의 차이가 거의 없었다.
- *  2. **아래를 색면으로.** 어둠 위에 밝은 글자를 얹는 대신, 편마다 정해진
- *     안료색 판을 깔고 그 위에 먹색 글자를 얹는다. 인쇄물의 방식이고
- *     대비가 가장 크다. 그리드에서 채널이 색으로 구분된다.
- *  3. **글자를 둘로 줄인다.** 숫자와 한 줄. kicker는 뺐다 — 200px에서
- *     54px 글자는 10px이라 얼룩이다. 소재는 지도 모양이 말한다.
- *  4. **빈 데를 없앤다.** 지도는 가장자리까지 채우고 색면이 바로 붙는다.
- *     전에는 가운데 3분의 1이 그냥 비어 있었다.
+ * 그때 위쪽 kicker('1959년 추석 · 태풍 사라')를 지웠다. 200px에서
+ * 못 읽으니 자리만 먹는다고 봤는데, 그게 실은 이 숫자가 무엇에 대한
+ * 것인지를 말하던 유일한 줄이었다. 남은 건 '849명 / 나머지 셋 다 합쳐
+ * 390명'이었고, 이건 앞에 뭐가 있었는지 모르면 아무 뜻이 없다.
  *
- * 단전 편만 색을 뒤집는다. 불이 꺼진 편이라 판이 먹색이고 글자가
- * 불빛색이다. 일곱 장 중 하나만 반대라 그리드에서 그 한 장이 걸린다.
+ * 지금은 두 줄로 감싼다.
+ *
+ *   1959년 태풍 사라        ← 무엇에 대한 숫자인가
+ *       849명
+ *   한 번에 낸 사망·실종자 수  ← 무엇을 센 숫자인가
+ *
+ * 한 줄에 다 넣으면 '1959년, 태풍 사라 한 번에 발생한 사망·실종자 수'가
+ * 되는데 28자라 글자가 36px까지 줄어든다. 200px에서 6px이니 못 읽는다.
+ * 짧게 줄이면 뜻이 없어지고 길게 쓰면 안 보이므로, 줄이지 말고 나눈다.
+ * 두 줄 다 62px을 지키면 200px에서 11px이라 읽힌다.
  */
 const Face: React.FC<{
-  /** 제일 큰 숫자. 여기가 썸네일의 전부다. */
+  /** 무엇에 대한 숫자인가 — 연도와 소재 */
+  topic: string;
+  /** 제일 큰 숫자 */
   big: string;
   /** 숫자에 붙는 단위 */
   unit: string;
-  /** 숫자가 무엇인지. 반드시 한 줄. */
+  /** 무엇을 센 숫자인가 */
   label: string;
   /** 색면 색 */
   band: string;
   /** 색면 위 글자색. 기본은 먹색이다. */
   ink?: string;
-}> = ({ big, unit, label, band, ink = "#17140F" }) => {
-  // 숫자 길이로 크기를 정한다. '11.5'와 '8'이 같은 크기면 하나는 넘친다.
+}> = ({ topic, big, unit, label, band, ink = "#17140F" }) => {
+  // 숫자 길이로 크기를 정한다. '11.5%'와 '8일'이 같은 크기면 하나는 넘친다.
   const n = big.length + unit.length * 0.62;
-  const size = Math.min(420, Math.floor(1900 / Math.max(2.4, n)));
+  const size = Math.min(360, Math.floor(1660 / Math.max(2.4, n)));
+  // 글자 수가 많으면 줄이되 62px 밑으로는 안 내린다. 그 밑은 어차피 못 읽는다.
+  const fit = (t: string) => Math.max(52, Math.min(70, Math.floor(1080 / Math.max(1, t.length))));
   return (
     <>
       {/* 지도와 색면이 만나는 자리. 딱 끊지 않고 한 뼘만 그늘을 준다. */}
@@ -92,20 +96,32 @@ const Face: React.FC<{
           position: "absolute",
           left: 0,
           right: 0,
-          top: 1128,
+          top: 1090,
           bottom: 0,
           background: band,
         }}
       />
-      <div style={{ position: "absolute", left: 64, right: 64, top: 1178 }}>
+      <div style={{ position: "absolute", left: 64, right: 64, top: 1136 }}>
+        <div
+          style={{
+            color: ink,
+            fontSize: fit(topic),
+            fontWeight: 800,
+            opacity: 0.78,
+            whiteSpace: "nowrap",
+            marginBottom: 6,
+          }}
+        >
+          {topic}
+        </div>
         <div style={{ display: "flex", alignItems: "baseline" }}>
           <span
             style={{
               color: ink,
               fontSize: size,
               fontWeight: 900,
-              lineHeight: 0.86,
-              letterSpacing: -10,
+              lineHeight: 0.9,
+              letterSpacing: -8,
             }}
           >
             {big}
@@ -113,28 +129,23 @@ const Face: React.FC<{
           <span
             style={{
               color: ink,
-              fontSize: Math.round(size * 0.42),
+              fontSize: Math.round(size * 0.44),
               fontWeight: 800,
-              marginLeft: 10,
-              opacity: 0.82,
+              marginLeft: 8,
+              opacity: 0.84,
             }}
           >
             {unit}
           </span>
         </div>
-        {/*
-          한 줄을 넘기면 200px에서 두 줄 다 못 읽는다. 글자 수로 크기를
-          줄여 항상 한 줄에 들어오게 한다. 폭은 1080에서 좌우 64씩 뺀 952.
-        */}
         <div
           style={{
             color: ink,
-            fontSize: Math.min(78, Math.floor(1010 / Math.max(1, label.length))),
+            fontSize: fit(label),
             fontWeight: 800,
-            lineHeight: 1.2,
-            marginTop: 22,
+            lineHeight: 1.16,
+            marginTop: 16,
             whiteSpace: "nowrap",
-            opacity: 0.88,
           }}
         >
           {label}
@@ -194,7 +205,13 @@ export const ThumbWar: React.FC = () => (
         palette={{ free: M.land, held: "#8E2A1C", coast: M.coast }}
       />
     </AbsoluteFill>
-    <Face big="11" unit="개월" label="일본군이 한양에 있던 시간" band={BAND.war} />
+    <Face
+      topic="1592년 임진왜란"
+      big="11"
+      unit="개월"
+      label="일본군이 한양을 차지한 기간"
+      band={BAND.war}
+    />
   </Frame>
 );
 
@@ -227,7 +244,13 @@ export const ThumbKoreanWar: React.FC = () => (
         ))}
       </svg>
     </AbsoluteFill>
-    <Face big="40" unit="일" label="낙동강까지 밀리는 데" band={BAND.kwar} />
+    <Face
+      topic="1950년 6·25 전쟁"
+      big="40"
+      unit="일"
+      label="38선에서 낙동강까지 밀린 시간"
+      band={BAND.kwar}
+    />
   </Frame>
 );
 
@@ -273,7 +296,13 @@ export const ThumbTyphoon: React.FC = () => (
         })()}
       </svg>
     </AbsoluteFill>
-    <Face big="849" unit="명" label="나머지 셋 다 합쳐 390명" band={BAND.typhoon} />
+    <Face
+      topic="1959년 태풍 사라"
+      big="849"
+      unit="명"
+      label="한 번에 낸 사망·실종자 수"
+      band={BAND.typhoon}
+    />
   </Frame>
 );
 
@@ -319,7 +348,13 @@ export const ThumbRail: React.FC = () => {
           })}
         </svg>
       </AbsoluteFill>
-      <Face big="81" unit="년" label="신의주행 표를 못 판 시간" band={BAND.rail} />
+      <Face
+        topic="1945년 이후 경의선"
+        big="81"
+        unit="년"
+        label="서울에서 신의주행 표를 못 판 기간"
+        band={BAND.rail}
+      />
     </Frame>
   );
 };
@@ -356,7 +391,13 @@ export const ThumbBongsu: React.FC = () => (
         ))}
       </svg>
     </AbsoluteFill>
-    <Face big="12" unit="시간" label="실제로는 닷새가 걸렸다" band={BAND.bongsu} />
+    <Face
+      topic="조선의 봉수"
+      big="12"
+      unit="시간"
+      label="부산에서 서울까지 가는 규정 시간"
+      band={BAND.bongsu}
+    />
   </Frame>
 );
 
@@ -408,6 +449,7 @@ export const ThumbPower: React.FC = () => (
     </AbsoluteFill>
     {/* 이 편만 판이 먹색이고 글자가 불빛색이다 — 불이 꺼진 편이다 */}
     <Face
+      topic="1948년 5·14 단전"
       big="11.5"
       unit="%"
       label="남한에 있던 발전설비의 몫"
@@ -451,7 +493,13 @@ export const ThumbTongsinsa: React.FC = () => {
           ))}
         </svg>
       </AbsoluteFill>
-      <Face big="24" unit="일" label="여섯 달을 가서 머문 날" band={BAND.tongsinsa} />
+      <Face
+        topic="1764년 조선통신사"
+        big="24"
+        unit="일"
+        label="에도에 머문 날 수"
+        band={BAND.tongsinsa}
+      />
     </Frame>
   );
 };
