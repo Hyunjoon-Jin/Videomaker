@@ -295,7 +295,7 @@ export const ShortsTongsinsa: React.FC = () => {
       {ev && mapIn > 0.5 && !inOutro && (
         <div style={{ position: "absolute", bottom: 306, left: 60, right: 60 }}>
           <div style={{ color: ev.back ? INK.oxideHot : INK.brass, fontSize: 34, fontWeight: 900 }}>
-            {ev.back ? "돌아오는 길" : head.sea ? "바닷길" : "뭍길"}
+            {ev.back ? "돌아오는 길" : head.sea ? "해로" : "육로"}
           </div>
           <Typed
             text={ev.title}
@@ -331,8 +331,8 @@ export const ShortsTongsinsa: React.FC = () => {
       {mapIn > 0.5 && !inOutro && (
         <div style={{ position: "absolute", bottom: 62, left: 60, right: 60 }}>
           <div style={{ display: "flex", gap: 26, marginBottom: 10 }}>
-            <Legend color={INK.brass} dashed={false} text="뭍길" />
-            <Legend color={INK.indigoHot} dashed text="바닷길" />
+            <Legend color={INK.brass} dashed={false} text="육로" />
+            <Legend color={INK.indigoHot} dashed text="해로" />
           </div>
           <div style={{ color: "#8A8070", fontSize: 20 }}>
             날짜는 사행록 기록값(음력) · 그 사이 위치는 거리에 비례한 보간 (고정댓글)

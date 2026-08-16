@@ -309,11 +309,11 @@ export interface TEvent {
  */
 export const T_EVENTS: TEvent[] = [
   { day: 0, title: "477명이 한양을 떠났다", detail: "국서를 전하러 에도로 간다", impact: 0.9, zoom: 3.2 },
-  { day: 20, title: "부산까지 걸어서 20일", detail: "서른 고을을 지나 440km를 갔다", impact: 0.7, zoom: 3.0 },
+  { day: 20, title: "부산까지 걸어서 20일", detail: "서른 고을을 지나 440km를 걸었다", impact: 0.7, zoom: 3.0 },
   { day: 62, title: "여기서 42일을 더 기다렸다", detail: "걸어온 날의 두 배를 항구에서 보냈다", impact: 1, zoom: 3.4 },
   { day: 63, title: "쓰시마까지는 하루였다", detail: "42일을 기다려 하루 만에 건넜다", impact: 0.8, zoom: 3.0 },
   { day: 166, title: "오사카까지 103일이 걸렸다", detail: "항구마다 바람 때를 기다렸다", impact: 0.9, zoom: 1.9 },
-  { day: 191, title: "여섯 달 열사흘 만에 에도다", detail: "106명은 오사카에 남고 371명이 들어갔다", impact: 1, zoom: 2.6 },
+  { day: 191, title: "여섯 달 열사흘 만에 에도에 닿았다", detail: "106명은 오사카에 남고 371명이 들어갔다", impact: 1, zoom: 2.6 },
   { day: 215, title: "24일 만에 에도를 떠났다", detail: "여섯 달을 와서 스무나흘을 머물렀다", impact: 1, zoom: 2.6 },
   { day: 241, title: "오사카에서 사람이 죽었다", detail: "도훈도 최천종이 4월 7일 살해됐다", impact: 0.9, zoom: 2.4, back: true },
   { day: 266, title: "한 달을 더 못 떠났다", detail: "범인이 처형된 5월 2일까지 묶여 있었다", impact: 0.8, zoom: 2.4, back: true },
