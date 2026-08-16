@@ -38,96 +38,144 @@ const KW_FRONT = makePolyFront(FRONT_TRACE, "north");
  */
 const PENINSULA_VB = "40 -50 900 1600";
 
-const FREE = "#2C2B24";
-const HELD = "#7A2A20";
-
-/** 지도 위에 얹는 글자 — 네 편이 같은 틀을 쓴다 */
+/**
+ * 썸네일의 얼굴.
+ *
+ * 일곱 장을 200px으로 줄여 나란히 놓고 보니 전부 검은 사각형이었다
+ * (scripts/grid.py). 1080에서는 근사한데 실제로 뜨는 크기에서는
+ * 지도가 안 보이고, 위 kicker와 아래 label은 글자로 안 읽히고, 살아남는
+ * 것은 숫자 하나뿐이었다. 어두운 화면은 피드에서 '내용이 없는 칸'으로
+ * 보인다.
+ *
+ * 고친 것 넷.
+ *
+ *  1. **땅을 밝게.** 지도를 배경이 아니라 그림으로 만든다. 먹색 바다
+ *     위에 뼈색 땅을 얹으면 100px에서도 반도가 형태로 읽힌다. 전에는
+ *     땅(#2A241B)과 배경(#151310)의 차이가 거의 없었다.
+ *  2. **아래를 색면으로.** 어둠 위에 밝은 글자를 얹는 대신, 편마다 정해진
+ *     안료색 판을 깔고 그 위에 먹색 글자를 얹는다. 인쇄물의 방식이고
+ *     대비가 가장 크다. 그리드에서 채널이 색으로 구분된다.
+ *  3. **글자를 둘로 줄인다.** 숫자와 한 줄. kicker는 뺐다 — 200px에서
+ *     54px 글자는 10px이라 얼룩이다. 소재는 지도 모양이 말한다.
+ *  4. **빈 데를 없앤다.** 지도는 가장자리까지 채우고 색면이 바로 붙는다.
+ *     전에는 가운데 3분의 1이 그냥 비어 있었다.
+ *
+ * 단전 편만 색을 뒤집는다. 불이 꺼진 편이라 판이 먹색이고 글자가
+ * 불빛색이다. 일곱 장 중 하나만 반대라 그리드에서 그 한 장이 걸린다.
+ */
 const Face: React.FC<{
   /** 제일 큰 숫자. 여기가 썸네일의 전부다. */
   big: string;
   /** 숫자에 붙는 단위 */
   unit: string;
-  /** 숫자가 무엇인지. 반드시 한 줄 — 두 줄이 되면 200px에서 못 읽는다. */
+  /** 숫자가 무엇인지. 반드시 한 줄. */
   label: string;
-  /** 위쪽 작은 글자 — 무슨 소재인지 */
-  kicker: string;
-  color: string;
-}> = ({ big, unit, label, kicker, color }) => (
-  <>
-    {/* 글자 자리 어둠. 본편보다 세게 — 썸네일은 글자가 이겨야 한다 */}
-    <AbsoluteFill
-      style={{
-        background:
-          "linear-gradient(180deg, rgba(12,10,8,0.86) 0%, rgba(12,10,8,0.3) 14%, rgba(12,10,8,0) 30%, rgba(12,10,8,0.55) 52%, rgba(12,10,8,0.93) 68%)",
-      }}
-    />
-    <AbsoluteFill style={{ padding: "0 68px" }}>
+  /** 색면 색 */
+  band: string;
+  /** 색면 위 글자색. 기본은 먹색이다. */
+  ink?: string;
+}> = ({ big, unit, label, band, ink = "#17140F" }) => {
+  // 숫자 길이로 크기를 정한다. '11.5'와 '8'이 같은 크기면 하나는 넘친다.
+  const n = big.length + unit.length * 0.62;
+  const size = Math.min(420, Math.floor(1900 / Math.max(2.4, n)));
+  return (
+    <>
+      {/* 지도와 색면이 만나는 자리. 딱 끊지 않고 한 뼘만 그늘을 준다. */}
+      <AbsoluteFill
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(12,10,8,0) 44%, rgba(12,10,8,0.55) 56%, rgba(12,10,8,0) 62%)",
+        }}
+      />
       <div
         style={{
           position: "absolute",
-          top: 74,
-          left: 68,
-          color: INK.brass,
-          fontSize: 54,
-          fontWeight: 800,
-          letterSpacing: 4,
+          left: 0,
+          right: 0,
+          top: 1128,
+          bottom: 0,
+          background: band,
         }}
-      >
-        {kicker}
-      </div>
-      {/* 숫자는 아래에서 300px 띄운다. 그 아래는 쇼츠 UI 자리다. */}
-      <div style={{ position: "absolute", left: 68, right: 68, bottom: 300 }}>
+      />
+      <div style={{ position: "absolute", left: 64, right: 64, top: 1178 }}>
         <div style={{ display: "flex", alignItems: "baseline" }}>
           <span
             style={{
-              color,
-              fontSize: 400,
+              color: ink,
+              fontSize: size,
               fontWeight: 900,
-              lineHeight: 0.92,
-              letterSpacing: -8,
+              lineHeight: 0.86,
+              letterSpacing: -10,
             }}
           >
             {big}
           </span>
           <span
             style={{
-              color: C.text,
-              fontSize: 148,
+              color: ink,
+              fontSize: Math.round(size * 0.42),
               fontWeight: 800,
-              marginLeft: 8,
+              marginLeft: 10,
+              opacity: 0.82,
             }}
           >
             {unit}
           </span>
         </div>
         {/*
-          nowrap이라 길면 그냥 잘려 나간다 — 실제로 태풍 편 라벨이
-          "…다 합쳐도 39"에서 끊겼다. 글자 수로 크기를 줄여 항상 한 줄에
-          들어오게 한다. 폭은 1080에서 좌우 여백 68씩 뺀 944.
+          한 줄을 넘기면 200px에서 두 줄 다 못 읽는다. 글자 수로 크기를
+          줄여 항상 한 줄에 들어오게 한다. 폭은 1080에서 좌우 64씩 뺀 952.
         */}
         <div
           style={{
-            color: C.text,
-            fontSize: Math.min(86, Math.floor(944 / Math.max(1, label.length))),
+            color: ink,
+            fontSize: Math.min(78, Math.floor(1010 / Math.max(1, label.length))),
             fontWeight: 800,
             lineHeight: 1.2,
-            marginTop: 16,
+            marginTop: 22,
             whiteSpace: "nowrap",
+            opacity: 0.88,
           }}
         >
           {label}
         </div>
       </div>
-    </AbsoluteFill>
-  </>
-);
+    </>
+  );
+};
+
+/** 편마다 하나씩 — 그리드에서 채널이 색으로 갈린다 */
+const BAND = {
+  war: "#B3402C",      // 산화철 붉은색
+  kwar: "#8E5A3A",     // 붉은 흙
+  typhoon: "#3E6480",  // 삭은 쪽빛
+  rail: "#C09240",     // 놋쇠
+  bongsu: "#D9741F",   // 잉걸불
+  power: "#17140F",    // 먹색 — 이 편만 뒤집는다
+  tongsinsa: "#7C8B52", // 국방색
+} as const;
+
+/**
+ * 지도 색 — 썸네일에서는 땅이 밝고 바다가 어둡다.
+ *
+ * 본편은 반대다. 80초 동안 보는 화면에서 땅이 밝으면 눈이 피로하고,
+ * 그 위에 얹히는 선과 글자가 죽는다. 썸네일은 0.3초 안에 형태가
+ * 읽혀야 하므로 땅과 바다의 명도 차를 최대로 벌린다. 같은 지도라도
+ * 보는 시간이 다르면 칠하는 법이 다르다.
+ */
+const M = {
+  land: "#8C7F66",
+  coast: "#C4B79B",
+  /** 강조 — 이 편이 말하는 면 */
+  hot: "#B3402C",
+} as const;
 
 const Frame: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   useFonts();
   return (
     <AbsoluteFill style={{ backgroundColor: C.bg, fontFamily: "Pretendard" }}>
       {children}
-      <Grain opacity={0.34} vignette={0.4} />
+      <Grain opacity={0.3} vignette={0.34} />
     </AbsoluteFill>
   );
 };
@@ -138,15 +186,15 @@ const Frame: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 export const ThumbWar: React.FC = () => (
   <Frame>
     <AbsoluteFill style={{ opacity: 0.92 }}>
-      <WarMap month={2.4} viewBox={PENINSULA_VB} u={(px) => px * 0.78} bare />
+      <WarMap
+        month={2.4}
+        viewBox={PENINSULA_VB}
+        u={(px) => px * 0.78}
+        bare
+        palette={{ free: M.land, held: "#8E2A1C", coast: M.coast }}
+      />
     </AbsoluteFill>
-    <Face
-      kicker="임진왜란 7년"
-      big="11"
-      unit="개월"
-      label="일본군이 한양에 있던 시간"
-      color={INK.oxideHot}
-    />
+    <Face big="11" unit="개월" label="일본군이 한양에 있던 시간" band={BAND.war} />
   </Frame>
 );
 
@@ -168,24 +216,18 @@ export const ThumbKoreanWar: React.FC = () => (
           </clipPath>
         </defs>
         {PROVINCES.map((p) => (
-          <path key={p.id} d={p.d} fill={FREE} />
+          <path key={p.id} d={p.d} fill={M.land} />
         ))}
         <g clipPath="url(#thLand)">
-          <path d={KW_FRONT.areaAt(40)} fill={HELD} />
-          <path d={KW_FRONT.lineAt(40)} fill="none" stroke="#D4694F" strokeWidth={5} />
+          <path d={KW_FRONT.areaAt(40)} fill="#8E2A1C" />
+          <path d={KW_FRONT.lineAt(40)} fill="none" stroke="#F0A08A" strokeWidth={7} />
         </g>
         {PROVINCES.map((p) => (
-          <path key={`c${p.id}`} d={p.d} fill="none" stroke="#4A4638" strokeWidth={2} />
+          <path key={`c${p.id}`} d={p.d} fill="none" stroke={M.coast} strokeWidth={2.4} />
         ))}
       </svg>
     </AbsoluteFill>
-    <Face
-      kicker="6·25 · 1950년 6월 25일"
-      big="40"
-      unit="일"
-      label="낙동강까지 밀리는 데"
-      color="#D4694F"
-    />
+    <Face big="40" unit="일" label="낙동강까지 밀리는 데" band={BAND.kwar} />
   </Frame>
 );
 
@@ -205,7 +247,7 @@ export const ThumbTyphoon: React.FC = () => (
         style={{ width: "100%", height: "100%", display: "block" }}
       >
         {EA_LANDS.map((l, i) => (
-          <path key={i} d={l.d} fill="#2F2920" stroke="#6E6555" strokeWidth={2.6} />
+          <path key={i} d={l.d} fill={M.land} stroke={M.coast} strokeWidth={2.6} />
         ))}
         {TYPHOONS.map((t) => (
           <path
@@ -231,13 +273,7 @@ export const ThumbTyphoon: React.FC = () => (
         })()}
       </svg>
     </AbsoluteFill>
-    <Face
-      kicker="1959년 추석 · 태풍 사라"
-      big="849"
-      unit="명"
-      label="나머지 셋 다 합쳐 390명"
-      color="#D4694F"
-    />
+    <Face big="849" unit="명" label="나머지 셋 다 합쳐 390명" band={BAND.typhoon} />
   </Frame>
 );
 
@@ -254,7 +290,7 @@ export const ThumbRail: React.FC = () => {
           style={{ width: "100%", height: "100%", display: "block" }}
         >
           {PROVINCES.map((p) => (
-            <path key={p.id} d={p.d} fill="#302C22" stroke="#5E5747" strokeWidth={2} />
+            <path key={p.id} d={p.d} fill={M.land} stroke={M.coast} strokeWidth={2.4} />
           ))}
           {LINES.filter((l) => l.year <= YEAR).map((l) => {
             const parts = l.north ? splitAt(l.pts, cutLatAt(YEAR)) : null;
@@ -263,8 +299,8 @@ export const ThumbRail: React.FC = () => {
                 <path
                   d={parts ? parts.south : partialPath(l.pts, 1)}
                   fill="none"
-                  stroke="#D9A45E"
-                  strokeWidth={7}
+                  stroke="#7A2A16"
+                  strokeWidth={9}
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
@@ -272,8 +308,8 @@ export const ThumbRail: React.FC = () => {
                   <path
                     d={parts.north}
                     fill="none"
-                    stroke="#6A6252"
-                    strokeWidth={6}
+                    stroke="#4A4436"
+                    strokeWidth={7}
                     strokeDasharray="16 18"
                     strokeLinecap="round"
                   />
@@ -283,13 +319,7 @@ export const ThumbRail: React.FC = () => {
           })}
         </svg>
       </AbsoluteFill>
-      <Face
-        kicker="경의선 · 1906 – 1945"
-        big="81"
-        unit="년"
-        label="신의주행 표를 못 판 시간"
-        color={INK.brass}
-      />
+      <Face big="81" unit="년" label="신의주행 표를 못 판 시간" band={BAND.rail} />
     </Frame>
   );
 };
@@ -308,31 +338,25 @@ export const ThumbBongsu: React.FC = () => (
         style={{ width: "100%", height: "100%", display: "block" }}
       >
         {PROVINCES.map((p) => (
-          <path key={p.id} d={p.d} fill="#1B1810" stroke="#4C432E" strokeWidth={1.1} />
+          <path key={p.id} d={p.d} fill="#5C5340" stroke="#8E8267" strokeWidth={1.3} />
         ))}
         <path
           d={BEACON_XY.map((b, i) => `${i ? "L" : "M"}${b.x.toFixed(1)} ${b.y.toFixed(1)}`).join("")}
           fill="none"
-          stroke={INK.ember}
-          strokeWidth={4.5}
+          stroke="#7A2E08"
+          strokeWidth={6}
           strokeLinecap="round"
           strokeLinejoin="round"
         />
         {BEACON_XY.map((b) => (
           <g key={b.name}>
-            <circle cx={b.x} cy={b.y} r={7} fill={INK.flame} opacity={0.55} />
-            <circle cx={b.x} cy={b.y} r={3.2} fill="#FFF3D6" />
+            <circle cx={b.x} cy={b.y} r={9} fill="#7A2E08" />
+            <circle cx={b.x} cy={b.y} r={5} fill="#FFD98A" />
           </g>
         ))}
       </svg>
     </AbsoluteFill>
-    <Face
-      kicker="조선 봉수 · 제2로 직봉"
-      big="12"
-      unit="시간"
-      label="실제로는 닷새가 걸렸다"
-      color={INK.flame}
-    />
+    <Face big="12" unit="시간" label="실제로는 닷새가 걸렸다" band={BAND.bongsu} />
   </Frame>
 );
 
@@ -348,38 +372,47 @@ export const ThumbPower: React.FC = () => (
         style={{ width: "100%", height: "100%", display: "block" }}
       >
         {PROVINCES.map((p) => (
-          <path key={p.id} d={p.d} fill="#221E16" stroke="#4E4736" strokeWidth={2} />
+          <path key={p.id} d={p.d} fill={M.land} stroke={M.coast} strokeWidth={2.4} />
         ))}
         {FEEDS.map((f) => (
           <path
             key={f.id}
             d={f.d}
             fill="none"
-            stroke="#6A6252"
-            strokeWidth={3}
+            stroke="#4A4436"
+            strokeWidth={4}
             strokeDasharray="12 14"
-            opacity={0.55}
+            opacity={0.7}
           />
         ))}
         {PLANT_XY.filter((p) => !p.ship).map((p) => {
           const off = p.north;
-          const col = off ? "#6A6252" : INK.flame;
+          // 꺼진 곳은 윤곽만, 살아 있는 곳은 채운다. 크기 차이가 이 편이다.
+          const col = off ? "#241F18" : INK.flame;
           const r = radiusOf(p.kw);
           return (
             <g key={p.name}>
-              <circle cx={p.x} cy={p.y} r={r} fill={col} opacity={off ? 0.18 : 0.3} />
-              <circle cx={p.x} cy={p.y} r={r} fill="none" stroke={col} strokeWidth={3.4} />
+              <circle cx={p.x} cy={p.y} r={r} fill={col} opacity={off ? 0.85 : 0.95} />
+              <circle
+                cx={p.x}
+                cy={p.y}
+                r={r}
+                fill="none"
+                stroke={off ? "#241F18" : "#FFE9BC"}
+                strokeWidth={4}
+              />
             </g>
           );
         })}
       </svg>
     </AbsoluteFill>
+    {/* 이 편만 판이 먹색이고 글자가 불빛색이다 — 불이 꺼진 편이다 */}
     <Face
-      kicker="1948년 5월 14일 정오"
       big="11.5"
       unit="%"
       label="남한에 있던 발전설비의 몫"
-      color={INK.flame}
+      band={BAND.power}
+      ink={INK.flame}
     />
   </Frame>
 );
@@ -400,32 +433,25 @@ export const ThumbTongsinsa: React.FC = () => {
           style={{ width: "100%", height: "100%", display: "block" }}
         >
           {EA_LANDS.map((l, i) => (
-            <path key={i} d={l.d} fill="#2A241B" stroke="#645B4B" strokeWidth={2.2} />
+            <path key={i} d={l.d} fill={M.land} stroke={M.coast} strokeWidth={2.2} />
           ))}
-          <path d={t.land} fill="none" stroke={INK.brass} strokeWidth={7} strokeLinejoin="round" />
+          <path d={t.land} fill="none" stroke="#8E2A14" strokeWidth={12} strokeLinejoin="round" />
           <path
             d={t.sea}
             fill="none"
-            stroke={INK.indigoHot}
-            strokeWidth={7}
-            strokeDasharray="15 11"
+            stroke="#16344B"
+            strokeWidth={12}
+            strokeDasharray="17 12"
             strokeLinecap="round"
           />
           {TS_XY.filter((s) => s.name === "한양" || s.name === "에도").map((s) => (
             <g key={s.name}>
-              <circle cx={s.x} cy={s.y} r={16} fill="none" stroke={INK.bone} strokeWidth={5} />
-              <circle cx={s.x} cy={s.y} r={6} fill={INK.bone} />
+              <circle cx={s.x} cy={s.y} r={17} fill="#241F18" stroke="#F3E7CC" strokeWidth={6} />
             </g>
           ))}
         </svg>
       </AbsoluteFill>
-      <Face
-        kicker="1763년 · 한양에서 에도까지"
-        big="24"
-        unit="일"
-        label="여섯 달을 가서 머문 날"
-        color={INK.brass}
-      />
+      <Face big="24" unit="일" label="여섯 달을 가서 머문 날" band={BAND.tongsinsa} />
     </Frame>
   );
 };

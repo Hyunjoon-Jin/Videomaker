@@ -39,6 +39,14 @@ interface Props {
    * 전선만 남기면 '어디까지 밀렸나'가 한눈에 들어온다.
    */
   bare?: boolean;
+  /**
+   * 색 갈아끼우기 — 썸네일 전용.
+   *
+   * 본편은 80초를 보는 화면이라 땅이 어두워야 그 위의 붉은 면과 글자가
+   * 산다. 썸네일은 200px에서 0.3초 안에 형태가 읽혀야 하므로 반대로
+   * 땅을 밝게 깐다. 같은 지도라도 보는 시간이 다르면 칠하는 법이 다르다.
+   */
+  palette?: { free: string; held: string; coast: string };
   children?: React.ReactNode;
 }
 
@@ -83,8 +91,10 @@ export const WarMap: React.FC<Props> = ({
   u = (px: number) => px,
   markJeolla = false,
   bare = false,
+  palette,
   children,
 }) => {
+  const pal = palette ?? { free: FREE, held: HELD, coast: COAST };
   const fought = battlesUpTo(month);
   const jeollaA = JEOLLA.alphaAt(month);
   const jeollaD = jeollaA > 0 ? JEOLLA.pathAt(month) : "";
@@ -117,14 +127,14 @@ export const WarMap: React.FC<Props> = ({
       <g opacity={reveal}>
         {/* 바탕 */}
         {PROVINCES.map((p) => (
-          <path key={p.id} d={p.d} fill={FREE} stroke="none" />
+          <path key={p.id} d={p.d} fill={pal.free} stroke="none" />
         ))}
 
         {/* 점령권 — 폴리라인 아래, 육지 안쪽만.
             순서: 채움 → 전라도 빼내기 → 전선 → 전라도 테두리 */}
         <g clipPath="url(#land)">
-          <path d={FRONT.areaAt(month)} fill={HELD} />
-          {jeollaD && <path d={jeollaD} fill={FREE} opacity={jeollaA} />}
+          <path d={FRONT.areaAt(month)} fill={pal.held} />
+          {jeollaD && <path d={jeollaD} fill={pal.free} opacity={jeollaA} />}
           <path
             d={FRONT.lineAt(month)}
             fill="none"
@@ -146,7 +156,7 @@ export const WarMap: React.FC<Props> = ({
 
         {/* 해안선 */}
         {PROVINCES.map((p) => (
-          <path key={`c${p.id}`} d={p.d} fill="none" stroke={COAST} strokeWidth={u(1.8)} />
+          <path key={`c${p.id}`} d={p.d} fill="none" stroke={pal.coast} strokeWidth={u(1.8)} />
         ))}
 
         {/* 지명 */}
