@@ -297,10 +297,10 @@ export const ThumbTyphoon: React.FC = () => (
       </svg>
     </AbsoluteFill>
     <Face
-      topic="1959년 태풍 사라"
+      topic="1959년 태풍 사라 · 사망·실종"
       big="849"
       unit="명"
-      label="한 번에 낸 사망·실종자 수"
+      label="루사·매미·힌남노 합쳐 390명"
       band={BAND.typhoon}
     />
   </Frame>
@@ -392,10 +392,10 @@ export const ThumbBongsu: React.FC = () => (
       </svg>
     </AbsoluteFill>
     <Face
-      topic="조선의 봉수"
+      topic="조선 봉수 · 부산에서 서울까지"
       big="12"
       unit="시간"
-      label="부산에서 서울까지 가는 규정 시간"
+      label="규정이 그랬고 실제는 닷새였다"
       band={BAND.bongsu}
     />
   </Frame>
@@ -452,7 +452,7 @@ export const ThumbPower: React.FC = () => (
       topic="1948년 5·14 단전"
       big="11.5"
       unit="%"
-      label="남한에 있던 발전설비의 몫"
+      label="북한이 끊자 남한에 남은 발전설비"
       band={BAND.power}
       ink={INK.flame}
     />
@@ -494,10 +494,10 @@ export const ThumbTongsinsa: React.FC = () => {
         </svg>
       </AbsoluteFill>
       <Face
-        topic="1764년 조선통신사"
-        big="24"
+        topic="1763년 조선통신사"
+        big="191"
         unit="일"
-        label="에도에 머문 날 수"
+        label="한양에서 에도까지 걸린 시간"
         band={BAND.tongsinsa}
       />
     </Frame>

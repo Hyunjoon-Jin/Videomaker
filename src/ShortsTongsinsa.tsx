@@ -428,7 +428,7 @@ export const ShortsTongsinsa: React.FC = () => {
             />
             <div style={{ display: "flex", alignItems: "baseline", marginTop: 2 }}>
               <Typed
-                text="24"
+                text="191"
                 start={44}
                 cps={8}
                 style={{
@@ -446,7 +446,7 @@ export const ShortsTongsinsa: React.FC = () => {
               />
             </div>
             <Typed
-              text="여섯 달을 가서 머문 날"
+              text="한양에서 에도까지 걸린 시간"
               start={70}
               cps={22}
               style={{
