@@ -13,7 +13,7 @@ import {
   EDO_IN,
   EDO_OUT,
   FULL_PATH,
-  MISSIONS,
+  VOYAGES,
   TOTAL_DAYS,
   T_EVENTS,
   XY,
@@ -354,38 +354,56 @@ export const ShortsTongsinsa: React.FC = () => {
           <AbsoluteFill
             style={{ justifyContent: "flex-end", padding: "0 60px 232px", opacity: outroIn }}
           >
-            <div style={{ color: C.dim, fontSize: 30, fontWeight: 700, marginBottom: 12 }}>
-              통신사 열두 번, 204년
+            <div style={{ color: C.dim, fontSize: 30, fontWeight: 700, marginBottom: 18 }}>
+              1607년부터 1811년까지 열두 번 갔다
             </div>
-            {MISSIONS.map(([y, what], i) => (
-              <div key={y} style={{ display: "flex", alignItems: "baseline", gap: 22, marginTop: 2 }}>
+            <div style={{ color: C.text, fontSize: 46, fontWeight: 800, marginBottom: 26 }}>
+              마지막 열두 번째는 에도에 못 갔다
+            </div>
+
+            {/* 같은 출발지, 같은 형식, 다른 숫자. 읽는 게 아니라 보면 된다. */}
+            {VOYAGES.map((v) => (
+              <div
+                key={v.year}
+                style={{
+                  display: "flex",
+                  alignItems: "baseline",
+                  gap: 20,
+                  marginTop: 10,
+                  color: v.now ? INK.brass : INK.indigoHot,
+                }}
+              >
                 <span
                   style={{
-                    color: C.dim,
-                    fontSize: 38,
+                    fontSize: 36,
                     fontWeight: 700,
                     fontVariantNumeric: "tabular-nums",
-                    minWidth: 130,
+                    minWidth: 106,
+                    color: C.dim,
                   }}
                 >
-                  {y}
+                  {v.year}
+                </span>
+                <span style={{ fontSize: 40, fontWeight: 800, minWidth: 130 }}>{v.who}</span>
+                <span style={{ fontSize: 40, fontWeight: 700, color: C.text, minWidth: 250 }}>
+                  {v.from} → {v.to}
                 </span>
                 <span
                   style={{
-                    color: i === 3 ? INK.oxideHot : i === 4 ? INK.indigoHot : INK.brass,
-                    fontSize: 42,
+                    fontSize: 62,
                     fontWeight: 900,
+                    fontVariantNumeric: "tabular-nums",
+                    marginLeft: "auto",
                   }}
                 >
-                  {what}
+                  {v.days}
                 </span>
               </div>
             ))}
-            <div style={{ height: 1, background: "#3B342A", margin: "24px 0 16px" }} />
-            <div style={{ color: C.text, fontSize: 50, fontWeight: 800, lineHeight: 1.34 }}>
-              부산에서 도쿄까지 8일이 걸렸다
-              <br />
-              방금 본 그 길은 129일이었다
+
+            <div style={{ height: 1, background: "#3B342A", margin: "30px 0 18px" }} />
+            <div style={{ color: C.text, fontSize: 48, fontWeight: 800, lineHeight: 1.34 }}>
+              65년 뒤, 같은 바다를 증기선이 건넜다
             </div>
           </AbsoluteFill>
         </>
