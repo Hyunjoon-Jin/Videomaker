@@ -9,8 +9,9 @@ import { ShortsRail, RAIL_DURATION } from "./ShortsRail";
 import { ShortsBongsu, BONGSU_DURATION } from "./ShortsBongsu";
 import { ShortsPower, POWER_DURATION } from "./ShortsPower";
 import { ShortsTongsinsa, TONGSINSA_DURATION } from "./ShortsTongsinsa";
+import { ShortsGanchuk, GANCHUK_DURATION } from "./ShortsGanchuk";
 import { ChannelBanner, ChannelIcon, ChannelWatermark } from "./Channel";
-import { ThumbBongsu, ThumbKoreanWar, ThumbPower, ThumbRail, ThumbTongsinsa, ThumbTyphoon, ThumbWar } from "./Thumbs";
+import { ThumbBongsu, ThumbGanchuk, ThumbKoreanWar, ThumbPower, ThumbRail, ThumbTongsinsa, ThumbTyphoon, ThumbWar } from "./Thumbs";
 import { FPS, SHORT_H, SHORT_W } from "./theme";
 
 export const RemotionRoot: React.FC = () => (
@@ -93,6 +94,14 @@ export const RemotionRoot: React.FC = () => (
       width={SHORT_W}
       height={SHORT_H}
     />
+    <Composition
+      id="ShortsGanchuk"
+      component={ShortsGanchuk}
+      durationInFrames={GANCHUK_DURATION}
+      fps={FPS}
+      width={SHORT_W}
+      height={SHORT_H}
+    />
     {/* 썸네일 — 쇼츠와 같은 9:16 */}
     {([
       ["ThumbWar", ThumbWar],
@@ -102,6 +111,7 @@ export const RemotionRoot: React.FC = () => (
       ["ThumbBongsu", ThumbBongsu],
       ["ThumbPower", ThumbPower],
       ["ThumbTongsinsa", ThumbTongsinsa],
+      ["ThumbGanchuk", ThumbGanchuk],
     ] as const).map(([id, comp]) => (
       <Composition
         key={id}

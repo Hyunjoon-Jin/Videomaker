@@ -9,6 +9,7 @@ import { EA_LANDS, TYPHOONS, eaProject, trackPathTo } from "./data/typhoon";
 import { BEACON_XY } from "./data/bongsu";
 import { FEEDS, PLANT_XY, radiusOf } from "./data/power";
 import { XY as TS_XY, traveled } from "./data/tongsinsa";
+import { ZONE_XY, polyPath } from "./data/ganchuk";
 import { C, INK } from "./theme";
 import { Grain } from "./Grain";
 import { useFonts } from "./fonts";
@@ -164,6 +165,7 @@ const BAND = {
   bongsu: "#D9741F",   // 잉걸불
   power: "#17140F",    // 먹색 — 이 편만 뒤집는다
   tongsinsa: "#7C8B52", // 국방색
+  ganchuk: "#3E6B62",   // 갯벌 위의 물빛
 } as const;
 
 /**
@@ -503,3 +505,45 @@ export const ThumbTongsinsa: React.FC = () => {
     </Frame>
   );
 };
+
+/* ── 8. 서해안 간척 ───────────────────────────────────
+   막은 선과 그 안쪽 땅을 본편과 같은 방식으로 그린다. 새만금 하나가
+   나머지 넷을 합친 것보다 넓다는 게 200px에서도 면 크기로 읽힌다. */
+export const ThumbGanchuk: React.FC = () => (
+  <Frame>
+    <AbsoluteFill style={{ opacity: 0.95 }}>
+      <svg
+        // 다섯 지구는 x 402~427, y 583~736에 몰려 있다. 반도 전체를 잡으면
+        // 원이 점이 되므로 그 띠만 담기게 바짝 당긴다.
+        viewBox="340 500 180 320"
+        preserveAspectRatio="xMidYMid slice"
+        style={{ width: "100%", height: "100%", display: "block" }}
+      >
+        {PROVINCES.map((p) => (
+          <path key={p.id} d={p.d} fill={M.land} stroke={M.coast} strokeWidth={0.8} />
+        ))}
+        {ZONE_XY.map((z) => (
+          <g key={z.id}>
+            <path d={polyPath(z)} fill="#1E5750" opacity={0.95} />
+            <line
+              x1={z.A.x}
+              y1={z.A.y}
+              x2={z.B.x}
+              y2={z.B.y}
+              stroke="#9FE4D2"
+              strokeWidth={2.2}
+              strokeLinecap="round"
+            />
+          </g>
+        ))}
+      </svg>
+    </AbsoluteFill>
+    <Face
+      topic="1968~2010 서해안 간척"
+      big="1,351"
+      unit="km²"
+      label="바다를 막아 만든 땅 넓이"
+      band={BAND.ganchuk}
+    />
+  </Frame>
+);
