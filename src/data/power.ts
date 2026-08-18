@@ -190,7 +190,7 @@ export interface PEvent {
  * 4분의 1이라 따로 셀 값어치가 없다.
  */
 export const P_EVENTS: PEvent[] = [
-  { year: 1929, title: "북쪽에 수력이 들어선다", detail: "부전강 20만kW. 함경도 산속이다", impact: 0.7, side: "north", focus: [127.45, 40.20], zoom: 2.3 },
+  { year: 1929, title: "북쪽에 수력이 들어선다", detail: "부전강 20만kW · 함경도 산속", impact: 0.7, side: "north", focus: [127.45, 40.20], zoom: 2.3 },
   { year: 1941, title: "북쪽에 67만kW가 더", detail: "장진강 33만, 허천강 33만", impact: 0.7, side: "north", focus: [127.80, 40.42], zoom: 2.1 },
   // 남쪽은 한 번에 다 보여준다.
   //
@@ -199,7 +199,7 @@ export const P_EVENTS: PEvent[] = [
   // 남쪽에서 제일 큰 것(영월 6%)을 빼고 제일 작은 것(당인리 1%)에만
   // 자막을 준 꼴이었다. 셋이 다 들어선 1943년에 한꺼번에 세운다.
   { year: 1943, title: "남쪽에서 제일 큰 셋", detail: "영월 10만 · 청평 4만 · 당인리 2만", impact: 0.7, side: "south", focus: [127.62, 37.48], zoom: 2.15 },
-  { year: 1944, title: "수풍 60만kW", detail: "이 하나가 남쪽 전체의 세 배다", impact: 1, side: "north", focus: [125.70, 40.20], zoom: 2.2 },
+  { year: 1944, title: "수풍 60만kW", detail: "남쪽 발전설비 전체의 세 배", impact: 1, side: "north", focus: [125.70, 40.20], zoom: 2.2 },
   { year: 1945, title: "해방", detail: "남한 몫은 19만kW, 11.5%", impact: 0.9, focus: [127.30, 38.60], zoom: 1.55 },
   { year: CUT, title: "5·14 단전", detail: "정오, 북에서 오던 전기가 끊기다", impact: 1, cut: true, focus: [127.00, 38.40], zoom: 1.7 },
   // 여기서부터가 "그래서 무슨 일이 있었나"다.
@@ -208,7 +208,7 @@ export const P_EVENTS: PEvent[] = [
   // 보여주지 않는 것을 글로 말한 것이고 무엇보다 얼마나 큰일이었는지
   // 숫자가 없었다. 설비의 11.5%와 수요의 60~66%는 다른 값이다.
   // 앞의 것은 발전소가 어디 있었나이고, 뒤의 것이 실제로 얼마를 잃었나다.
-  { year: 1948.42, title: "쓰던 전기의 60~66%", detail: "북에서 오던 몫이다", impact: 1, focus: [127.20, 38.20], zoom: 1.45 },
+  { year: 1948.42, title: "쓰던 전기의 60~66%", detail: "북에서 오던 몫", impact: 1, focus: [127.20, 38.20], zoom: 1.45 },
   // 전차와 쌀을 따로 세우지 않는다.
   //
   // 각각 비트를 주면 화면은 그대로인데 자막만 바뀐다. 지도가 보여줄 수
@@ -216,5 +216,5 @@ export const P_EVENTS: PEvent[] = [
   // 무엇을 못 했는지는 한 줄에 모으고, 그림은 수요 막대가 맡는다 —
   // 쓰던 전기의 3분의 2가 꺼지는 것을 눈으로 보게.
   { year: 1948.55, title: "전차가 서고 공장이 멈췄다", detail: "격일제 송전 · 쌀 55만 석 감수", impact: 0.9, focus: [127.00, 37.30], zoom: 1.9 },
-  { year: 1951, title: "배가 전기를 냈다", detail: "여덟 척이 총 발전량의 56.4%를 냈다", impact: 1, focus: [127.80, 36.40], zoom: 1.5 },
+  { year: 1951, title: "배가 전기를 냈다", detail: "발전선 여덟 척 · 총 발전량의 56.4%", impact: 1, focus: [127.80, 36.40], zoom: 1.5 },
 ];
