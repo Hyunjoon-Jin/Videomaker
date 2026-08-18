@@ -11,6 +11,7 @@ import { FEEDS, PLANT_XY, radiusOf } from "./data/power";
 import { XY as TS_XY, traveled } from "./data/tongsinsa";
 import { ZONE_XY, dikePath, polyPath } from "./data/ganchuk";
 import { AKASHI, MERIDIANS, SEOUL, meridianPath, meridianX } from "./data/timezone";
+import { FLIGHT, OLD_SAGO, flightPathTo } from "./data/sillok";
 import { C, INK } from "./theme";
 import { Grain } from "./Grain";
 import { useFonts } from "./fonts";
@@ -168,6 +169,7 @@ const BAND = {
   tongsinsa: "#7C8B52", // 국방색
   ganchuk: "#3E6B62",   // 갯벌 위의 물빛
   tz: "#4E4867",        // 남보라 — 새벽하늘
+  sillok: "#63333F",    // 자단빛 — 책갑 물들이던 색
 } as const;
 
 /**
@@ -624,6 +626,70 @@ export const ThumbTimezone: React.FC = () => (
       unit="분"
       label="해가 가장 높이 뜨기까지 남은 시간"
       band={BAND.tz}
+    />
+  </Frame>
+);
+
+/* ── 10. 조선왕조실록 사고 ────────────────────────────
+   붉은 ✕ 셋과 살아남은 점 하나, 그리고 그 점에서 뻗어 반도를 세로로
+   가로지르는 선. 200px으로 줄이면 '셋이 죽고 하나가 도망쳤다'가 형태만으로
+   읽힌다. 글자를 못 읽어도 그림이 먼저 말한다. */
+export const ThumbSillok: React.FC = () => (
+  <Frame>
+    <AbsoluteFill style={{ opacity: 0.95 }}>
+      <svg
+        // 사고 넷(x 452~558)과 피난 경로(x 351~467, y 306~767)가 다 들어오되
+        // 색면이 시작하는 y 1090 위에서 끝나게 잡았다.
+        viewBox="250 246 560 996"
+        preserveAspectRatio="xMidYMid slice"
+        style={{ width: "100%", height: "100%", display: "block" }}
+      >
+        {PROVINCES.map((p) => (
+          <path key={p.id} d={p.d} fill={M.land} stroke={M.coast} strokeWidth={2.2} />
+        ))}
+        <path
+          d={flightPathTo(1)}
+          fill="none"
+          stroke="#F3E7CC"
+          strokeWidth={16}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d={flightPathTo(1)}
+          fill="none"
+          stroke="#8E2A3A"
+          strokeWidth={9}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        {/* 불탄 셋 — ✕가 200px에서 살아남는 유일한 기호다 */}
+        {OLD_SAGO.filter((s) => s.lost).map((s) => (
+          <g key={s.name} stroke="#8E1F1F" strokeWidth={9} strokeLinecap="round">
+            <line x1={s.x - 15} y1={s.y - 15} x2={s.x + 15} y2={s.y + 15} />
+            <line x1={s.x - 15} y1={s.y + 15} x2={s.x + 15} y2={s.y - 15} />
+          </g>
+        ))}
+        {/* 살아남은 전주와 도착지 묘향산 */}
+        {[FLIGHT[0], FLIGHT[FLIGHT.length - 1]].map((s) => (
+          <circle
+            key={s.name}
+            cx={s.x}
+            cy={s.y}
+            r={17}
+            fill="#F3E7CC"
+            stroke="#241F18"
+            strokeWidth={6}
+          />
+        ))}
+      </svg>
+    </AbsoluteFill>
+    <Face
+      topic="1592년 내장산"
+      big="370"
+      unit="일"
+      label="선비 둘이 실록을 지킨 날"
+      band={BAND.sillok}
     />
   </Frame>
 );
