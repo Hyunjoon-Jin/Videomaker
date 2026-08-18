@@ -460,7 +460,7 @@ export const ShortsTongsinsa: React.FC = () => {
         >
           <div style={{ opacity: hookIn }}>
             <Typed
-              text="1763년, 사절 477명이 에도로 떠났다"
+              text="1763년, 에도로 떠난 사절 477명"
               start={-20}
               cps={400}
               style={{ display: "block", color: C.dim, fontSize: 40, fontWeight: 700 }}

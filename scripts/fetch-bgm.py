@@ -81,7 +81,7 @@ TRACKS = [
         "제일 높았지만 중역이 18%뿐이라 휴대폰에서 배경이 비었다.",
     ),
     (
-        "public/bgm-gc.wav", "Machinations", 21.0, 63.5,
+        "public/bgm-gc.wav", "Machinations", 21.0, 61.2,
         "간척 — 바다를 막는 편이라 기계가 도는 느낌이 맞는다. 고른 구간을 "
         "자동으로 훑어 골랐다(고르기 3.69, 중역 44%). Deep Haze가 점수는 더 "
         "높았지만 통신사 편이 이미 쓰고 있어 두 편이 같은 곡이 된다.",
@@ -107,6 +107,12 @@ TRACKS = [
         "고르기 4.90으로 더 높았지만 원본이 너무 작아(세기 0.024) 키우면 잡음이 "
         "같이 올라온다. Tempting Secrets는 고르기 11.20으로 압도적인데 중역이 "
         "13%뿐이라 휴대폰에서 배경이 통째로 빈다.",
+    ),
+    (
+        "public/bgm-tyc.wav", "Anguish", 26.0, 20.2,
+        "태풍 20초 판 — 본편과 같은 곡의 같은 자리를 짧게 자른다. 두 판을 "
+        "나란히 올려 길이만 놓고 비교할 것이므로 음악까지 바꾸면 무엇이 "
+        "달랐는지 알 수 없다.",
     ),
     (
         "public/bgm-rail.wav", "Lost Frontier", 9.0, 140.1,
@@ -170,7 +176,13 @@ def fetch(name: str) -> str:
 
 def main() -> None:
     print(CREDIT)
+    # 자막을 한 줄 고치면 길이가 바뀌고 그 편의 BGM만 다시 잘라야 한다.
+    # 열한 곡을 매번 디코딩할 이유가 없어서 이름으로 걸러낼 수 있게 했다.
+    #   python3 scripts/fetch-bgm.py tyc qk
+    only = sys.argv[1:]
     for out, name, start, dur, why in TRACKS:
+        if only and not any(k in out for k in only):
+            continue
         a = decode(fetch(name))
         i0 = int(start * SR)
         seg = a[i0: i0 + int(dur * SR)].copy()

@@ -55,29 +55,55 @@ const HOOK = Math.round(2.2 * FPS);
  * 길이를 준다.
  */
 const CHARS_PER_SEC = 9;
-const SECS = TYPHOONS.map((t) => {
-  const chars =
-    t.period.length +
-    t.name.length +
-    4 + // 연도
-    9 + // "951.5 hPa"
-    (t.rain == null ? 5 : 6) +
-    t.rainAt.length +
-    t.wind.length +
-    t.toll.length;
-  // 경로가 그려지는 동안은 지도를 보므로 최소 8초는 준다
-  return Math.max(8, chars / CHARS_PER_SEC + 1.2);
-});
-const SEG = SECS.map((s) => Math.round(s * FPS));
-/** 각 구간의 시작 프레임(훅 이후 기준) */
-const STARTS = SEG.reduce<number[]>(
-  (acc, f, i) => [...acc, (acc[i - 1] ?? 0) + (SEG[i - 1] ?? 0)],
-  []
-);
-const BODY = SEG.reduce((a, b) => a + b, 0);
+
+/** 목록 하나를 받아 구간 길이를 계산한다 — 본편과 짧은 판이 같은 식을 쓴다 */
+function plan(list: Typhoon[], minSec: number) {
+  const SEG = list.map((t) => {
+    const chars =
+      t.period.length +
+      t.name.length +
+      4 + // 연도
+      9 + // "951.5 hPa"
+      (t.rain == null ? 5 : 6) +
+      t.rainAt.length +
+      t.wind.length +
+      t.toll.length;
+    // 경로가 그려지는 동안은 지도를 보므로 바닥을 깔아둔다
+    return Math.round(Math.max(minSec, chars / CHARS_PER_SEC + 1.2) * FPS);
+  });
+  /** 각 구간의 시작 프레임(훅 이후 기준) */
+  const STARTS = SEG.reduce<number[]>(
+    (acc, _f, i) => [...acc, (acc[i - 1] ?? 0) + (SEG[i - 1] ?? 0)],
+    []
+  );
+  return { SEG, STARTS, BODY: SEG.reduce((a, b) => a + b, 0) };
+}
+
+const FULL = plan(TYPHOONS, 8);
+
+/**
+ * 짧은 판 — 사라 한 구간만.
+ *
+ * 70~80초짜리를 올려놓고 노출이 안 붙는 걸 보고 있었다. 길이가 원인인지는
+ * 아직 모르지만, 재생 시간이 이 정도로 차이 나는 두 판을 같이 올려보지
+ * 않으면 영영 알 수 없다. 그래서 같은 소재로 20초 판을 하나 낸다.
+ *
+ * 무엇을 버릴지는 마무리 문장이 정해줬다. "사라 849명, 뒤의 셋을 다
+ * 합쳐도 390명"은 넷의 숫자가 화면에 서 있어야 성립하는데, 그 표는
+ * 마무리에 통째로 나온다. 그러니까 본문에서 셋을 빼도 대비는 안 죽는다.
+ * 오히려 사라만 따라간 뒤 마무리에서 나머지 셋이 한꺼번에 켜지는 쪽이
+ * 숫자 차이가 더 크게 보인다.
+ *
+ * 한 구간뿐이라 최소 길이를 11초로 올렸다. 넷을 훑을 때는 8초여도
+ * 다음 태풍이 이어받지만, 여기서는 이 구간이 본문 전부다.
+ */
+const CUT_LIST = TYPHOONS.filter((t) => t.id === "sarah");
+const CUT = plan(CUT_LIST, 11);
 
 const OUTRO = Math.round(8.5 * FPS);
-export const TY_DURATION = HOOK + BODY + OUTRO;
+const OUTRO_CUT = Math.round(7.0 * FPS);
+export const TY_DURATION = HOOK + FULL.BODY + OUTRO;
+export const TY_CUT_DURATION = HOOK + CUT.BODY + OUTRO_CUT;
 
 /** 경로를 구간의 앞 몇 할에 걸쳐 그릴지 — 나머지는 결과를 보는 시간 */
 const DRAW = 0.84;
@@ -98,9 +124,12 @@ const WARN = "#C4402C";
  */
 const DANGER_K = 2.4;
 
-export const ShortsTyphoon: React.FC = () => {
+export const ShortsTyphoon: React.FC<{ cut?: boolean }> = ({ cut = false }) => {
   useFonts();
   const frame = useCurrentFrame();
+
+  const list = cut ? CUT_LIST : TYPHOONS;
+  const { SEG, STARTS, BODY } = cut ? CUT : FULL;
 
   const afterHook = frame - HOOK;
   const inOutro = afterHook >= BODY;
@@ -111,7 +140,7 @@ export const ShortsTyphoon: React.FC = () => {
   const local = afterHook - STARTS[idx];
   const seg = SEG[idx];
 
-  const cur = TYPHOONS[idx];
+  const cur = list[idx];
   /** 현재 태풍의 경로 진행도 */
   const prog = interpolate(local, [0, seg * DRAW], [0, 1], {
     extrapolateLeft: "clamp",
@@ -181,7 +210,7 @@ export const ShortsTyphoon: React.FC = () => {
 
   return (
     <AbsoluteFill style={{ backgroundColor: SEA, fontFamily: "Pretendard" }}>
-      <Audio src={staticFile("bgm-ty.wav")} volume={0.9} />
+      <Audio src={staticFile(cut ? "bgm-tyc.wav" : "bgm-ty.wav")} volume={0.9} />
 
       {/* ── 지도 ── */}
       <AbsoluteFill style={{ opacity: mapIn }}>
@@ -210,11 +239,18 @@ export const ShortsTyphoon: React.FC = () => {
             <path key={`k${i}`} d={d} fill={KOREA_F} stroke={KOREA_S} strokeWidth={u(2.6)} />
           ))}
 
-          {/* 지나간 태풍은 옅게 남겨 누적을 보여준다 */}
-          {TYPHOONS.map((t, i) => {
-            if (inOutro) return <Track key={t.id} t={t} p={1} dim={1} frame={frame} u={u} />;
-            if (i < idx) return <Track key={t.id} t={t} p={1} dim={0.3} frame={frame} u={u} />;
-            if (i === idx) return <Track key={t.id} t={t} p={prog} dim={1} frame={frame} u={u} />;
+          {/* 지나간 태풍은 옅게 남겨 누적을 보여준다.
+              짧은 판에서는 본문에 사라 하나뿐이라 나머지 셋은 마무리에
+              가서야 켜진다. 그게 오히려 대비가 커진다. */}
+          {TYPHOONS.map((t) => {
+            // 마무리에서는 지도가 배경이고 표가 본문이다. 최저기압 라벨
+            // 넷이 그대로 켜져 있으면 표의 숫자 위에 겹쳐 앉는다.
+            if (inOutro)
+              return <Track key={t.id} t={t} p={1} dim={1} frame={frame} u={u} peak={false} />;
+            const j = list.indexOf(t);
+            if (j < 0) return null;
+            if (j < idx) return <Track key={t.id} t={t} p={1} dim={0.3} frame={frame} u={u} />;
+            if (j === idx) return <Track key={t.id} t={t} p={prog} dim={1} frame={frame} u={u} />;
             return null;
           })}
         </svg>
@@ -326,8 +362,9 @@ export const ShortsTyphoon: React.FC = () => {
                   background: cur.color,
                 }}
               />
-              {TYPHOONS.map((t, i) =>
-                i < idx && t.rain != null ? (
+              {TYPHOONS.map((t) => {
+                const j = list.indexOf(t);
+                return j >= 0 && j < idx && t.rain != null ? (
                   <div
                     key={t.id}
                     style={{
@@ -339,8 +376,8 @@ export const ShortsTyphoon: React.FC = () => {
                       background: t.color,
                     }}
                   />
-                ) : null
-              )}
+                ) : null;
+              })}
             </div>
             <div style={{ color: "#6E6657", fontSize: 25, fontWeight: 600, marginTop: 7 }}>
               {cur.rainAt}
@@ -432,15 +469,21 @@ export const ShortsTyphoon: React.FC = () => {
       {/* ── 범례와 고지 ── */}
       {uiOn && (
         <div style={{ position: "absolute", bottom: BOTTOM_INSET, left: TEXT_X, right: SAFE_RIGHT }}>
+          {/* 마무리에서는 범례를 접는다. 표가 이름과 색을 같이 세우고 있어
+              범례가 하는 일이 없는데, 마무리 문장 자리로 올라와 겹쳤다. */}
+          {!inOutro && (
           <div style={{ display: "flex", gap: 20, flexWrap: "wrap", marginBottom: 10 }}>
-            {TYPHOONS.map((t, i) => (
+            {TYPHOONS.map((t) => (
               <div
                 key={t.id}
                 style={{
                   display: "flex",
                   alignItems: "center",
                   gap: 8,
-                  opacity: inOutro || i <= idx ? 1 : 0.32,
+                  opacity:
+                    inOutro || (list.indexOf(t) >= 0 && list.indexOf(t) <= idx)
+                      ? 1
+                      : 0.32,
                 }}
               >
                 <div style={{ width: 20, height: 5, background: t.color }} />
@@ -460,6 +503,7 @@ export const ShortsTyphoon: React.FC = () => {
               </span>
             </div>
           </div>
+          )}
           <div style={{ color: "#5E5648", fontSize: 20 }}>
             상륙값은 기록, 경로와 위험반원은 근사 (자세한 설명은 고정댓글)
           </div>
@@ -529,6 +573,9 @@ export const ShortsTyphoon: React.FC = () => {
   );
 };
 
+/** 같은 소재의 20초 판 — 길이가 노출에 영향을 주는지 보려고 나란히 올린다 */
+export const ShortsTyphoonCut: React.FC = () => <ShortsTyphoon cut />;
+
 /** 얇은 구분선 — 인쇄물의 괘선 */
 const Rule: React.FC = () => (
   <div style={{ height: 1, background: "#3B342A", marginBottom: 14 }} />
@@ -564,7 +611,9 @@ const Track: React.FC<{
   dim: number;
   frame: number;
   u: (px: number) => number;
-}> = ({ t, p, dim, frame, u }) => {
+  /** 최저기압 라벨을 띄울지 — 마무리에서는 표와 겹쳐서 끈다 */
+  peak?: boolean;
+}> = ({ t, p, dim, frame, u, peak: showPeak = true }) => {
   const d = trackPathTo(t, p);
   if (!d) return null;
   const head = trackPointAt(t, p);
@@ -634,7 +683,7 @@ const Track: React.FC<{
       />
 
       {/* 최저 중심기압 지점 — 이 태풍이 가장 강했던 곳 */}
-      {p > 0.45 && (
+      {p > 0.45 && showPeak && (
         <g opacity={0.85}>
           <circle
             cx={peak.x}

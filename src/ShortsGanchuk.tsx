@@ -32,7 +32,7 @@ import { BOTTOM_INSET, SAFE_RIGHT, SAFE_TOP, OUTRO_PAD, TEXT_X } from "./safe";
 
 const PROVINCES: Array<{ id: string; d: string }> = provinces.provinces;
 
-const HOOK = Math.round(4.5 * FPS);
+const HOOK = Math.round(2.2 * FPS);
 
 const BEATS = G_EVENTS.map((e) =>
   beatFor(e.year, { title: e.title, detail: e.detail }, e.impact ?? 0.4, FPS)
@@ -105,15 +105,19 @@ export const ShortsGanchuk: React.FC = () => {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  const hookOut = interpolate(frame, [HOOK - 14, HOOK], [1, 0], {
+  const hookOut = interpolate(frame, [HOOK - 16, HOOK], [1, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  const hookIn = interpolate(frame, [0, 12], [0, 1], { extrapolateRight: "clamp" });
-  const mapIn = interpolate(frame, [HOOK - 8, HOOK + 14], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
+  /** 훅 글자는 페이드인하지 않는다. 0프레임이 곧 완성된 화면이어야 한다. */
+  const hookIn = 1;
+  /**
+   * 지도는 0프레임부터 떠 있다. 전에는 훅이 끝나는 4.5초까지 빈 화면이라
+   * 피드에서 넘길지 말지가 정해지는 1~2초를 통째로 버리고 있었다.
+   */
+  const mapIn = 1;
+  /** 계기판·자막이 서는 시점 — 훅 글자가 걷히고 나서 */
+  const uiOn = frame >= HOOK - 4;
 
   const cam = cameraAt(SHOTS, frame);
   const u = (px: number) => px / (1.08 * cam.z);
@@ -231,7 +235,7 @@ export const ShortsGanchuk: React.FC = () => {
       />
 
       {/* ── 연도 ── */}
-      {mapIn > 0.5 && !inOutro && (
+      {uiOn && !inOutro && (
         <div style={{ position: "absolute", top: SAFE_TOP, left: TEXT_X, right: TEXT_X }}>
           <div style={{ color: C.dim, fontSize: 30, fontWeight: 700, letterSpacing: 2 }}>
             바다를 막아 만든 땅
@@ -257,7 +261,7 @@ export const ShortsGanchuk: React.FC = () => {
       )}
 
       {/* ── 사건 ── */}
-      {ev && mapIn > 0.5 && !inOutro && (
+      {ev && uiOn && !inOutro && (
         <div style={{ position: "absolute", bottom: 330, left: TEXT_X, right: SAFE_RIGHT }}>
           <div style={{ color: DIKE, fontSize: 34, fontWeight: 900 }}>
             {ev.kicker}
@@ -293,7 +297,7 @@ export const ShortsGanchuk: React.FC = () => {
       )}
 
       {/* ── 고지 ── */}
-      {mapIn > 0.5 && !inOutro && (
+      {uiOn && !inOutro && (
         <div style={{ position: "absolute", bottom: BOTTOM_INSET, left: TEXT_X, right: SAFE_RIGHT }}>
           <div style={{ color: "#8A8070", fontSize: 20, lineHeight: 1.4 }}>
             연도와 면적은 기록값 · 테두리는 만의 모양을 따르되 정밀 측량은 아니다
@@ -366,7 +370,8 @@ export const ShortsGanchuk: React.FC = () => {
       {hookOut > 0 && (
         <AbsoluteFill
           style={{
-            backgroundColor: C.bg,
+            background:
+              "linear-gradient(180deg, rgba(21,19,16,0.58) 0%, rgba(21,19,16,0.5) 60%, rgba(21,19,16,0.4) 100%)",
             opacity: hookOut,
             justifyContent: "center",
             padding: `0 ${TEXT_X}px`,
@@ -374,16 +379,16 @@ export const ShortsGanchuk: React.FC = () => {
         >
           <div style={{ opacity: hookIn }}>
             <Typed
-              text="1968년부터 서해를 막기 시작했다"
-              start={4}
-              cps={30}
+              text="1968년부터 막기 시작한 서해"
+              start={-20}
+              cps={400}
               style={{ display: "block", color: C.dim, fontSize: 40, fontWeight: 700 }}
             />
             <div style={{ display: "flex", alignItems: "baseline", marginTop: 2 }}>
               <Typed
                 text="1,351"
-                start={42}
-                cps={9}
+                start={-20}
+                cps={400}
                 style={{
                   color: DIKE,
                   fontSize: 250,
@@ -394,15 +399,15 @@ export const ShortsGanchuk: React.FC = () => {
               />
               <Typed
                 text="km²"
-                start={54}
-                cps={8}
+                start={-20}
+                cps={400}
                 style={{ color: C.text, fontSize: 88, fontWeight: 800, marginLeft: 10 }}
               />
             </div>
             <Typed
-              text="바다를 막아 만든 땅, 서울 면적의 두 배가 넘는다"
-              start={72}
-              cps={22}
+              text="바다를 막아 만든 땅, 서울 면적의 두 배"
+              start={-20}
+              cps={400}
               style={{
                 display: "block",
                 color: C.text,

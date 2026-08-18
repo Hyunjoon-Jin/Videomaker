@@ -445,7 +445,7 @@ export const ShortsPower: React.FC = () => {
         >
           <div style={{ opacity: hookIn }}>
             <Typed
-              text="1948년 5월 14일 정오, 전기가 끊겼다"
+              text="1948년 5월 14일 정오, 끊긴 전기"
               start={-20}
               cps={400}
               style={{ display: "block", color: C.dim, fontSize: 40, fontWeight: 700 }}

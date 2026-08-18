@@ -4,7 +4,7 @@ import { ShortsDecline, SHORT_DURATION } from "./ShortsDecline";
 import { ShortsImjin, IMJIN_DURATION } from "./ShortsImjin";
 import { ShortsWar, WAR_DURATION } from "./ShortsWar";
 import { ShortsKoreanWar, KW_DURATION } from "./ShortsKoreanWar";
-import { ShortsTyphoon, TY_DURATION } from "./ShortsTyphoon";
+import { ShortsTyphoon, ShortsTyphoonCut, TY_DURATION, TY_CUT_DURATION } from "./ShortsTyphoon";
 import { ShortsRail, RAIL_DURATION } from "./ShortsRail";
 import { ShortsBongsu, BONGSU_DURATION } from "./ShortsBongsu";
 import { ShortsPower, POWER_DURATION } from "./ShortsPower";
@@ -60,6 +60,15 @@ export const RemotionRoot: React.FC = () => (
       id="ShortsTyphoon"
       component={ShortsTyphoon}
       durationInFrames={TY_DURATION}
+      fps={FPS}
+      width={SHORT_W}
+      height={SHORT_H}
+    />
+    {/* 같은 소재의 20초 판 — 길이를 놓고 나란히 비교하려고 만든 것 */}
+    <Composition
+      id="ShortsTyphoonCut"
+      component={ShortsTyphoonCut}
+      durationInFrames={TY_CUT_DURATION}
       fps={FPS}
       width={SHORT_W}
       height={SHORT_H}
