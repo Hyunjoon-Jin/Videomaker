@@ -5,11 +5,12 @@ import { WarMap } from "./ProvinceMap";
 import { makePolyFront } from "./polyfront";
 import { FRONT_TRACE } from "./data/korean-war";
 import { LINES, cutLatAt, partialPath, splitAt } from "./data/rail";
-import { EA_LANDS, TYPHOONS, eaProject, trackPathTo } from "./data/typhoon";
+import { EA_KOREA, EA_LANDS, TYPHOONS, eaProject, trackPathTo } from "./data/typhoon";
 import { BEACON_XY } from "./data/bongsu";
 import { FEEDS, PLANT_XY, radiusOf } from "./data/power";
 import { XY as TS_XY, traveled } from "./data/tongsinsa";
 import { ZONE_XY, dikePath, polyPath } from "./data/ganchuk";
+import { AKASHI, MERIDIANS, SEOUL, meridianPath, meridianX } from "./data/timezone";
 import { C, INK } from "./theme";
 import { Grain } from "./Grain";
 import { useFonts } from "./fonts";
@@ -166,6 +167,7 @@ const BAND = {
   power: "#17140F",    // 먹색 — 이 편만 뒤집는다
   tongsinsa: "#7C8B52", // 국방색
   ganchuk: "#3E6B62",   // 갯벌 위의 물빛
+  tz: "#4E4867",        // 남보라 — 새벽하늘
 } as const;
 
 /**
@@ -543,6 +545,85 @@ export const ThumbGanchuk: React.FC = () => (
       unit="km²"
       label="바다를 막아 만든 땅 넓이"
       band={BAND.ganchuk}
+    />
+  </Frame>
+);
+
+/* ── 9. 한국 표준시 ───────────────────────────────────
+   세로선 두 개와 그 사이를 잇는 가로 막대. 200px으로 줄이면 다른
+   여덟 장은 전부 지도 얼룩인데 이것만 직선이라 그리드에서 혼자 튄다.
+   막대 하나가 곧 32분이라 그림과 숫자가 같은 말을 한다. */
+export const ThumbTimezone: React.FC = () => (
+  <Frame>
+    <AbsoluteFill style={{ opacity: 0.95 }}>
+      <svg
+        // 두 자오선(x 382, 677)과 한반도 서해안이 다 들어오게 잡는다.
+        // 세로는 색면이 시작하는 y 1090 위로 서울과 아카시가 오게 맞췄다.
+        viewBox="243 60 560 996"
+        preserveAspectRatio="xMidYMid slice"
+        style={{ width: "100%", height: "100%", display: "block" }}
+      >
+        {EA_LANDS.map((l, i) => (
+          <path key={i} d={l.d} fill={M.land} stroke={M.coast} strokeWidth={2.4} />
+        ))}
+        {/* EA_LANDS에 한반도는 없다. 따로 그려야 반도가 화면에 남는다. */}
+        {EA_KOREA.map((d, i) => (
+          <path key={`k${i}`} d={d} fill={M.land} stroke={M.coast} strokeWidth={2.4} />
+        ))}
+        {/*
+          선을 밝게 쓴다. 본편은 어두운 바다 위에 옅은 선이지만 여기서는
+          바다가 검고 땅이 밝다. 어두운 선을 그으면 바다 구간에서 통째로
+          사라져 막대가 반만 남는다.
+        */}
+        {MERIDIANS.map((m) => (
+          <path
+            key={m}
+            d={meridianPath(m)}
+            fill="none"
+            stroke={m === 135 ? "#C3B7E8" : "#6E668C"}
+            strokeWidth={m === 135 ? 12 : 7}
+            strokeDasharray={m === 135 ? undefined : "20 18"}
+          />
+        ))}
+        {/* 서울에서 135°까지 — 이 가로 길이가 곧 32분이다 */}
+        <line
+          x1={SEOUL.x}
+          y1={SEOUL.y}
+          x2={meridianX(135)}
+          y2={SEOUL.y}
+          stroke="#F3E7CC"
+          strokeWidth={15}
+        />
+        {[SEOUL.x, meridianX(135)].map((x) => (
+          <line
+            key={x}
+            x1={x}
+            y1={SEOUL.y - 30}
+            x2={x}
+            y2={SEOUL.y + 30}
+            stroke="#F3E7CC"
+            strokeWidth={15}
+          />
+        ))}
+        {[SEOUL, AKASHI].map((c) => (
+          <circle
+            key={c.name}
+            cx={c.x}
+            cy={c.y}
+            r={18}
+            fill="#F3E7CC"
+            stroke="#241F18"
+            strokeWidth={7}
+          />
+        ))}
+      </svg>
+    </AbsoluteFill>
+    <Face
+      topic="서울, 낮 12시"
+      big="32"
+      unit="분"
+      label="해가 가장 높이 뜨기까지 남은 시간"
+      band={BAND.tz}
     />
   </Frame>
 );
