@@ -25,7 +25,7 @@ import { C, FPS, INK } from "./theme";
 import { Grain } from "./Grain";
 import { Typed } from "./Typed";
 import { useFonts } from "./fonts";
-import { BOTTOM_INSET, SAFE_RIGHT, SAFE_TOP, SAFE_X } from "./safe";
+import { BOTTOM_INSET, SAFE_RIGHT, SAFE_TOP, OUTRO_PAD, TEXT_X } from "./safe";
 
 const PROVINCES: Array<{ id: string; d: string }> = provinces.provinces;
 const VIEWBOX: string = provinces.viewBox;
@@ -242,7 +242,7 @@ export const ShortsRail: React.FC = () => {
 
       {/* ── 연도 ── */}
       {mapIn > 0.5 && !inOutro && (
-        <div style={{ position: "absolute", top: SAFE_TOP, left: SAFE_X, right: SAFE_X }}>
+        <div style={{ position: "absolute", top: SAFE_TOP, left: TEXT_X, right: TEXT_X }}>
           <div style={{ color: C.dim, fontSize: 30, fontWeight: 700 }}>
             한반도 철도
           </div>
@@ -262,7 +262,7 @@ export const ShortsRail: React.FC = () => {
 
       {/* ── 지표와 사건 ── */}
       {mapIn > 0.5 && ev && !inOutro && (
-        <div style={{ position: "absolute", bottom: 330, left: SAFE_X, right: SAFE_RIGHT }}>
+        <div style={{ position: "absolute", bottom: 330, left: TEXT_X, right: SAFE_RIGHT }}>
           <div style={{ height: 1, background: "#3B342A", marginBottom: 14 }} />
           <div
             style={{
@@ -317,7 +317,7 @@ export const ShortsRail: React.FC = () => {
         <AbsoluteFill
           style={{
             justifyContent: "flex-end",
-            padding: `0 ${SAFE_X}px 200px`,
+            padding: `0 ${TEXT_X}px ${OUTRO_PAD}px`,
             opacity: outroIn,
           }}
         >
@@ -368,7 +368,7 @@ export const ShortsRail: React.FC = () => {
 
       {/* ── 범례와 고지 ── */}
       {mapIn > 0.5 && (
-        <div style={{ position: "absolute", bottom: BOTTOM_INSET, left: SAFE_X, right: SAFE_RIGHT }}>
+        <div style={{ position: "absolute", bottom: BOTTOM_INSET, left: TEXT_X, right: SAFE_RIGHT }}>
           <div style={{ display: "flex", gap: 22, marginBottom: 10, flexWrap: "wrap" }}>
             <Key color={LIVE} label="운행 노선" />
             <Key color={FAST} label="고속선" />
@@ -387,7 +387,7 @@ export const ShortsRail: React.FC = () => {
             backgroundColor: C.bg,
             opacity: hookOut,
             justifyContent: "center",
-            padding: "0 70px",
+            padding: `0 ${TEXT_X}px`,
           }}
         >
           <div style={{ opacity: hookIn }}>

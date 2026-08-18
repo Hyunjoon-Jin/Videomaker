@@ -32,7 +32,7 @@ import { C, FPS, INK } from "./theme";
 import { Grain } from "./Grain";
 import { Typed } from "./Typed";
 import { useFonts } from "./fonts";
-import { BOTTOM_INSET, SAFE_RIGHT, SAFE_TOP, SAFE_X } from "./safe";
+import { BOTTOM_INSET, SAFE_RIGHT, SAFE_TOP, OUTRO_PAD, TEXT_X } from "./safe";
 
 const HOOK = Math.round(4.5 * FPS);
 
@@ -63,8 +63,8 @@ const P0 = Q_EVENTS.findIndex((e) => e.profile);
    단면 상자를 378px로 잡은 것은 축척을 맞추기 위해서다. 가로 1000단위가
    실제 2,001km이고 세로 350단위가 700km이니 단위당 2.00km 대 1.99km,
    거의 1:1이다. 단면에서 보이는 29도 기울기가 실제 기울기다. */
-const MAP_TOP = 440;
-const MAP_H = 545;
+const MAP_TOP = 470;
+const MAP_H = 510;
 const PROF_TOP = 1010;
 const PROF_H = 378;
 /** 단면 viewBox 높이 — 1080px에 1000단위를 걸치는 비례 그대로 */
@@ -412,7 +412,7 @@ export const ShortsQuake: React.FC = () => {
 
       {/* ── 깊이 범례 ── */}
       {mapIn > 0.5 && !inOutro && (
-        <div style={{ position: "absolute", top: SAFE_TOP, left: SAFE_X, right: SAFE_X }}>
+        <div style={{ position: "absolute", top: SAFE_TOP, left: TEXT_X, right: TEXT_X }}>
           <div style={{ color: C.dim, fontSize: 28, fontWeight: 700, letterSpacing: 2 }}>
             진앙 깊이
           </div>
@@ -433,7 +433,7 @@ export const ShortsQuake: React.FC = () => {
 
       {/* ── 사건 ── */}
       {ev && mapIn > 0.5 && !inOutro && (
-        <div style={{ position: "absolute", bottom: 300, left: SAFE_X, right: SAFE_RIGHT }}>
+        <div style={{ position: "absolute", bottom: 320, left: TEXT_X, right: SAFE_RIGHT }}>
           <div style={{ color: INK.brass, fontSize: 31, fontWeight: 900 }}>{ev.kicker}</div>
           <Typed
             text={ev.title}
@@ -468,7 +468,7 @@ export const ShortsQuake: React.FC = () => {
       {/* ── 고지 ── */}
       {mapIn > 0.5 && !inOutro && (
         <div
-          style={{ position: "absolute", bottom: BOTTOM_INSET, left: SAFE_X, right: SAFE_RIGHT }}
+          style={{ position: "absolute", bottom: BOTTOM_INSET, left: TEXT_X, right: SAFE_RIGHT }}
         >
           <div style={{ color: "#8A8070", fontSize: 20, lineHeight: 1.5 }}>
             USGS 지진 목록 · 핵실험·붕괴 제외 · 단면은 북위 36~44도 (고정댓글)
@@ -490,7 +490,7 @@ export const ShortsQuake: React.FC = () => {
           <AbsoluteFill
             style={{
               justifyContent: "flex-end",
-              padding: `0 ${SAFE_RIGHT}px 200px ${SAFE_X}px`,
+              padding: `0 ${SAFE_RIGHT}px ${OUTRO_PAD}px ${TEXT_X}px`,
               opacity: outroIn,
             }}
           >
@@ -574,12 +574,12 @@ export const ShortsQuake: React.FC = () => {
             backgroundColor: C.bg,
             opacity: hookOut,
             justifyContent: "center",
-            padding: "0 70px",
+            padding: `0 ${TEXT_X}px`,
           }}
         >
           <div style={{ opacity: hookIn }}>
             <Typed
-              text="2023년 9월 6일 · 함경북도 앞바다"
+              text="경주 지진 13km · 포항 10km"
               start={4}
               cps={30}
               style={{ display: "block", color: C.dim, fontSize: 40, fontWeight: 700 }}
@@ -599,7 +599,7 @@ export const ShortsQuake: React.FC = () => {
               />
             </div>
             <Typed
-              text="그 밑에서 지진이 난 깊이"
+              text="한반도에서 지진이 난 가장 깊은 곳"
               start={56}
               cps={22}
               style={{

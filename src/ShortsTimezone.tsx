@@ -30,7 +30,7 @@ import { C, FPS, INK } from "./theme";
 import { Grain } from "./Grain";
 import { Typed } from "./Typed";
 import { useFonts } from "./fonts";
-import { BOTTOM_INSET, SAFE_RIGHT, SAFE_TOP, SAFE_X } from "./safe";
+import { BOTTOM_INSET, SAFE_RIGHT, SAFE_TOP, OUTRO_PAD, TEXT_X } from "./safe";
 
 const HOOK = Math.round(4.5 * FPS);
 
@@ -253,17 +253,37 @@ export const ShortsTimezone: React.FC = () => {
           style={{
             position: "absolute",
             top: SAFE_TOP,
-            left: SAFE_X,
-            right: SAFE_X,
-            display: "flex",
-            alignItems: "flex-start",
-            gap: 20,
+            left: TEXT_X,
+            right: TEXT_X,
           }}
         >
-          <div style={{ flex: 1 }}>
-            <div style={{ color: C.dim, fontSize: 30, fontWeight: 700, letterSpacing: 2 }}>
+          {/*
+            연도를 값 줄에서 빼내 위 줄 오른쪽에 뒀다.
+            왼쪽 여백을 68에서 104로 넓히자 '동경 127.5도 · 서울과 2분 ·
+            1954년'이 한 줄에 안 들어가 '도'와 '분'이 다음 줄로 떨어졌다.
+            값 줄이 폭을 다 쓰게 해야 자오선이 안 쪼개진다.
+          */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "baseline",
+            }}
+          >
+            <span style={{ color: C.dim, fontSize: 30, fontWeight: 700, letterSpacing: 2 }}>
               표준 자오선
-            </div>
+            </span>
+            <span
+              style={{
+                color: C.text,
+                fontSize: 46,
+                fontWeight: 900,
+                fontVariantNumeric: "tabular-nums",
+              }}
+            >
+              {Math.floor(year)}년
+            </span>
+          </div>
             {gauges.map((g) => (
               <div
                 key={g.tag || "one"}
@@ -298,25 +318,12 @@ export const ShortsTimezone: React.FC = () => {
             <div style={{ color: C.dim, fontSize: 30, fontWeight: 700, marginTop: 4 }}>
               {gauges.map((g) => utcLabel(g.m)).join("  ·  ")}
             </div>
-          </div>
-
-          <div
-            style={{
-              color: C.text,
-              fontSize: 54,
-              fontWeight: 900,
-              fontVariantNumeric: "tabular-nums",
-              paddingTop: 4,
-            }}
-          >
-            {Math.floor(year)}년
-          </div>
         </div>
       )}
 
       {/* ── 사건 ── */}
       {ev && mapIn > 0.5 && !inOutro && (
-        <div style={{ position: "absolute", bottom: 330, left: SAFE_X, right: SAFE_RIGHT }}>
+        <div style={{ position: "absolute", bottom: 330, left: TEXT_X, right: SAFE_RIGHT }}>
           <div
             style={{
               color: ev.split ? NORTH : INK.brass,
@@ -357,7 +364,7 @@ export const ShortsTimezone: React.FC = () => {
       {/* ── 고지 ── */}
       {mapIn > 0.5 && !inOutro && (
         <div
-          style={{ position: "absolute", bottom: BOTTOM_INSET, left: SAFE_X, right: SAFE_RIGHT }}
+          style={{ position: "absolute", bottom: BOTTOM_INSET, left: TEXT_X, right: SAFE_RIGHT }}
         >
           <div style={{ color: "#8A8070", fontSize: 20, lineHeight: 1.5 }}>
             날짜·법령은 기록값 · 시차는 경도에서 계산한 평균값 (고정댓글)
@@ -382,7 +389,7 @@ export const ShortsTimezone: React.FC = () => {
               // 오른쪽은 SAFE_X가 아니라 SAFE_RIGHT다. 이 자리는 쇼츠
               // 오른쪽 버튼 기둥(y 1130~1760) 안이라 68px만 비우면 숫자가
               // 좋아요 버튼 밑으로 들어간다.
-              padding: `0 ${SAFE_RIGHT}px 200px ${SAFE_X}px`,
+              padding: `0 ${SAFE_RIGHT}px ${OUTRO_PAD}px ${TEXT_X}px`,
               opacity: outroIn,
             }}
           >
@@ -479,7 +486,7 @@ export const ShortsTimezone: React.FC = () => {
             backgroundColor: C.bg,
             opacity: hookOut,
             justifyContent: "center",
-            padding: "0 70px",
+            padding: `0 ${TEXT_X}px`,
           }}
         >
           <div style={{ opacity: hookIn }}>

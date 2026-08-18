@@ -28,7 +28,7 @@ import { C, FPS, INK } from "./theme";
 import { Grain } from "./Grain";
 import { Typed } from "./Typed";
 import { useFonts } from "./fonts";
-import { BOTTOM_INSET, SAFE_RIGHT, SAFE_TOP, SAFE_X } from "./safe";
+import { BOTTOM_INSET, SAFE_RIGHT, SAFE_TOP, OUTRO_PAD, TEXT_X } from "./safe";
 
 const PROVINCES: Array<{ id: string; d: string }> = provinces.provinces;
 
@@ -232,7 +232,7 @@ export const ShortsGanchuk: React.FC = () => {
 
       {/* ── 연도 ── */}
       {mapIn > 0.5 && !inOutro && (
-        <div style={{ position: "absolute", top: SAFE_TOP, left: SAFE_X, right: SAFE_X }}>
+        <div style={{ position: "absolute", top: SAFE_TOP, left: TEXT_X, right: TEXT_X }}>
           <div style={{ color: C.dim, fontSize: 30, fontWeight: 700, letterSpacing: 2 }}>
             바다를 막아 만든 땅
           </div>
@@ -258,7 +258,7 @@ export const ShortsGanchuk: React.FC = () => {
 
       {/* ── 사건 ── */}
       {ev && mapIn > 0.5 && !inOutro && (
-        <div style={{ position: "absolute", bottom: 330, left: SAFE_X, right: SAFE_RIGHT }}>
+        <div style={{ position: "absolute", bottom: 330, left: TEXT_X, right: SAFE_RIGHT }}>
           <div style={{ color: DIKE, fontSize: 34, fontWeight: 900 }}>
             {ev.kicker}
           </div>
@@ -294,7 +294,7 @@ export const ShortsGanchuk: React.FC = () => {
 
       {/* ── 고지 ── */}
       {mapIn > 0.5 && !inOutro && (
-        <div style={{ position: "absolute", bottom: BOTTOM_INSET, left: SAFE_X, right: SAFE_RIGHT }}>
+        <div style={{ position: "absolute", bottom: BOTTOM_INSET, left: TEXT_X, right: SAFE_RIGHT }}>
           <div style={{ color: "#8A8070", fontSize: 20, lineHeight: 1.4 }}>
             연도와 면적은 기록값 · 테두리는 만의 모양을 따르되 정밀 측량은 아니다
             <br />
@@ -315,7 +315,7 @@ export const ShortsGanchuk: React.FC = () => {
             }}
           />
           <AbsoluteFill
-            style={{ justifyContent: "flex-end", padding: `0 ${SAFE_X}px 200px`, opacity: outroIn }}
+            style={{ justifyContent: "flex-end", padding: `0 ${TEXT_X}px ${OUTRO_PAD}px`, opacity: outroIn }}
           >
             {/* 덩어리는 둘. 숫자 한 줄과 닫는 말. */}
             <div style={{ color: C.dim, fontSize: 32, fontWeight: 700, marginBottom: 10 }}>
@@ -369,7 +369,7 @@ export const ShortsGanchuk: React.FC = () => {
             backgroundColor: C.bg,
             opacity: hookOut,
             justifyContent: "center",
-            padding: "0 70px",
+            padding: `0 ${TEXT_X}px`,
           }}
         >
           <div style={{ opacity: hookIn }}>

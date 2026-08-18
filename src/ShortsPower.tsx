@@ -27,7 +27,7 @@ import { C, FPS, INK } from "./theme";
 import { Grain } from "./Grain";
 import { Typed } from "./Typed";
 import { useFonts } from "./fonts";
-import { BOTTOM_INSET, SAFE_RIGHT, SAFE_TOP, SAFE_X } from "./safe";
+import { BOTTOM_INSET, SAFE_RIGHT, SAFE_TOP, OUTRO_PAD, TEXT_X } from "./safe";
 
 const PROVINCES: Array<{ id: string; d: string }> = provinces.provinces;
 
@@ -285,7 +285,7 @@ export const ShortsPower: React.FC = () => {
         />
       )}
       {mapIn > 0.5 && !inOutro && (
-        <div style={{ position: "absolute", top: SAFE_TOP, left: SAFE_X, right: SAFE_X }}>
+        <div style={{ position: "absolute", top: SAFE_TOP, left: TEXT_X, right: TEXT_X }}>
           {/* 이 자리는 이 영상이 무엇을 보는 중인지 계속 말해준다.
               전에는 '한반도 발전설비'라고만 적혀 있어 연표처럼 읽혔다. */}
           <div style={{ color: C.dim, fontSize: 30, fontWeight: 700, letterSpacing: 2 }}>
@@ -308,7 +308,7 @@ export const ShortsPower: React.FC = () => {
       )}
 
       {ev && mapIn > 0.5 && !inOutro && (
-        <div style={{ position: "absolute", bottom: 330, left: SAFE_X, right: SAFE_RIGHT }}>
+        <div style={{ position: "absolute", bottom: 330, left: TEXT_X, right: SAFE_RIGHT }}>
           <div style={{ color: ev.cut ? "#D4694F" : INK.flame, fontSize: 34, fontWeight: 900 }}>
             {ev.cut
               ? "1948년 5월 14일 정오"
@@ -365,7 +365,7 @@ export const ShortsPower: React.FC = () => {
           <AbsoluteFill
             style={{
               justifyContent: "flex-end",
-              padding: `0 ${SAFE_X}px 200px`,
+              padding: `0 ${TEXT_X}px ${OUTRO_PAD}px`,
               opacity: outroIn,
             }}
           >
@@ -409,7 +409,7 @@ export const ShortsPower: React.FC = () => {
       )}
 
       {mapIn > 0.5 && !inOutro && (
-        <div style={{ position: "absolute", bottom: BOTTOM_INSET, left: SAFE_X, right: SAFE_RIGHT }}>
+        <div style={{ position: "absolute", bottom: BOTTOM_INSET, left: TEXT_X, right: SAFE_RIGHT }}>
           <div style={{ display: "flex", gap: 22, marginBottom: 10, flexWrap: "wrap" }}>
             <Key color={LIVE} label="가동 중" />
             <Key color={DEAD} label="끊긴 공급" />
@@ -430,7 +430,7 @@ export const ShortsPower: React.FC = () => {
             backgroundColor: C.bg,
             opacity: hookOut,
             justifyContent: "center",
-            padding: "0 70px",
+            padding: `0 ${TEXT_X}px`,
           }}
         >
           <div style={{ opacity: hookIn }}>

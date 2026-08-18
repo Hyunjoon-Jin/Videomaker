@@ -775,10 +775,10 @@ export const ThumbQuake: React.FC = () => (
     </div>
 
     <Face
-      topic="함경북도 앞바다"
+      topic="2023년 함경북도 앞바다"
       big="645"
       unit="km"
-      label="그 밑에서 지진이 난 깊이"
+      label="한반도에서 가장 깊은 지진"
       band={BAND.quake}
     />
   </Frame>

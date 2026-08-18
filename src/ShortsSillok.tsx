@@ -24,7 +24,7 @@ import { C, FPS, INK } from "./theme";
 import { Grain } from "./Grain";
 import { Typed } from "./Typed";
 import { useFonts } from "./fonts";
-import { BOTTOM_INSET, SAFE_RIGHT, SAFE_TOP, SAFE_X } from "./safe";
+import { BOTTOM_INSET, SAFE_RIGHT, SAFE_TOP, OUTRO_PAD, TEXT_X } from "./safe";
 
 const PROVINCES: Array<{ id: string; d: string }> = provinces.provinces;
 
@@ -318,7 +318,7 @@ export const ShortsSillok: React.FC = () => {
 
       {/* ── 계기판 ── */}
       {mapIn > 0.5 && !inOutro && (
-        <div style={{ position: "absolute", top: SAFE_TOP, left: SAFE_X, right: SAFE_X }}>
+        <div style={{ position: "absolute", top: SAFE_TOP, left: TEXT_X, right: TEXT_X }}>
           {onWatch ? (
             /*
               여기서만 계기가 바뀐다.
@@ -425,7 +425,7 @@ export const ShortsSillok: React.FC = () => {
 
       {/* ── 사건 ── */}
       {ev && mapIn > 0.5 && !inOutro && (
-        <div style={{ position: "absolute", bottom: 330, left: SAFE_X, right: SAFE_RIGHT }}>
+        <div style={{ position: "absolute", bottom: 330, left: TEXT_X, right: SAFE_RIGHT }}>
           <div
             style={{
               color: ev.phase === "burn" ? LOST : PATH,
@@ -468,7 +468,7 @@ export const ShortsSillok: React.FC = () => {
       {/* ── 고지 ── */}
       {mapIn > 0.5 && !inOutro && (
         <div
-          style={{ position: "absolute", bottom: BOTTOM_INSET, left: SAFE_X, right: SAFE_RIGHT }}
+          style={{ position: "absolute", bottom: BOTTOM_INSET, left: TEXT_X, right: SAFE_RIGHT }}
         >
           <div style={{ color: "#8A8070", fontSize: 20, lineHeight: 1.5 }}>
             날짜·일수는 기록값 · 좌표는 현재 지명 위치 · 거리는 직선 합 (고정댓글)
@@ -491,7 +491,7 @@ export const ShortsSillok: React.FC = () => {
             style={{
               justifyContent: "flex-end",
               // 오른쪽은 버튼 기둥을 피해 SAFE_RIGHT로 둔다
-              padding: `0 ${SAFE_RIGHT}px 200px ${SAFE_X}px`,
+              padding: `0 ${SAFE_RIGHT}px ${OUTRO_PAD}px ${TEXT_X}px`,
               opacity: outroIn,
             }}
           >
@@ -581,7 +581,7 @@ export const ShortsSillok: React.FC = () => {
             backgroundColor: C.bg,
             opacity: hookOut,
             justifyContent: "center",
-            padding: "0 70px",
+            padding: `0 ${TEXT_X}px`,
           }}
         >
           <div style={{ opacity: hookIn }}>
