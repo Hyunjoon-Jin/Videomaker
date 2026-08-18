@@ -278,7 +278,7 @@ export const ShortsGanchuk: React.FC = () => {
       {mapIn > 0.5 && !inOutro && (
         <div style={{ position: "absolute", bottom: BOTTOM_INSET, left: SAFE_X, right: SAFE_RIGHT }}>
           <div style={{ color: "#8A8070", fontSize: 20, lineHeight: 1.4 }}>
-            연도와 면적은 기록값 · 칠한 면은 넓이만 맞춘 것이고 실제 모양이 아니다
+            연도와 면적은 기록값 · 면은 만의 모양을 따르되 정밀 측량은 아니다
             <br />
             면적이 기록으로 확인되는 다섯 곳만 그렸다 (고정댓글)
           </div>
