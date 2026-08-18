@@ -34,7 +34,7 @@ import { Typed } from "./Typed";
 import { useFonts } from "./fonts";
 import { BOTTOM_INSET, SAFE_RIGHT, SAFE_TOP, OUTRO_PAD, TEXT_X } from "./safe";
 
-const HOOK = Math.round(4.5 * FPS);
+const HOOK = Math.round(2.2 * FPS);
 
 /**
  * 단면이 처음 서는 비트는 길게 준다.
@@ -123,11 +123,20 @@ export const ShortsQuake: React.FC = () => {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  const hookIn = interpolate(frame, [0, 12], [0, 1], { extrapolateRight: "clamp" });
-  const mapIn = interpolate(frame, [HOOK - 8, HOOK + 14], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
+  /** 훅 글자는 페이드인하지 않는다. 0프레임이 곧 완성된 화면이어야 한다. */
+  const hookIn = 1;
+  /**
+   * 지도는 0프레임부터 떠 있다.
+   *
+   * 전에는 훅이 끝나는 4.5초까지 검은 화면이었다. 재보니 0초에 화면이
+   * 0.0%, 1.5초에 1.0%, 2.5초에 2.1% 차 있었다. 피드에서 넘길지 말지는
+   * 1~2초에 정해지는데 그 구간을 통째로 빈 화면으로 쓰고 있었다.
+   *
+   * 이제 첫 프레임이 완성된 그림이다. 훅 글자는 그 위에 얹힌다.
+   */
+  const mapIn = 1;
+  /** 계기판·자막이 서는 시점 — 훅 글자가 걷히고 나서 */
+  const uiOn = frame >= HOOK - 4;
 
   // 지도 상자가 전체 화면에서 띠로 줄어든다
   const mapTop = split * MAP_TOP;
@@ -411,7 +420,7 @@ export const ShortsQuake: React.FC = () => {
       />
 
       {/* ── 깊이 범례 ── */}
-      {mapIn > 0.5 && !inOutro && (
+      {uiOn && !inOutro && (
         <div style={{ position: "absolute", top: SAFE_TOP, left: TEXT_X, right: TEXT_X }}>
           <div style={{ color: C.dim, fontSize: 28, fontWeight: 700, letterSpacing: 2 }}>
             진앙 깊이
@@ -432,7 +441,7 @@ export const ShortsQuake: React.FC = () => {
       )}
 
       {/* ── 사건 ── */}
-      {ev && mapIn > 0.5 && !inOutro && (
+      {ev && uiOn && !inOutro && (
         <div style={{ position: "absolute", bottom: 320, left: TEXT_X, right: SAFE_RIGHT }}>
           <div style={{ color: INK.brass, fontSize: 31, fontWeight: 900 }}>{ev.kicker}</div>
           <Typed
@@ -466,7 +475,7 @@ export const ShortsQuake: React.FC = () => {
       )}
 
       {/* ── 고지 ── */}
-      {mapIn > 0.5 && !inOutro && (
+      {uiOn && !inOutro && (
         <div
           style={{ position: "absolute", bottom: BOTTOM_INSET, left: TEXT_X, right: SAFE_RIGHT }}
         >
@@ -571,7 +580,8 @@ export const ShortsQuake: React.FC = () => {
       {hookOut > 0 && (
         <AbsoluteFill
           style={{
-            backgroundColor: C.bg,
+            background:
+              "linear-gradient(180deg, rgba(21,19,16,0.58) 0%, rgba(21,19,16,0.5) 60%, rgba(21,19,16,0.4) 100%)",
             opacity: hookOut,
             justifyContent: "center",
             padding: `0 ${TEXT_X}px`,
@@ -580,28 +590,28 @@ export const ShortsQuake: React.FC = () => {
           <div style={{ opacity: hookIn }}>
             <Typed
               text="경주 지진 13km · 포항 10km"
-              start={4}
-              cps={30}
+              start={-20}
+              cps={400}
               style={{ display: "block", color: C.dim, fontSize: 40, fontWeight: 700 }}
             />
             <div style={{ display: "flex", alignItems: "baseline", marginTop: 2 }}>
               <Typed
                 text="645"
-                start={26}
-                cps={8}
+                start={-20}
+                cps={400}
                 style={{ color: "#7FA8C4", fontSize: 280, fontWeight: 900, lineHeight: 1 }}
               />
               <Typed
                 text="km"
-                start={38}
-                cps={8}
+                start={-20}
+                cps={400}
                 style={{ color: C.text, fontSize: 96, fontWeight: 800 }}
               />
             </div>
             <Typed
               text="한반도에서 지진이 난 가장 깊은 곳"
-              start={56}
-              cps={22}
+              start={-20}
+              cps={400}
               style={{
                 display: "block",
                 color: C.text,

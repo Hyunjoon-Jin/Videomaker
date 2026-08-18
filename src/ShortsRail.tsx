@@ -30,7 +30,7 @@ import { BOTTOM_INSET, SAFE_RIGHT, SAFE_TOP, OUTRO_PAD, TEXT_X } from "./safe";
 const PROVINCES: Array<{ id: string; d: string }> = provinces.provinces;
 const VIEWBOX: string = provinces.viewBox;
 
-const HOOK = Math.round(4.5 * FPS);
+const HOOK = Math.round(2.2 * FPS);
 
 /**
  * 사건마다 시간을 준다.
@@ -114,11 +114,20 @@ export const ShortsRail: React.FC = () => {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  const hookIn = interpolate(frame, [0, 14], [0, 1], { extrapolateRight: "clamp" });
-  const mapIn = interpolate(frame, [HOOK - 8, HOOK + 16], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
+  /** 훅 글자는 페이드인하지 않는다. 0프레임이 곧 완성된 화면이어야 한다. */
+  const hookIn = 1;
+  /**
+   * 지도는 0프레임부터 떠 있다.
+   *
+   * 전에는 훅이 끝나는 4.5초까지 검은 화면이었다. 재보니 0초에 화면이
+   * 0.0%, 1.5초에 1.0%, 2.5초에 2.1% 차 있었다. 피드에서 넘길지 말지는
+   * 1~2초에 정해지는데 그 구간을 통째로 빈 화면으로 쓰고 있었다.
+   *
+   * 이제 첫 프레임이 완성된 그림이다. 훅 글자는 그 위에 얹힌다.
+   */
+  const mapIn = 1;
+  /** 계기판·자막이 서는 시점 — 훅 글자가 걷히고 나서 */
+  const uiOn = frame >= HOOK - 4;
 
   const cam = cameraAt(SHOTS, frame);
   /** 화면 픽셀 → 지도 단위. 확대해도 선과 글자가 굵어지지 않게 한다. */
@@ -241,7 +250,7 @@ export const ShortsRail: React.FC = () => {
       />
 
       {/* ── 연도 ── */}
-      {mapIn > 0.5 && !inOutro && (
+      {uiOn && !inOutro && (
         <div style={{ position: "absolute", top: SAFE_TOP, left: TEXT_X, right: TEXT_X }}>
           <div style={{ color: C.dim, fontSize: 30, fontWeight: 700 }}>
             한반도 철도
@@ -261,7 +270,7 @@ export const ShortsRail: React.FC = () => {
       )}
 
       {/* ── 지표와 사건 ── */}
-      {mapIn > 0.5 && ev && !inOutro && (
+      {uiOn && ev && !inOutro && (
         <div style={{ position: "absolute", bottom: 330, left: TEXT_X, right: SAFE_RIGHT }}>
           <div style={{ height: 1, background: "#3B342A", marginBottom: 14 }} />
           <div
@@ -367,7 +376,7 @@ export const ShortsRail: React.FC = () => {
       )}
 
       {/* ── 범례와 고지 ── */}
-      {mapIn > 0.5 && (
+      {uiOn && (
         <div style={{ position: "absolute", bottom: BOTTOM_INSET, left: TEXT_X, right: SAFE_RIGHT }}>
           <div style={{ display: "flex", gap: 22, marginBottom: 10, flexWrap: "wrap" }}>
             <Key color={LIVE} label="운행 노선" />
@@ -384,7 +393,8 @@ export const ShortsRail: React.FC = () => {
       {hookOut > 0 && (
         <AbsoluteFill
           style={{
-            backgroundColor: C.bg,
+            background:
+              "linear-gradient(180deg, rgba(21,19,16,0.58) 0%, rgba(21,19,16,0.5) 60%, rgba(21,19,16,0.4) 100%)",
             opacity: hookOut,
             justifyContent: "center",
             padding: `0 ${TEXT_X}px`,
@@ -393,8 +403,8 @@ export const ShortsRail: React.FC = () => {
           <div style={{ opacity: hookIn }}>
             <Typed
               text="서울역에서 신의주행 표를 팔던 건 39년"
-              start={4}
-              cps={30}
+              start={-20}
+              cps={400}
               style={{
                 display: "block",
                 color: C.dim,
@@ -405,8 +415,8 @@ export const ShortsRail: React.FC = () => {
             <div style={{ display: "flex", alignItems: "baseline", marginTop: 2 }}>
               <Typed
                 text="81"
-                start={44}
-                cps={8}
+                start={-20}
+                cps={400}
                 style={{
                   color: INK.brass,
                   fontSize: 280,
@@ -416,15 +426,15 @@ export const ShortsRail: React.FC = () => {
               />
               <Typed
                 text="년"
-                start={52}
-                cps={8}
+                start={-20}
+                cps={400}
                 style={{ color: C.text, fontSize: 94, fontWeight: 800 }}
               />
             </div>
             <Typed
               text="그 표를 팔지 못한 시간"
-              start={70}
-              cps={22}
+              start={-20}
+              cps={400}
               style={{
                 display: "block",
                 color: C.text,

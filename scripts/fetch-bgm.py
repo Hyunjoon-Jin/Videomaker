@@ -49,33 +49,33 @@ CREDIT = (
 # (출력, 곡 이름, 시작 초, 길이 초, 왜 이 곡인지)
 TRACKS = [
     (
-        "public/bgm.wav", "The Descent", 33.0, 94.3,
+        "public/bgm.wav", "The Descent", 33.0, 92.0,
         "임진왜란 — 어둡게 조여드는 진행. Clash Defiant가 더 웅장했지만 "
         "고른 구간이 저역 76%라 휴대폰에서 뭉근하게만 들렸다.",
     ),
     (
-        "public/bgm-kw.wav", "Volatile Reaction", 25.0, 100.8,
+        "public/bgm-kw.wav", "Volatile Reaction", 25.0, 98.5,
         "6·25 — 어둡고 밀어붙이는 진행. 전선이 네 번 뒤집히는 편에 맞는다.",
     ),
     (
-        "public/bgm-ty.wav", "Anguish", 26.0, 59.3,
+        "public/bgm-ty.wav", "Anguish", 26.0, 57.0,
         "태풍 — 조여드는 긴장. Rising Tide가 제목은 더 맞았지만 고른 구간의 "
         "중역이 37%뿐이라 휴대폰에서 힘이 없었다. 이쪽이 76%다.",
     ),
     (
-        "public/bgm-pw.wav", "Static Motion", 42.0, 66.3,
+        "public/bgm-pw.wav", "Static Motion", 42.0, 64.0,
         "5·14 단전 — 조여들다 끊기는 편. 고른 구간을 자동으로 훑어 골랐다"
         "(고르기 4.65, 중역 43%). Industrial Music Box가 점수는 더 높았지만 "
         "중역 100%라 저역이 통째로 비어 오르골처럼 얇았다.",
     ),
     (
-        "public/bgm-bs.wav", "Killers", 228.0, 67.3,
+        "public/bgm-bs.wav", "Killers", 228.0, 65.0,
         "봉수 — 밤에 불이 한 줄로 올라오는 편이라 밀어붙이는 진행이 맞는다. "
         "고른 구간을 자동으로 훑어 골랐다(고르기 3.93, 중역 70%). Echoes of Time이 "
         "분위기는 맞았지만 중역이 3%뿐이라 휴대폰에서 아무것도 안 들렸다.",
     ),
     (
-        "public/bgm-ts.wav", "Deep Haze", 34.0, 87.8,
+        "public/bgm-ts.wav", "Deep Haze", 34.0, 85.5,
         "조선통신사 — 열한 달을 가는 편이라 밀어붙이면 안 된다. 고른 구간을 "
         "자동으로 훑어 골랐다(고르기 4.91, 중역 48%). Crypto가 고르기는 7.74로 "
         "제일 높았지만 중역이 18%뿐이라 휴대폰에서 배경이 비었다.",
@@ -87,21 +87,21 @@ TRACKS = [
         "높았지만 통신사 편이 이미 쓰고 있어 두 편이 같은 곡이 된다.",
     ),
     (
-        "public/bgm-tz.wav", "Half Mystery", 137.0, 62.5,
+        "public/bgm-tz.wav", "Half Mystery", 137.0, 60.2,
         "표준시 — 전쟁도 재난도 아니고 법령이 네 번 바뀐 편이라 밀어붙이면 "
         "안 된다. 고른 구간을 자동으로 훑어 골랐다(고르기 3.36, 중역 88%). "
         "Grim Idol이 고르기는 4.10으로 더 높았지만 어두운 타격이라 전쟁 편 "
         "톤이고, 중역도 44%뿐이다.",
     ),
     (
-        "public/bgm-sl.wav", "Lost Time", 19.0, 81.3,
+        "public/bgm-sl.wav", "Lost Time", 19.0, 79.0,
         "조선왕조실록 사고 — 지키는 편이라 밀어붙이면 안 되고, 그렇다고 "
         "느슨해도 안 된다. 고른 구간을 자동으로 훑어 골랐다(고르기 4.66, "
         "중역 43%). Unseen Horrors가 고르기 4.89로 더 높았지만 원본이 너무 "
         "작아(세기 0.024) 키우면 잡음이 같이 올라온다.",
     ),
     (
-        "public/bgm-qk.wav", "Windswept", 56.0, 75.9,
+        "public/bgm-qk.wav", "Windswept", 56.0, 73.6,
         "한반도 밑 — 땅속 600km를 훑어 내려가는 편이라 넓고 느린 것이 맞는다. "
         "고른 구간을 자동으로 훑어 골랐다(고르기 3.33, 중역 53%). Unseen Horrors가 "
         "고르기 4.90으로 더 높았지만 원본이 너무 작아(세기 0.024) 키우면 잡음이 "
@@ -109,7 +109,7 @@ TRACKS = [
         "13%뿐이라 휴대폰에서 배경이 통째로 빈다.",
     ),
     (
-        "public/bgm-rail.wav", "Lost Frontier", 9.0, 142.3,
+        "public/bgm-rail.wav", "Lost Frontier", 9.0, 140.1,
         "철도 — 넓고 계속 나아가는 느낌. 200~4000Hz 비중이 84%로 후보 중 "
         "가장 또렷하다. 전쟁 편들과 톤도 달라야 한다.",
     ),

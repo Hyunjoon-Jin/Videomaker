@@ -47,7 +47,7 @@ const ZONES = KW_GUERRILLA.map((z) => ({
   model: makePocket(z.keys, z.from, z.to, 12),
 }));
 
-const HOOK = Math.round(4.5 * FPS);
+const HOOK = Math.round(2.2 * FPS);
 
 /**
  * 사건마다 시간을 준다.
@@ -141,11 +141,20 @@ export const ShortsKoreanWar: React.FC = () => {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  const hookIn = interpolate(frame, [0, 12], [0, 1], { extrapolateRight: "clamp" });
-  const mapIn = interpolate(frame, [HOOK - 8, HOOK + 14], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
+  /** 훅 글자는 페이드인하지 않는다. 0프레임이 곧 완성된 화면이어야 한다. */
+  const hookIn = 1;
+  /**
+   * 지도는 0프레임부터 떠 있다.
+   *
+   * 전에는 훅이 끝나는 4.5초까지 검은 화면이었다. 재보니 0초에 화면이
+   * 0.0%, 1.5초에 1.0%, 2.5초에 2.1% 차 있었다. 피드에서 넘길지 말지는
+   * 1~2초에 정해지는데 그 구간을 통째로 빈 화면으로 쓰고 있었다.
+   *
+   * 이제 첫 프레임이 완성된 그림이다. 훅 글자는 그 위에 얹힌다.
+   */
+  const mapIn = 1;
+  /** 계기판·자막이 서는 시점 — 훅 글자가 걷히고 나서 */
+  const uiOn = frame >= HOOK - 4;
 
   const cam = cameraAt(SHOTS, frame);
   /**
@@ -416,7 +425,7 @@ export const ShortsKoreanWar: React.FC = () => {
       />
 
       {/* ── 날짜 ── */}
-      {mapIn > 0.5 && !inOutro && (
+      {uiOn && !inOutro && (
         <div style={{ position: "absolute", top: SAFE_TOP, left: TEXT_X, right: TEXT_X }}>
           <div style={{ color: C.dim, fontSize: 30, fontWeight: 700, letterSpacing: 2 }}>
             6·25 전쟁
@@ -436,7 +445,7 @@ export const ShortsKoreanWar: React.FC = () => {
       )}
 
       {/* ── 사건 ── */}
-      {ev && mapIn > 0.5 && !inOutro && (
+      {ev && uiOn && !inOutro && (
         <div style={{ position: "absolute", bottom: 330, left: TEXT_X, right: SAFE_RIGHT }}>
           <div style={{ color: accent, fontSize: 34, fontWeight: 900 }}>
             {ev.south ? "국군·유엔군" : "북한군·중국군"}
@@ -533,7 +542,7 @@ export const ShortsKoreanWar: React.FC = () => {
       )}
 
       {/* ── 범례 · 고지 ── */}
-      {mapIn > 0.5 && !inOutro && (
+      {uiOn && !inOutro && (
         <div style={{ position: "absolute", bottom: BOTTOM_INSET, left: TEXT_X, right: SAFE_RIGHT }}>
           <div style={{ display: "flex", gap: 24, marginBottom: 10, flexWrap: "wrap" }}>
             <Key color={HELD} label="북한군·중국군" />
@@ -551,7 +560,8 @@ export const ShortsKoreanWar: React.FC = () => {
       {hookOut > 0 && (
         <AbsoluteFill
           style={{
-            backgroundColor: C.bg,
+            background:
+              "linear-gradient(180deg, rgba(21,19,16,0.58) 0%, rgba(21,19,16,0.5) 60%, rgba(21,19,16,0.4) 100%)",
             opacity: hookOut,
             justifyContent: "center",
             padding: `0 ${TEXT_X}px`,
@@ -560,8 +570,8 @@ export const ShortsKoreanWar: React.FC = () => {
           <div style={{ opacity: hookIn }}>
             <Typed
               text="1950년 6월 25일 새벽, 38선"
-              start={4}
-              cps={30}
+              start={-20}
+              cps={400}
               style={{
                 display: "block",
                 color: C.dim,
@@ -572,8 +582,8 @@ export const ShortsKoreanWar: React.FC = () => {
             <div style={{ display: "flex", alignItems: "baseline", marginTop: 2 }}>
               <Typed
                 text="40"
-                start={40}
-                cps={8}
+                start={-20}
+                cps={400}
                 style={{
                   color: "#D4694F",
                   fontSize: 280,
@@ -583,15 +593,15 @@ export const ShortsKoreanWar: React.FC = () => {
               />
               <Typed
                 text="일"
-                start={48}
-                cps={8}
+                start={-20}
+                cps={400}
                 style={{ color: C.text, fontSize: 92, fontWeight: 800 }}
               />
             </div>
             <Typed
               text="낙동강까지 밀리는 데 걸린 시간"
-              start={66}
-              cps={22}
+              start={-20}
+              cps={400}
               style={{
                 display: "block",
                 color: C.text,
