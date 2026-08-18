@@ -174,7 +174,11 @@ export function yearLabel(y: number): string {
 
 export interface GEvent {
   year: number;
+  /** 언제, 어디 */
+  kicker: string;
+  /** 무엇이 얼마나 */
   title: string;
+  /** 곁들일 사실 하나 */
   detail: string;
   impact?: number;
   zoom?: number;
@@ -183,30 +187,45 @@ export interface GEvent {
   tanker?: boolean;
 }
 
+/**
+ * 자막은 담백하게.
+ *
+ * 처음에는 '계화도부터 막기 시작했다', '시화호를 막는 데 7년이 걸렸다'로
+ * 썼다. 데이터를 문장인 척 부풀린 것이다. 서술어를 떼면 남는 것은
+ * '계화도 39.7km²'뿐인데, 그게 이 편이 할 말의 전부다.
+ *
+ * 지명과 수량은 명사구로 그냥 놓는다. '~다'로 억지로 닫지 않는다.
+ */
 export const G_EVENTS: GEvent[] = [
   {
-    year: 1968, zone: "gyehwa", title: "계화도부터 막기 시작했다",
-    detail: "섬이던 계화도가 육지에 붙었다", impact: 0.9, zoom: 3.2,
+    year: 1968, zone: "gyehwa", kicker: "1968년 · 전북 부안",
+    title: "계화도 39.7km²",
+    detail: "최초의 대규모 간척 · 방조제 9,254m + 3,556m", impact: 0.9, zoom: 3.2,
   },
   {
-    year: 1982, zone: "seosanB", title: "서산에서 58km²를 얻었다",
-    detail: "1,228m를 막고 바다를 걷어냈다", impact: 0.7, zoom: 3.0,
+    year: 1982, zone: "seosanB", kicker: "1982년 · 충남 서산",
+    title: "서산 B지구 57.8km²",
+    detail: "방조제 1,228m", impact: 0.7, zoom: 3.0,
   },
   {
-    year: 1984, zone: "seosanA", title: "여기서 유조선을 가라앉혔다",
-    detail: "물살이 10톤 바위를 쓸어가자 배로 막았다", impact: 1, zoom: 3.2, tanker: true,
+    year: 1984, zone: "seosanA", kicker: "1984년 · 충남 서산",
+    title: "서산 A지구 96.3km²",
+    detail: "22만 6천 톤 폐유조선으로 물막이 · 방조제 6,476m", impact: 1, zoom: 3.2, tanker: true,
   },
   {
-    year: 1994, zone: "sihwa", title: "시화호를 막는 데 7년이 걸렸다",
-    detail: "1994년 1월 24일 물길이 끊겼다", impact: 0.9, zoom: 2.8,
+    year: 1994, zone: "sihwa", kicker: "1994년 · 경기 시흥·안산",
+    title: "시화 123.0km²",
+    detail: "1987년 착공, 1994년 1월 24일 물막이 · 방조제 12.7km", impact: 0.9, zoom: 2.8,
   },
   {
-    year: 2010, zone: "saemangeum", title: "새만금 하나가 409km²다",
-    detail: "앞의 넷을 합친 것보다 넓고 계화도를 품었다", impact: 1, zoom: 2.2,
+    year: 2010, zone: "saemangeum", kicker: "2010년 · 전북 군산·부안",
+    title: "새만금 409km²",
+    detail: "토지 291km² + 담수호 118km² · 방조제 33.9km", impact: 1, zoom: 2.2,
   },
   {
-    year: 2010.6, title: "방조제는 33.9km, 세계에서 제일 길다",
-    detail: "네덜란드 자위더르해의 32.5km를 넘어섰다", impact: 1, zoom: 1.9,
+    year: 2010.6, kicker: "세계 최장",
+    title: "새만금 방조제 33.9km",
+    detail: "네덜란드 자위더르해 32.5km", impact: 1, zoom: 1.9,
   },
 ];
 

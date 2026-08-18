@@ -229,11 +229,7 @@ export const ShortsGanchuk: React.FC = () => {
       {ev && mapIn > 0.5 && !inOutro && (
         <div style={{ position: "absolute", bottom: 330, left: SAFE_X, right: SAFE_RIGHT }}>
           <div style={{ color: DIKE, fontSize: 34, fontWeight: 900 }}>
-            {ev.zone
-              ? `${ZONE_XY.find((d) => d.id === ev.zone)?.name} · ${
-                  ZONE_XY.find((d) => d.id === ev.zone)?.km2
-                }km² · 방조제 ${ZONE_XY.find((d) => d.id === ev.zone)?.len}`
-              : "새만금 방조제"}
+            {ev.kicker}
           </div>
           <Typed
             text={ev.title}
