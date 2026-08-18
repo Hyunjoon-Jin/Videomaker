@@ -243,12 +243,13 @@ export const ShortsTyphoon: React.FC<{ cut?: boolean }> = ({ cut = false }) => {
               짧은 판에서는 본문에 사라 하나뿐이라 나머지 셋은 마무리에
               가서야 켜진다. 그게 오히려 대비가 커진다. */}
           {TYPHOONS.map((t) => {
+            const j = list.indexOf(t);
             // 마무리에서는 지도가 배경이고 표가 본문이다. 최저기압 라벨
             // 넷이 그대로 켜져 있으면 표의 숫자 위에 겹쳐 앉는다.
-            if (inOutro)
+            if (inOutro && j >= 0)
               return <Track key={t.id} t={t} p={1} dim={1} frame={frame} u={u} peak={false} />;
-            const j = list.indexOf(t);
             if (j < 0) return null;
+            if (inOutro) return null;
             if (j < idx) return <Track key={t.id} t={t} p={1} dim={0.3} frame={frame} u={u} />;
             if (j === idx) return <Track key={t.id} t={t} p={prog} dim={1} frame={frame} u={u} />;
             return null;
@@ -394,7 +395,8 @@ export const ShortsTyphoon: React.FC<{ cut?: boolean }> = ({ cut = false }) => {
       )}
 
       {/* ── 마무리 ── */}
-      {inOutro && (
+      {inOutro && cut && <SarahCard t={list[0]} fade={outroIn} />}
+      {inOutro && !cut && (
         <AbsoluteFill
           style={{
             justifyContent: "flex-end",
@@ -473,17 +475,17 @@ export const ShortsTyphoon: React.FC<{ cut?: boolean }> = ({ cut = false }) => {
               범례가 하는 일이 없는데, 마무리 문장 자리로 올라와 겹쳤다. */}
           {!inOutro && (
           <div style={{ display: "flex", gap: 20, flexWrap: "wrap", marginBottom: 10 }}>
-            {TYPHOONS.map((t) => (
+            {/* 짧은 판에는 사라밖에 안 나오므로 나머지 셋은 범례에서도
+                뺀다. 화면에 한 번도 안 그려지는 이름을 세워두면 그게 뭔지
+                묻게 된다. */}
+            {list.map((t) => (
               <div
                 key={t.id}
                 style={{
                   display: "flex",
                   alignItems: "center",
                   gap: 8,
-                  opacity:
-                    inOutro || (list.indexOf(t) >= 0 && list.indexOf(t) <= idx)
-                      ? 1
-                      : 0.32,
+                  opacity: inOutro || list.indexOf(t) <= idx ? 1 : 0.32,
                 }}
               >
                 <div style={{ width: 20, height: 5, background: t.color }} />
@@ -575,6 +577,91 @@ export const ShortsTyphoon: React.FC<{ cut?: boolean }> = ({ cut = false }) => {
 
 /** 같은 소재의 20초 판 — 길이가 노출에 영향을 주는지 보려고 나란히 올린다 */
 export const ShortsTyphoonCut: React.FC = () => <ShortsTyphoon cut />;
+
+/**
+ * 짧은 판의 마무리 — 사라 하나로 닫는다.
+ *
+ * 처음에는 본편의 넷짜리 표를 그대로 썼는데, 본문에서 한 번도 안 나온
+ * 셋을 마무리에서 "뒤의 셋"이라고 부르고 있었다. 앞을 가리키는데 앞에
+ * 아무것도 없다.
+ *
+ * 그런데 표현만 고칠 문제가 아니었다. "뒤의 셋"은 넷이 인명피해 상위
+ * 넷이라는 뜻으로 읽히는데 그게 사실이 아니다. 1972년 베티가 550명,
+ * 1987년 셀마가 345명으로 둘 다 루사(246명) 위에 있다. 본편의 마무리
+ * 문장이 통째로 다시 짜여야 하는 일이라 여기서는 비교를 아예 뺐다.
+ *
+ * 대신 사라 하나로 닫는다. 상륙일 1959년 9월 17일이 음력 8월 15일,
+ * 추석 당일이다. 삭 계산으로 확인했다 — 그해 음력 8월 초하루가
+ * 9월 3일이다(scripts/lunar.py 1959).
+ */
+const SarahCard: React.FC<{ t: Typhoon; fade: number }> = ({ t, fade }) => {
+  const peak = peakOf(t);
+  const rows: Array<[string, string]> = [
+    ["정점 중심기압", `${peak.hpa} hPa`],
+    ["상륙 중심기압", `${t.hpa} hPa`],
+    ["제주 최대순간풍속", "46.9 m/s"],
+    ["사망·실종", `${t.dead}명`],
+  ];
+  return (
+    <AbsoluteFill
+      style={{
+        justifyContent: "flex-end",
+        padding: `0 ${TEXT_X}px ${OUTRO_PAD}px`,
+        opacity: fade,
+      }}
+    >
+      <div style={{ marginBottom: 26 }}>
+        {rows.map(([k, v], i) => (
+          <div
+            key={k}
+            style={{
+              display: "flex",
+              alignItems: "baseline",
+              gap: 24,
+              marginTop: 8,
+            }}
+          >
+            <span
+              style={{
+                color: C.dim,
+                fontSize: 34,
+                fontWeight: 700,
+                minWidth: 330,
+              }}
+            >
+              {k}
+            </span>
+            <span
+              style={{
+                // 인명만 밝게. 이 편이 세는 것이 그것이다.
+                color: i === rows.length - 1 ? t.color : C.text,
+                fontSize: i === rows.length - 1 ? 50 : 44,
+                fontWeight: 900,
+                fontVariantNumeric: "tabular-nums",
+              }}
+            >
+              {v}
+            </span>
+          </div>
+        ))}
+      </div>
+      <Rule />
+      <div
+        style={{
+          color: C.text,
+          fontSize: 54,
+          fontWeight: 800,
+          lineHeight: 1.34,
+          marginTop: 14,
+        }}
+      >
+        상륙 1959년 9월 17일,
+        <br />
+        음력 8월 15일 추석 당일
+      </div>
+    </AbsoluteFill>
+  );
+};
 
 /** 얇은 구분선 — 인쇄물의 괘선 */
 const Rule: React.FC = () => (

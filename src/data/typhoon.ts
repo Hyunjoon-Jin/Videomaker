@@ -91,7 +91,7 @@ export const TYPHOONS: Typhoon[] = [
   {
     id: "sarah",
     rain: null,
-    rainAt: "1959년 관측망으로는 확인이 어렵다",
+    rainAt: "1959년 관측망으로는 확인이 어려운 값",
     name: "사라",
     year: 1959,
     period: "1959. 9. 15 ~ 9. 17",
