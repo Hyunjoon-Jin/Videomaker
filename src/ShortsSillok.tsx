@@ -566,9 +566,9 @@ export const ShortsSillok: React.FC = () => {
                 ),
               }}
             >
-              규장각에 있는 정족산본이
+              규장각의 정족산본
               <br />
-              두 사람이 지고 올라간 그 책이다
+              두 사람이 지고 올라간 그 책
             </div>
           </AbsoluteFill>
         </>

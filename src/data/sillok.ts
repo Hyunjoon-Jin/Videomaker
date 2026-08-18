@@ -112,26 +112,81 @@ export const NEW_SAGO: Site[] = [
   site("오대산", "평창 영감사", 128.5722, 37.7565, "right"),
 ];
 
-/** 지나온 만큼의 경로 — p는 0..1 */
-export function flightPathTo(p: number): string {
-  const n = FLIGHT.length - 1;
-  const t = Math.max(0, Math.min(1, p)) * n;
-  const i = Math.min(n - 1, Math.floor(t));
-  const f = t - i;
-  const pts = FLIGHT.slice(0, i + 1).map((s) => `${s.x} ${s.y}`);
-  const a = FLIGHT[i];
-  const b = FLIGHT[i + 1];
-  pts.push(`${(a.x + (b.x - a.x) * f).toFixed(1)} ${(a.y + (b.y - a.y) * f).toFixed(1)}`);
-  return "M" + pts.join("L");
+/**
+ * 경로를 곡선으로 편다.
+ *
+ * 일곱 점을 직선으로 이으면 지도 위에 꺾은선이 그어진다. 실록은 각지게
+ * 다니지 않았고, 무엇보다 꺾은선은 "이 선이 실제 노정"이라고 주장하는
+ * 것처럼 보인다. 곡선은 점과 점 사이를 자연스럽게 잇되 그 사이가
+ * 추정이라는 걸 오히려 정직하게 드러낸다. 지나는 점은 그대로 지난다.
+ *
+ * 구심(centripetal) 매개변수를 쓴다. 균일 Catmull-Rom은 구간 길이가
+ * 크게 다르면 짧은 구간에서 곡선이 밖으로 튄다. 여기가 딱 그렇다 —
+ * 내장산에서 정읍은 9.8km인데 강화에서 묘향산은 265km다. 균일로 하면
+ * 정읍 근처에서 고리가 생긴다.
+ */
+const STEPS = 30;
+const ALPHA = 0.5;
+
+function knots(a: XY, b: XY): number {
+  return Math.pow(Math.hypot(b.x - a.x, b.y - a.y), ALPHA);
 }
 
-export function flightPointAt(p: number): { x: number; y: number } {
-  const n = FLIGHT.length - 1;
-  const t = Math.max(0, Math.min(1, p)) * n;
-  const i = Math.min(n - 1, Math.floor(t));
-  const f = t - i;
-  const a = FLIGHT[i];
-  const b = FLIGHT[i + 1];
+interface XY {
+  x: number;
+  y: number;
+}
+
+function centripetal(pts: XY[]): XY[] {
+  if (pts.length < 2) return pts.slice();
+  // 양끝은 端점을 한 번 더 두어 곡선이 밖으로 나가지 않게 한다
+  const e = [pts[0], ...pts, pts[pts.length - 1]];
+  const out: XY[] = [];
+
+  for (let i = 1; i < e.length - 2; i++) {
+    const [p0, p1, p2, p3] = [e[i - 1], e[i], e[i + 1], e[i + 2]];
+    const t0 = 0;
+    const t1 = t0 + Math.max(1e-6, knots(p0, p1));
+    const t2 = t1 + Math.max(1e-6, knots(p1, p2));
+    const t3 = t2 + Math.max(1e-6, knots(p2, p3));
+
+    for (let k = 0; k < STEPS; k++) {
+      const t = t1 + ((t2 - t1) * k) / STEPS;
+      // Barry–Goldman 재귀
+      const lerp = (a: XY, b: XY, ta: number, tb: number): XY => {
+        const w = (t - ta) / (tb - ta);
+        return { x: a.x + (b.x - a.x) * w, y: a.y + (b.y - a.y) * w };
+      };
+      const a1 = lerp(p0, p1, t0, t1);
+      const a2 = lerp(p1, p2, t1, t2);
+      const a3 = lerp(p2, p3, t2, t3);
+      const b1 = lerp(a1, a2, t0, t2);
+      const b2 = lerp(a2, a3, t1, t3);
+      out.push(lerp(b1, b2, t1, t2));
+    }
+  }
+  out.push(pts[pts.length - 1]);
+  return out;
+}
+
+/** 곡선 위의 점들. 프레임마다 다시 만들 이유가 없다. */
+const CURVE: XY[] = centripetal(FLIGHT.map((s) => ({ x: s.x, y: s.y })));
+/** 원래 지점 i가 곡선의 몇 번째 표본인가 */
+const NODE_AT = (i: number) => Math.min(CURVE.length - 1, i * STEPS);
+
+/** 지나온 만큼의 경로 — p는 0..1(지점 기준) */
+export function flightPathTo(p: number): string {
+  const last = NODE_AT((FLIGHT.length - 1) * Math.max(0, Math.min(1, p)));
+  const n = Math.max(1, Math.round(last));
+  const pts = CURVE.slice(0, n + 1);
+  return "M" + pts.map((q) => `${q.x.toFixed(1)} ${q.y.toFixed(1)}`).join("L");
+}
+
+export function flightPointAt(p: number): XY {
+  const i = NODE_AT((FLIGHT.length - 1) * Math.max(0, Math.min(1, p)));
+  const a = CURVE[Math.floor(i)];
+  const b = CURVE[Math.min(CURVE.length - 1, Math.ceil(i))];
+  const f = i - Math.floor(i);
   return { x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f };
 }
 
@@ -172,7 +227,7 @@ export const S_EVENTS: SEvent[] = [
   {
     year: 1445.85,
     kicker: "1445년 · 세종 27년",
-    title: "실록을 네 곳에 나눴다",
+    title: "네 곳에 한 벌씩",
     detail: "춘추관·충주·성주·전주 · 한 곳이 타도 남게",
     phase: "sago", impact: 0.7, zoom: 1.5,
   },
@@ -180,28 +235,28 @@ export const S_EVENTS: SEvent[] = [
     year: 1592.28,
     kicker: "1592년 4월 13일",
     title: "임진왜란",
-    detail: "부산 상륙 · 스무날 만에 한양이 넘어갔다",
+    detail: "부산 상륙 · 스무날 만에 한양 함락",
     phase: "sago", impact: 1, zoom: 1.6,
   },
   {
     year: 1592.42,
     kicker: "1592년",
-    title: "셋이 탔다",
+    title: "불탄 사고 셋",
     detail: "춘추관·충주·성주 · 남은 것은 전주 하나",
     phase: "burn", impact: 1, zoom: 1.7,
   },
   {
     year: 1592.47,
     kicker: "1592년 6월 22일 · 정읍",
-    title: "실록을 산으로 옮겼다",
+    title: "전주에서 내장산으로",
     detail: "60여 궤 · 실록 830책과 태조 어진",
     phase: "flight", at: 1, impact: 1, zoom: 2.9,
   },
   {
     year: 1593.0,
     kicker: "내장산 은봉암",
-    title: "하루도 자리를 비우지 않았다",
-    detail: "『임계기사』 수직상체일기에 지킨 날짜가 남아 있다",
+    title: "하루도 빈 날 없이",
+    detail: "『임계기사』 수직상체일기에 적힌 날",
     phase: "flight", at: 1, watch: true, impact: 1, zoom: 3.2,
   },
   {
@@ -215,21 +270,21 @@ export const S_EVENTS: SEvent[] = [
     year: 1596.9,
     kicker: "1593~1596년",
     title: "해주에서 강화로",
-    detail: "3년 사이 두 번 더 옮겼다",
+    detail: "3년 사이 두 번 더",
     phase: "flight", at: 5, impact: 0.7, zoom: 2.2,
   },
   {
     year: 1597.7,
     kicker: "1597년 9월 · 정유재란",
     title: "묘향산 보현사",
-    detail: "여섯 번 옮겨 715km · 전란이 끝날 때까지 여기 있었다",
+    detail: "여섯 번 옮겨 715km · 전란이 끝날 때까지 여기",
     phase: "flight", at: 6, impact: 1, zoom: 1.9,
   },
   {
     year: 1606.0,
     kicker: "1603~1606년",
-    title: "다섯 질이 되었다",
-    detail: "살아남은 전주본을 원본 삼아 세 질을 더 찍었다",
+    title: "모두 다섯 질",
+    detail: "살아남은 전주본을 원본 삼아 세 질을 더",
     phase: "spread", impact: 1, zoom: 1.6,
   },
   {
@@ -245,7 +300,7 @@ export const S_EVENTS: SEvent[] = [
 export const FATES: Array<{ name: string; where: string; alive: boolean }> = [
   { name: "정족산본", where: "서울대 규장각", alive: true },
   { name: "태백산본", where: "국가기록원 부산", alive: true },
-  { name: "나머지 셋", where: "불탔거나 북에 있다", alive: false },
+  { name: "나머지 셋", where: "불탔거나 북에", alive: false },
 ];
 
 export function yearLabel(y: number): string {

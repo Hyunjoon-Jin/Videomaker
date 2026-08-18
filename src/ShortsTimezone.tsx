@@ -464,9 +464,9 @@ export const ShortsTimezone: React.FC = () => {
                 ),
               }}
             >
-              시계가 낮 12시를 가리킬 때
+              시계가 가리키는 낮 12시
               <br />
-              서울의 해는 아직 동쪽에 있다
+              서울의 해는 아직 동쪽
             </div>
           </AbsoluteFill>
         </>
