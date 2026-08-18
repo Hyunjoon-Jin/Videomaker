@@ -9,7 +9,7 @@ import { EA_LANDS, TYPHOONS, eaProject, trackPathTo } from "./data/typhoon";
 import { BEACON_XY } from "./data/bongsu";
 import { FEEDS, PLANT_XY, radiusOf } from "./data/power";
 import { XY as TS_XY, traveled } from "./data/tongsinsa";
-import { ZONE_XY, polyPath } from "./data/ganchuk";
+import { ZONE_XY, dikePath, polyPath } from "./data/ganchuk";
 import { C, INK } from "./theme";
 import { Grain } from "./Grain";
 import { useFonts } from "./fonts";
@@ -524,15 +524,14 @@ export const ThumbGanchuk: React.FC = () => (
         ))}
         {ZONE_XY.map((z) => (
           <g key={z.id}>
-            <path d={polyPath(z)} fill="#1E5750" opacity={0.95} />
-            <line
-              x1={z.A.x}
-              y1={z.A.y}
-              x2={z.B.x}
-              y2={z.B.y}
-              stroke="#9FE4D2"
-              strokeWidth={2.2}
+            <path d={polyPath(z)} fill="#1E5750" opacity={0.95} stroke="#7FD3BE" strokeWidth={1.4} />
+            <path
+              d={dikePath(z)}
+              fill="none"
+              stroke="#B9F0DE"
+              strokeWidth={2.8}
               strokeLinecap="round"
+              strokeLinejoin="round"
             />
           </g>
         ))}

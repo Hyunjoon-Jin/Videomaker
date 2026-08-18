@@ -13,14 +13,17 @@
  *
  * ── 없는 데이터를 짓지 않으면서 면을 칠하는 법 ──────
  * 시대별 해안선 폴리곤이 없다. 그래서 옛 해안선을 그리지 않는다.
- * 대신 방조제 선에서 안쪽으로 **기록된 넓이만큼** 면을 채운다. 선은
- * 실좌표고 면은 그 선에서 뻗은 사각형이다. 폭은 방조제 길이와 √넓이 중
- * 큰 쪽, 깊이는 넓이 ÷ 폭이다. 만은 입구보다 안쪽이 넓어서, 길이로만
- * 나누면 서산 B지구처럼 1.2km 폭에 48km 깊이짜리 바늘이 나온다.
+ * 대신 **방조제(실좌표) + 만 안쪽 가장자리**로 닫힌 도형을 만든다.
+ * 방조제는 손대지 않고 안쪽 가장자리만 방조제 선에서 떨어진 거리를
+ * 배율로 조절해, 도형의 넓이가 기록값과 정확히 같아지게 맞춘다
+ * (shoelace로 재서 확인한다).
  *
- * 그러니 이 면은 간척지의 모양이 아니라 넓이의 그림이다. 넓이는 기록값과
- * 같고(shoelace로 재서 확인한다) 어느 바다를 막았는지도 실좌표다. 다만
- * 경계의 굽이는 없다. 화면과 고정댓글에 그렇게 밝힌다.
+ * 그러니 이 도형은 만의 모양을 따르고 넓이는 기록값이다. 정밀 측량은
+ * 아니므로 경계의 잔굽이는 없다. 화면과 고정댓글에 그렇게 밝힌다.
+ *
+ * 4) 네 번째 판에서 경계를 선으로 두르고 바다색이 땅색으로 바뀌게 했다.
+ *    "대충 칠해 놓은 느낌이라 얼마나 넓어진 건지 안 와닿는다"는 말을
+ *    들었다. 면만 칠하면 얼룩이고, 테두리가 있어야 영역이 된다.
  */
 import { project } from "./places";
 
@@ -38,67 +41,70 @@ export interface Zone {
   year: number;
   /** 총 매립면적(km²) — 기록값 */
   km2: number;
-  /** 방조제 길이 — 자막에 쓴다 */
+  /** 방조제 길이 — 기록값 */
   len: string;
-  /** 방조제 양 끝 [경도, 위도] — 실좌표 */
-  a: [number, number];
-  b: [number, number];
-  /**
-   * 안쪽이 어느 쪽인가. 방조제 선의 법선 둘 중 땅이 생긴 쪽을 부호로 준다.
-   */
-  inward: 1 | -1;
-  side: "left" | "right";
+  /** 방조제. 실좌표이고 여러 점을 지날 수 있다(새만금은 섬 넷). */
+  dike: Array<[number, number]>;
+  /** 막힌 물의 안쪽 가장자리. 만의 모양을 따른다. */
+  shore: Array<[number, number]>;
+  side?: "left" | "right";
   dy?: number;
 }
 
 /**
- * 그리는 다섯 개. 면적이 기록으로 확인되는 것만 골랐다.
+ * 그리는 다섯 곳.
  *
- *  계화도   총 매립 39.68km² (농경지 27.04 + 저수지·수로 12.64)
- *  서산 B   57.82km² (담수호 15.62 포함)
- *  서산 A   96.26km² (담수호 27.33 포함)
- *  시화     1단계 2,452ha + 2단계 9,850ha = 123.02km²
- *  새만금   409km² (토지 291 + 담수호 118)
- *
- * 방조제 양 끝은 기록된 지명을 위경도로 옮긴 값이다.
- *  계화도    부안 동진면 ~ 계화도
- *  서산 B    서산 대산 ~ 태안 이원
- *  서산 A    서산 부석면 창리 ~ 태안 남면 당암리
+ * 방조제 양 끝은 기록된 지명이다.
+ *  계화도    부안 동진면 문포 ~ 계화도
+ *  서산 B    서산 부석면 창리 ~ 태안 남면 당암리 (부남호)
+ *  서산 A    서산 부석면 간월도리 ~ 홍성 서부면 궁리 (간월호)
  *  시화      시흥 오이도 ~ 안산 대부도
- *  새만금    군산 비응도 ~ 부안 대항리
+ *  새만금    군산 비응도 ~ 야미도 ~ 신시도 ~ 가력도 ~ 부안 대항리
  *
- * 직선 길이가 기록된 방조제 길이보다 짧은 곳이 있다. 실제 방조제는
- * 굽어 있고 새만금은 섬 넷을 지나기 때문이다(직선 28km, 실제 33.9km).
- * 자막에는 기록된 길이를 쓴다.
+ * 처음에 A지구와 B지구를 서로 바꿔 적고 위치도 북쪽 대산 앞바다로
+ * 잘못 찍었다. 둘 다 천수만이다. A지구가 간월호(6,458m), B지구가
+ * 부남호(1,228m)다.
  */
 export const ZONES: Zone[] = [
   {
     id: "gyehwa", name: "계화도", year: 1968, km2: 39.68, len: "9,254m + 3,556m",
-    a: [126.705, 35.775], b: [126.612, 35.802], inward: -1, side: "right", dy: -62,
+    dike: [[126.705, 35.775], [126.612, 35.802]],
+    shore: [[126.622, 35.845], [126.688, 35.838]],
+    side: "right", dy: -34,
   },
   {
     id: "seosanB", name: "서산 B지구", year: 1982, km2: 57.82, len: "1,228m",
-    a: [126.372, 36.902], b: [126.360, 36.898], inward: 1, side: "left",
+    dike: [[126.372, 36.612], [126.359, 36.607]],
+    shore: [[126.352, 36.660], [126.392, 36.700], [126.432, 36.668], [126.408, 36.628]],
+    side: "right",
   },
   {
-    id: "seosanA", name: "서산 A지구", year: 1984, km2: 96.26, len: "6,476m",
-    a: [126.442, 36.712], b: [126.369, 36.708], inward: 1, side: "left", dy: 30,
+    id: "seosanA", name: "서산 A지구", year: 1984, km2: 96.26, len: "6,458m",
+    dike: [[126.388, 36.572], [126.437, 36.528]],
+    shore: [[126.492, 36.556], [126.478, 36.604], [126.424, 36.612], [126.396, 36.596]],
+    side: "right", dy: 20,
   },
   {
     id: "sihwa", name: "시화", year: 1994, km2: 123.02, len: "12.7km",
-    a: [126.682, 37.342], b: [126.602, 37.249], inward: -1, side: "right",
+    dike: [[126.682, 37.342], [126.602, 37.249]],
+    shore: [[126.652, 37.226], [126.735, 37.240], [126.780, 37.300], [126.752, 37.358]],
+    side: "right",
   },
   {
     id: "saemangeum", name: "새만금", year: 2010, km2: 409, len: "33.9km",
-    a: [126.518, 35.952], b: [126.602, 35.716], inward: -1, side: "left", dy: 54,
+    dike: [
+      [126.518, 35.952], [126.478, 35.855], [126.466, 35.802],
+      [126.545, 35.745], [126.602, 35.716],
+    ],
+    shore: [
+      [126.662, 35.742], [126.735, 35.792], [126.782, 35.855],
+      [126.722, 35.930], [126.622, 35.958],
+    ],
+    side: "right",
   },
 ];
 
-function distKm(p: { x: number; y: number }, q: { x: number; y: number }): number {
-  return Math.hypot(q.x - p.x, q.y - p.y) * KM_PER_UNIT;
-}
-
-/** 다각형 넓이(km²) — shoelace. 그린 면이 기록값과 맞는지 검산한다. */
+/** 다각형 넓이(km²) — shoelace */
 function areaKm2(pts: Array<{ x: number; y: number }>): number {
   let s = 0;
   for (let i = 0; i < pts.length; i++) {
@@ -110,55 +116,69 @@ function areaKm2(pts: Array<{ x: number; y: number }>): number {
 }
 
 export const ZONE_XY = ZONES.map((z) => {
-  const A = project(z.a[0], z.a[1]);
-  const B = project(z.b[0], z.b[1]);
-  const dx = B.x - A.x;
-  const dy = B.y - A.y;
-  const L = Math.hypot(dx, dy) || 1;
-  const nx = (-dy / L) * z.inward;
-  const ny = (dx / L) * z.inward;
+  const D = z.dike.map(([lo, la]) => project(lo, la));
+  const S = z.shore.map(([lo, la]) => project(lo, la));
+  const a = D[0];
+  const b = D[D.length - 1];
+  const L = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+  const nx = -(b.y - a.y) / L;
+  const ny = (b.x - a.x) / L;
   /*
-   * 폭은 방조제 길이와 √넓이 중 큰 쪽으로 잡는다.
-   *
-   * 길이로만 나누면 입구가 좁은 곳이 터무니없어진다. 서산 B지구는
-   * 방조제가 1.2km인데 넓이가 57.8km²라, 그대로 나누면 1.2km 폭에
-   * 48km 깊이짜리 바늘이 나온다. 만은 입구보다 안쪽이 넓다.
-   * 폭을 √넓이까지 벌리면 정사각에 가까워지고, 깊이는 넓이 ÷ 폭이라
-   * 넓이는 그대로 기록값이다.
+   * 방조제는 실좌표라 손대지 않고, 안쪽 가장자리만 방조제 선에서
+   * 떨어진 거리를 k배 해서 넓이를 기록값에 맞춘다. 만의 모양은
+   * 그대로 두고 깊이만 조절하는 셈이다.
    */
-  const dikeKmLen = L * KM_PER_UNIT;
-  const wKm = Math.max(dikeKmLen, Math.sqrt(z.km2));
-  const depthKm = z.km2 / wKm;
-  const w = wKm / KM_PER_UNIT;
-  const depth = depthKm / KM_PER_UNIT;
-  const ux = dx / L;
-  const uy = dy / L;
-  const cx = (A.x + B.x) / 2;
-  const cy = (A.y + B.y) / 2;
-  const P0 = { x: cx - ux * (w / 2), y: cy - uy * (w / 2) };
-  const P1 = { x: cx + ux * (w / 2), y: cy + uy * (w / 2) };
-  const poly = [
-    P0,
-    P1,
-    { x: P1.x + nx * depth, y: P1.y + ny * depth },
-    { x: P0.x + nx * depth, y: P0.y + ny * depth },
-  ];
+  const scaled = (k: number) =>
+    D.concat(
+      S.map((p) => {
+        const t = (p.x - a.x) * nx + (p.y - a.y) * ny;
+        return { x: p.x + nx * t * (k - 1), y: p.y + ny * t * (k - 1) };
+      })
+    );
+  let lo = 0.05;
+  let hi = 6;
+  for (let i = 0; i < 60; i++) {
+    const m = (lo + hi) / 2;
+    if (areaKm2(scaled(m)) < z.km2) lo = m;
+    else hi = m;
+  }
+  const poly = scaled((lo + hi) / 2);
+  const cx = poly.reduce((s, p) => s + p.x, 0) / poly.length;
+  const cy = poly.reduce((s, p) => s + p.y, 0) / poly.length;
   return {
     ...z,
-    A,
-    B,
+    D,
     poly,
-    x: cx + (nx * depth) / 2,
-    y: cy + (ny * depth) / 2,
+    x: cx,
+    y: cy,
     drawnKm2: areaKm2(poly),
-    dikeKm: distKm(A, B),
+    dikeKm: (L * KM_PER_UNIT),
   };
 });
 
+/** 막힌 물 전체의 테두리 */
 export function polyPath(z: (typeof ZONE_XY)[number]): string {
   return (
     z.poly.map((p, i) => `${i ? "L" : "M"}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join("") + "Z"
   );
+}
+
+/** 사람이 그은 쪽만 — 방조제 */
+export function dikePath(z: (typeof ZONE_XY)[number], t = 1): string {
+  const pts = z.D;
+  const total = pts.length - 1;
+  const upto = Math.max(0, Math.min(total, t * total));
+  const n = Math.floor(upto);
+  const f = upto - n;
+  const head =
+    n >= total
+      ? pts[total]
+      : {
+          x: pts[n].x + (pts[n + 1].x - pts[n].x) * f,
+          y: pts[n].y + (pts[n + 1].y - pts[n].y) * f,
+        };
+  const seg = pts.slice(0, n + 1).concat([head]);
+  return seg.map((p, i) => `${i ? "L" : "M"}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join("");
 }
 
 /** 그 해까지의 누계 면적 */
@@ -200,34 +220,34 @@ export const G_EVENTS: GEvent[] = [
   {
     year: 1968, zone: "gyehwa", kicker: "1968년 · 전북 부안",
     title: "계화도 39.7km²",
-    detail: "최초의 대규모 간척 · 방조제 9,254m + 3,556m", impact: 0.9, zoom: 3.2,
+    detail: "최초의 대규모 간척 · 방조제 9,254m + 3,556m", impact: 0.9, zoom: 7.5,
   },
   {
     year: 1982, zone: "seosanB", kicker: "1982년 · 충남 서산",
     title: "서산 B지구 57.8km²",
-    detail: "방조제 1,228m", impact: 0.7, zoom: 3.0,
+    detail: "방조제 1,228m", impact: 0.7, zoom: 8.5,
   },
   {
     year: 1984, zone: "seosanA", kicker: "1984년 · 충남 서산",
     title: "서산 A지구 96.3km²",
-    detail: "22만 6천 톤 폐유조선으로 물막이 · 방조제 6,476m", impact: 1, zoom: 3.2, tanker: true,
+    detail: "22만 6천 톤 폐유조선으로 물막이 · 방조제 6,458m", impact: 1, zoom: 7.0, tanker: true,
   },
   {
     year: 1994, zone: "sihwa", kicker: "1994년 · 경기 시흥·안산",
     title: "시화 123.0km²",
-    detail: "1987년 착공, 1994년 1월 24일 물막이 · 방조제 12.7km", impact: 0.9, zoom: 2.8,
+    detail: "1987년 착공, 1994년 1월 24일 물막이 · 방조제 12.7km", impact: 0.9, zoom: 7.0,
   },
   {
     year: 2010, zone: "saemangeum", kicker: "2010년 · 전북 군산·부안",
     title: "새만금 409km²",
-    detail: "토지 291km² + 담수호 118km² · 방조제 33.9km", impact: 1, zoom: 2.2,
+    detail: "토지 291km² + 담수호 118km² · 방조제 33.9km", impact: 1, zoom: 4.2,
   },
   {
     year: 2010.6, kicker: "세계 최장",
     title: "새만금 방조제 33.9km",
-    detail: "네덜란드 자위더르해 32.5km", impact: 1, zoom: 1.9,
+    detail: "네덜란드 자위더르해 32.5km", impact: 1, zoom: 2.4,
   },
 ];
 
-/** 유조선 — 크리어워터베이, 22만 6천 톤, 길이 322m */
-export const TANKER = { lon: 126.30, lat: 36.70 };
+/** 유조선 — 크리어워터베이, 22만 6천 톤, 길이 322m. A지구 방조제 물막이 자리. */
+export const TANKER = { lon: 126.412, lat: 36.550 };

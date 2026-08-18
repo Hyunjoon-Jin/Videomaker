@@ -15,6 +15,7 @@ import {
   TOTAL_KM2,
   ZONE_XY,
   areaUpTo,
+  dikePath,
   polyPath,
   yearLabel,
 } from "./data/ganchuk";
@@ -59,11 +60,17 @@ const SHOTS: Shot[] = [
   ...SPANS.flatMap((sp, i) => {
     const e = G_EVENTS[i];
     const z0 = ZONE_XY.find((d) => d.id === e.zone);
-    const q = z0 ?? { x: 430, y: 660 };
+    const q = z0 ?? { x: 430, y: 700 };
     const z = e.zoom ?? 2.6;
+    /*
+     * 자막이 아래 3분의 1을 먹으므로 대상을 화면 가운데에 두면 가려진다.
+     * 카메라 중심을 아래로 내려 대상이 위쪽 40% 자리에 앉게 한다.
+     */
+    const viewH = (1000 / z) * (1920 / 1080);
+    const cy = q.y + viewH * 0.14;
     return [
-      { at: sp.t1, cx: q.x, cy: q.y, z },
-      { at: sp.t2, cx: q.x, cy: q.y, z },
+      { at: sp.t1, cx: q.x, cy, z },
+      { at: sp.t2, cx: q.x, cy, z },
     ];
   }),
   // 마무리 — 서해안 전체가 한 화면에 들어와야 직선들이 같이 보인다
@@ -74,8 +81,12 @@ const LAND = "#231E16";
 const COAST = "#4A4231";
 /** 막은 선 — 바다 위에 그은 것이라 뭍과 다른 색이어야 한다 */
 const DIKE = "#F0C877";
+/** 아직 바다인 동안 */
+const SEA = "#1B3A46";
+const SEA_EDGE = "#3E6B80";
 /** 막아서 생긴 땅. 뭍(#231E16)보다 밝게 둬야 '새로 생긴 것'으로 읽힌다. */
-const FILL = "#7A5F2E";
+const MADE = "#8A6B33";
+const EDGE = "#F0C877";
 
 export const ShortsGanchuk: React.FC = () => {
   useFonts();
@@ -128,48 +139,50 @@ export const ShortsGanchuk: React.FC = () => {
           ))}
 
           {ZONE_XY.map((z) => {
-            // 그 해가 오기 전에는 없다. 오는 순간 방조제가 그어지고
-            // 그 안쪽이 채워진다.
             const span = SPANS[G_EVENTS.findIndex((e) => e.zone === z.id)];
             if (!span) return null;
-            // 선이 먼저 그어지고, 다 그어지면 면이 찬다.
-            const draw = interpolate(frame, [span.t1, span.t1 + 16], [0, 1], {
+            // 방조제가 그어지고, 다 그어지면 갇힌 물이 땅으로 바뀐다.
+            const draw = interpolate(frame, [span.t1, span.t1 + 20], [0, 1], {
               extrapolateLeft: "clamp",
               extrapolateRight: "clamp",
             });
-            const fill = interpolate(frame, [span.t1 + 14, span.t1 + 34], [0, 1], {
+            const turn = interpolate(frame, [span.t1 + 18, span.t1 + 44], [0, 1], {
               extrapolateLeft: "clamp",
               extrapolateRight: "clamp",
             });
             if (draw <= 0) return null;
-            const hx = z.A.x + (z.B.x - z.A.x) * draw;
-            const hy = z.A.y + (z.B.y - z.A.y) * draw;
             return (
               <g key={z.id}>
-                {fill > 0 && (
-                  <path
-                    d={polyPath(z)}
-                    fill={FILL}
-                    opacity={fill * 0.85}
-                    stroke={FILL}
-                    strokeWidth={u(1.2)}
-                  />
-                )}
-                <line
-                  x1={z.A.x}
-                  y1={z.A.y}
-                  x2={hx}
-                  y2={hy}
-                  stroke={DIKE}
-                  strokeWidth={u(6)}
-                  strokeLinecap="round"
+                {/* 갇힌 물 → 땅. 색이 바뀌는 것이 이 편의 전부다. */}
+                <path
+                  d={polyPath(z)}
+                  fill={turn > 0 ? MADE : SEA}
+                  opacity={0.25 + turn * 0.7}
                 />
-                {fill > 0.7 && labelFits(z.x, z.name.length) && (
+                {/* 테두리가 있어야 얼룩이 아니라 영역으로 읽힌다 */}
+                <path
+                  d={polyPath(z)}
+                  fill="none"
+                  stroke={turn > 0.3 ? EDGE : SEA_EDGE}
+                  strokeWidth={u(2.2)}
+                  strokeLinejoin="round"
+                  opacity={0.5 + turn * 0.5}
+                />
+                {/* 사람이 그은 쪽만 굵게 */}
+                <path
+                  d={dikePath(z, draw)}
+                  fill="none"
+                  stroke={DIKE}
+                  strokeWidth={u(9)}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                {turn > 0.6 && labelFits(z.x, z.name.length) && (
                   <text
                     x={z.x}
                     y={z.y + u(9) + u(z.dy ?? 0)}
                     textAnchor="middle"
-                    fontSize={u(27)}
+                    fontSize={u(26)}
                     fontWeight={900}
                     fill="#F3E4BE"
                     style={{ paintOrder: "stroke", stroke: "#100E0A", strokeWidth: u(6) }}
@@ -184,8 +197,8 @@ export const ShortsGanchuk: React.FC = () => {
           {/* 1984년, 물길에 가라앉힌 22만 6천 톤 */}
           {shipOn > 0.02 && (
             <g transform={`translate(${tanker.x} ${tanker.y})`} opacity={shipOn}>
-              <rect x={-u(24)} y={-u(5)} width={u(48)} height={u(10)} rx={u(4)} fill="#EDE5D4" />
-              <rect x={u(7)} y={-u(13)} width={u(10)} height={u(9)} fill="#EDE5D4" />
+              <rect x={-u(16)} y={-u(4)} width={u(32)} height={u(8)} rx={u(3)} fill="#EDE5D4" />
+              <rect x={u(5)} y={-u(10)} width={u(7)} height={u(7)} fill="#EDE5D4" />
             </g>
           )}
         </svg>
