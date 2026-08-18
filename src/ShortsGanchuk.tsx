@@ -8,7 +8,8 @@ import {
 } from "remotion";
 import provinces from "./data/provinces.json";
 import {
-  FIVE_KM2,
+  FIVE_HELD_KM2,
+  FIVE_LAND_KM2,
   G_EVENTS,
   SEOUL_TIMES,
   TANKER,
@@ -16,6 +17,7 @@ import {
   ZONE_XY,
   areaUpTo,
   dikePath,
+  lakePath,
   polyPath,
   yearLabel,
 } from "./data/ganchuk";
@@ -84,8 +86,8 @@ const DIKE = "#F0C877";
 /** 아직 바다인 동안 */
 const SEA = "#1B3A46";
 const SEA_EDGE = "#3E6B80";
-/** 막아서 생긴 땅. 뭍(#231E16)보다 밝게 둬야 '새로 생긴 것'으로 읽힌다. */
-const MADE = "#8A6B33";
+/** 안에 남은 물 */
+const LAKE = "#141F26";
 const EDGE = "#F0C877";
 
 export const ShortsGanchuk: React.FC = () => {
@@ -153,27 +155,43 @@ export const ShortsGanchuk: React.FC = () => {
             if (draw <= 0) return null;
             return (
               <g key={z.id}>
-                {/* 갇힌 물 → 땅. 색이 바뀌는 것이 이 편의 전부다. */}
+                {/*
+                  가둔 물이 뭍이 된다. 다른 색으로 칠하면 표시일 뿐이라
+                  뭍과 같은 색으로 채운다. 반도가 실제로 불룩해진다.
+                */}
                 <path
                   d={polyPath(z)}
-                  fill={turn > 0 ? MADE : SEA}
-                  opacity={0.25 + turn * 0.7}
+                  fill={turn > 0 ? LAND : SEA}
+                  opacity={turn > 0 ? 1 : 0.55}
                 />
-                {/* 테두리가 있어야 얼룩이 아니라 영역으로 읽힌다 */}
+                {/* 그 안에 남은 물 */}
+                {turn > 0.4 && (
+                  <path
+                    d={lakePath(z)}
+                    fill={LAKE}
+                    stroke={COAST}
+                    strokeWidth={u(1.4)}
+                    opacity={(turn - 0.4) / 0.6}
+                  />
+                )}
+                {/*
+                  새로 생긴 자리의 테두리. 처음엔 밝게 들어왔다가 해안선
+                  색으로 잦아든다 — 어디가 늘었는지만 알려주고 물러난다.
+                */}
                 <path
                   d={polyPath(z)}
                   fill="none"
-                  stroke={turn > 0.3 ? EDGE : SEA_EDGE}
-                  strokeWidth={u(2.2)}
+                  stroke={turn > 0 ? EDGE : SEA_EDGE}
+                  strokeWidth={u(2)}
                   strokeLinejoin="round"
-                  opacity={0.5 + turn * 0.5}
+                  opacity={turn > 0 ? Math.max(0.28, 1 - (frame - span.t1 - 44) / 60) : 0.7}
                 />
-                {/* 사람이 그은 쪽만 굵게 */}
+                {/* 사람이 그은 쪽만 굵게 — 이건 계속 남는다 */}
                 <path
                   d={dikePath(z, draw)}
                   fill="none"
                   stroke={DIKE}
-                  strokeWidth={u(9)}
+                  strokeWidth={u(8)}
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
@@ -278,9 +296,9 @@ export const ShortsGanchuk: React.FC = () => {
       {mapIn > 0.5 && !inOutro && (
         <div style={{ position: "absolute", bottom: BOTTOM_INSET, left: SAFE_X, right: SAFE_RIGHT }}>
           <div style={{ color: "#8A8070", fontSize: 20, lineHeight: 1.4 }}>
-            연도와 면적은 기록값 · 면은 만의 모양을 따르되 정밀 측량은 아니다
+            연도와 면적은 기록값 · 테두리는 만의 모양을 따르되 정밀 측량은 아니다
             <br />
-            면적이 기록으로 확인되는 다섯 곳만 그렸다 (고정댓글)
+            안에 남은 호수는 넓이만 맞춰 가운데 앉힌 것 (고정댓글)
           </div>
         </div>
       )}
@@ -301,7 +319,7 @@ export const ShortsGanchuk: React.FC = () => {
           >
             {/* 덩어리는 둘. 숫자 한 줄과 닫는 말. */}
             <div style={{ color: C.dim, fontSize: 32, fontWeight: 700, marginBottom: 10 }}>
-              전국 간척지 누계 — 화면의 다섯은 {Math.round(FIVE_KM2)}km²
+              전국 간척지 누계 — 화면의 다섯은 땅 {Math.round(FIVE_LAND_KM2)}km²
             </div>
             <div style={{ display: "flex", alignItems: "baseline", gap: 20 }}>
               <span

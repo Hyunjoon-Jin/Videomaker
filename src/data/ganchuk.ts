@@ -3,27 +3,43 @@
  *
  * 질문 하나: 바다를 막아 땅을 얼마나 만들었나.
  *
- * ── 세 번 고쳐 그렸다 ───────────────────────────────
- * 1) 방조제를 선으로 그렸다. 안 보였다. 이 축척에서 1px이 약 1.1km라
- *    아산만방조제 2,564m는 2px이다. 선 굵기보다 짧다.
- * 2) 넓이를 원으로 그렸다. 보이기는 하는데 원은 간척지가 아니다.
- *    "제대로 간척된 영역을 선을 긋고 영역에 색을 칠해서" 보여달라는
- *    말을 들었고 맞는 말이었다. 이 편은 넓이가 아니라 땅에 대한 편이다.
- * 3) 지금 것 — 방조제는 선으로 긋고 그 안쪽을 면으로 칠한다.
+ * ── 다섯 번 고쳐 그렸다 ─────────────────────────────
+ * 1) 방조제를 선으로만. 안 보였다 — 이 축척에서 1px이 1.1km라
+ *    아산만방조제 2,564m는 선 굵기보다 짧다.
+ * 2) 넓이를 원으로. 원은 간척지가 아니다.
+ * 3) 방조제에서 안쪽으로 사각형을 뻗어 칠했다. 얼룩이었다.
+ * 4) 만 모양을 따르는 도형으로 바꾸고 테두리를 굴렸다.
+ * 5) 지금 것 — 두 가지를 고쳤다.
  *
- * ── 없는 데이터를 짓지 않으면서 면을 칠하는 법 ──────
- * 시대별 해안선 폴리곤이 없다. 그래서 옛 해안선을 그리지 않는다.
- * 대신 **방조제(실좌표) + 만 안쪽 가장자리**로 닫힌 도형을 만든다.
- * 방조제는 손대지 않고 안쪽 가장자리만 방조제 선에서 떨어진 거리를
- * 배율로 조절해, 도형의 넓이가 기록값과 정확히 같아지게 맞춘다
- * (shoelace로 재서 확인한다).
+ * ── 막은 물과 땅이 된 몫은 다르다 ───────────────────
+ * "막힌 구간 전체가 다 간척된 게 아닌 거야?"라는 말을 들었다. 맞다.
+ * 방조제로 가둔 물 전체가 땅이 되지 않는다. 안쪽에 담수호가 남는다.
  *
- * 그러니 이 도형은 만의 모양을 따르고 넓이는 기록값이다. 정밀 측량은
- * 아니므로 경계의 잔굽이는 없다. 화면과 고정댓글에 그렇게 밝힌다.
+ *   계화도   막은 물 39.68 = 농경지 27.04 + 저수지·수로 12.64
+ *   서산 B   57.82 = 42.20 + 담수호 15.62
+ *   서산 A   96.26 = 68.93 + 담수호 27.33
+ *   시화     165.46 = 간척지 108.96 + 시화호 56.50
+ *   새만금   409.00 = 토지 291.00 + 담수호 118.00
  *
- * 4) 네 번째 판에서 경계를 선으로 두르고 바다색이 땅색으로 바뀌게 했다.
- *    "대충 칠해 놓은 느낌이라 얼마나 넓어진 건지 안 와닿는다"는 말을
- *    들었다. 면만 칠하면 얼룩이고, 테두리가 있어야 영역이 된다.
+ * 그래서 화면에 둘을 같이 그린다. 가둔 물 전체가 뭍이 되고, 그 안에
+ * 남은 물이 호수로 들어앉는다. 화면 위 숫자는 **땅**만 센다 — 이 편의
+ * 질문이 그것이기 때문이다.
+ *
+ * ── 색칠이 아니라 땅이 늘어야 한다 ──────────────────
+ * "지도에 변화가 전혀 없고 그냥 색을 바다에 칠하는 느낌"이라는 말도
+ * 들었다. 그것도 맞다. 새로 생긴 땅을 다른 색으로 칠하면 그건 표시지
+ * 지형이 아니다. 그래서 간척지를 **뭍과 같은 색**으로 칠한다. 반도가
+ * 실제로 그만큼 불룩해진다. 새로 생긴 자리는 테두리가 잠깐 밝았다가
+ * 잦아들어, 어디가 늘었는지만 알려주고 물러난다.
+ *
+ * 바탕 지도(provinces.json)의 해안선에는 이 간척지들이 안 들어 있다.
+ * 그래서 얹으면 실제로 육지가 커진다.
+ *
+ * ── 정직하게 ────────────────────────────────────────
+ * 방조제는 실좌표다. 가둔 물의 테두리는 만의 모양을 따르되 정밀
+ * 측량이 아니고, 넓이만 기록값에 맞췄다(shoelace로 검산).
+ * 안에 남은 호수는 넓이만 맞춰 가운데에 앉힌 것이라 실제 위치·모양이
+ * 아니다. 화면과 고정댓글에 그렇게 밝힌다.
  */
 import { project } from "./places";
 
@@ -39,8 +55,10 @@ export interface Zone {
   id: string;
   name: string;
   year: number;
-  /** 총 매립면적(km²) — 기록값 */
+  /** 방조제로 가둔 물 전체(km²) — 기록값 */
   km2: number;
+  /** 그중 물로 남은 몫(담수호 등) */
+  water: number;
   /** 방조제 길이 — 기록값 */
   len: string;
   /** 방조제. 실좌표이고 여러 점을 지날 수 있다(새만금은 섬 넷). */
@@ -67,7 +85,7 @@ export interface Zone {
  */
 export const ZONES: Zone[] = [
   {
-    id: "gyehwa", name: "계화도", year: 1968, km2: 39.68, len: "9,254m + 3,556m",
+    id: "gyehwa", name: "계화도", year: 1968, km2: 39.68, water: 12.64, len: "9,254m + 3,556m",
     dike: [[126.705, 35.775], [126.672, 35.782], [126.645, 35.792], [126.612, 35.802]],
     shore: [
       [126.612, 35.818], [126.624, 35.834], [126.646, 35.840],
@@ -76,7 +94,7 @@ export const ZONES: Zone[] = [
     side: "right", dy: -86,
   },
   {
-    id: "seosanB", name: "서산 B지구", year: 1982, km2: 57.82, len: "1,228m",
+    id: "seosanB", name: "서산 B지구", year: 1982, km2: 57.82, water: 15.62, len: "1,228m",
     dike: [[126.372, 36.612], [126.359, 36.607]],
     shore: [
       [126.348, 36.628], [126.344, 36.652], [126.352, 36.676], [126.368, 36.696],
@@ -86,7 +104,7 @@ export const ZONES: Zone[] = [
     side: "right",
   },
   {
-    id: "seosanA", name: "서산 A지구", year: 1984, km2: 96.26, len: "6,458m",
+    id: "seosanA", name: "서산 A지구", year: 1984, km2: 96.26, water: 27.33, len: "6,458m",
     dike: [[126.388, 36.572], [126.404, 36.558], [126.420, 36.543], [126.437, 36.528]],
     shore: [
       [126.472, 36.530], [126.500, 36.544], [126.516, 36.566], [126.512, 36.592],
@@ -96,7 +114,7 @@ export const ZONES: Zone[] = [
     side: "right", dy: 20,
   },
   {
-    id: "sihwa", name: "시화", year: 1994, km2: 123.02, len: "12.7km",
+    id: "sihwa", name: "시화", year: 1994, km2: 165.46, water: 56.50, len: "12.7km",
     dike: [[126.682, 37.342], [126.655, 37.312], [126.630, 37.282], [126.602, 37.249]],
     shore: [
       [126.620, 37.236], [126.646, 37.230], [126.678, 37.234], [126.704, 37.242],
@@ -106,7 +124,7 @@ export const ZONES: Zone[] = [
     side: "right",
   },
   {
-    id: "saemangeum", name: "새만금", year: 2010, km2: 409, len: "33.9km",
+    id: "saemangeum", name: "새만금", year: 2010, km2: 409, water: 118, len: "33.9km",
     dike: [
       [126.518, 35.952], [126.500, 35.905], [126.478, 35.855], [126.470, 35.828],
       [126.466, 35.802], [126.492, 35.772], [126.545, 35.745], [126.575, 35.728],
@@ -202,13 +220,41 @@ export const ZONE_XY = ZONES.map((z) => {
   for (let i = 1; i < D.length; i++) {
     dikeKm += Math.hypot(D[i].x - D[i - 1].x, D[i].y - D[i - 1].y) * KM_PER_UNIT;
   }
-  return { ...z, D, poly, x: cx, y: cy, drawnKm2: areaKm2(poly), dikeKm };
+  /*
+   * 안에 남은 물. 같은 모양을 가운데에서 √(물/전체)만큼 줄여 앉힌다.
+   * 넓이는 기록값이지만 자리와 모양은 실제가 아니다 — 시화호는 방조제
+   * 쪽에 붙어 있고 새만금 담수호는 동쪽에 치우쳐 있다.
+   */
+  const shrink = Math.sqrt(z.water / z.km2);
+  const lake = poly.map((p) => ({
+    x: cx + (p.x - cx) * shrink,
+    y: cy + (p.y - cy) * shrink,
+  }));
+  return {
+    ...z,
+    D,
+    poly,
+    lake,
+    x: cx,
+    y: cy,
+    land: z.km2 - z.water,
+    drawnKm2: areaKm2(poly),
+    drawnLakeKm2: areaKm2(lake),
+    dikeKm,
+  };
 });
 
-/** 막힌 물 전체의 테두리 */
+/** 가둔 물 전체의 테두리 — 이만큼이 뭍이 된다 */
 export function polyPath(z: (typeof ZONE_XY)[number]): string {
   return (
     z.poly.map((p, i) => `${i ? "L" : "M"}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join("") + "Z"
+  );
+}
+
+/** 그 안에 남은 물 */
+export function lakePath(z: (typeof ZONE_XY)[number]): string {
+  return (
+    z.lake.map((p, i) => `${i ? "L" : "M"}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join("") + "Z"
   );
 }
 
@@ -230,12 +276,16 @@ export function dikePath(z: (typeof ZONE_XY)[number], t = 1): string {
   return seg.map((p, i) => `${i ? "L" : "M"}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join("");
 }
 
-/** 그 해까지의 누계 면적 */
+/** 그 해까지 새로 생긴 땅의 누계 — 가둔 물이 아니라 땅만 센다 */
 export function areaUpTo(year: number): number {
-  return ZONES.filter((z) => z.year <= year + 0.001).reduce((s, z) => s + z.km2, 0);
+  return ZONES.filter((z) => z.year <= year + 0.001).reduce(
+    (s, z) => s + (z.km2 - z.water),
+    0
+  );
 }
 
-export const FIVE_KM2 = ZONES.reduce((s, z) => s + z.km2, 0);
+export const FIVE_LAND_KM2 = ZONES.reduce((s, z) => s + (z.km2 - z.water), 0);
+export const FIVE_HELD_KM2 = ZONES.reduce((s, z) => s + z.km2, 0);
 
 export function yearLabel(y: number): string {
   return `${Math.floor(y)}년`;
@@ -268,28 +318,28 @@ export interface GEvent {
 export const G_EVENTS: GEvent[] = [
   {
     year: 1968, zone: "gyehwa", kicker: "1968년 · 전북 부안",
-    title: "계화도 39.7km²",
-    detail: "최초의 대규모 간척 · 방조제 9,254m + 3,556m", impact: 0.9, zoom: 7.5,
+    title: "계화도 27.0km²",
+    detail: "가둔 물 39.7km² 중 · 최초의 대규모 간척", impact: 0.9, zoom: 7.5,
   },
   {
-    year: 1982, zone: "seosanB", kicker: "1982년 · 충남 서산",
-    title: "서산 B지구 57.8km²",
-    detail: "방조제 1,228m", impact: 0.7, zoom: 8.5,
+    year: 1982, zone: "seosanB", kicker: "1982년 · 충남 서산 부남호",
+    title: "서산 B지구 42.2km²",
+    detail: "가둔 물 57.8km² 중 · 방조제 1,228m", impact: 0.7, zoom: 8.5,
   },
   {
-    year: 1984, zone: "seosanA", kicker: "1984년 · 충남 서산",
-    title: "서산 A지구 96.3km²",
+    year: 1984, zone: "seosanA", kicker: "1984년 · 충남 서산 간월호",
+    title: "서산 A지구 68.9km²",
     detail: "22만 6천 톤 폐유조선으로 물막이 · 방조제 6,458m", impact: 1, zoom: 7.0, tanker: true,
   },
   {
     year: 1994, zone: "sihwa", kicker: "1994년 · 경기 시흥·안산",
-    title: "시화 123.0km²",
-    detail: "1987년 착공, 1994년 1월 24일 물막이 · 방조제 12.7km", impact: 0.9, zoom: 7.0,
+    title: "시화 109.0km²",
+    detail: "가둔 물 165.5km² 중 · 시화호로 56.5km²가 남음", impact: 0.9, zoom: 7.0,
   },
   {
     year: 2010, zone: "saemangeum", kicker: "2010년 · 전북 군산·부안",
-    title: "새만금 409km²",
-    detail: "토지 291km² + 담수호 118km² · 방조제 33.9km", impact: 1, zoom: 4.2,
+    title: "새만금 291km²",
+    detail: "가둔 물 409km² 중 · 담수호 118km² · 방조제 33.9km", impact: 1, zoom: 4.2,
   },
   {
     year: 2010.6, kicker: "세계 최장",
