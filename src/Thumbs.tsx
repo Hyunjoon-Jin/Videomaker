@@ -12,6 +12,7 @@ import { XY as TS_XY, traveled } from "./data/tongsinsa";
 import { ZONE_XY, dikePath, polyPath } from "./data/ganchuk";
 import { AKASHI, MERIDIANS, SEOUL, meridianPath, meridianX } from "./data/timezone";
 import { FLIGHT, OLD_SAGO, flightPathTo } from "./data/sillok";
+import { MAP_KOREA, MAP_LANDS, MARKED, MAX_DEPTH, PROFILE, TRENCH_LON, colorOf, lonX, radiusOf as qRadius } from "./data/quake";
 import { C, INK } from "./theme";
 import { Grain } from "./Grain";
 import { useFonts } from "./fonts";
@@ -170,6 +171,7 @@ const BAND = {
   ganchuk: "#3E6B62",   // 갯벌 위의 물빛
   tz: "#4E4867",        // 남보라 — 새벽하늘
   sillok: "#63333F",    // 자단빛 — 책갑 물들이던 색
+  quake: "#5E2E1C",     // 녹슨 쇠 — 땅속. 6·25의 붉은 흙과 갈리게 더 어둡게
 } as const;
 
 /**
@@ -690,6 +692,94 @@ export const ThumbSillok: React.FC = () => (
       unit="일"
       label="선비 둘이 실록을 지킨 날"
       band={BAND.sillok}
+    />
+  </Frame>
+);
+
+/* ── 11. 한반도 밑 ────────────────────────────────────
+   이 채널 썸네일 중 유일하게 지도가 아니라 단면이다. 200px으로 줄이면
+   왼쪽 아래로 비스듬히 내려가는 점의 띠만 남는데, 그 형태가 곧 이 편의
+   답이라 글자를 못 읽어도 그림이 먼저 말한다.
+
+   위에 반도와 일본을 띠로 얹어 어디를 자른 단면인지 알아보게 했다.
+   축척은 본편과 같은 1:1이라 보이는 기울기가 실제 기울기다. */
+const QK_LON0 = 128.5;
+const QK_LON1 = 146.5;
+/** 잘라 쓸 경도 구간의 폭(지도 단위) */
+const QK_W = lonX(QK_LON1) - lonX(QK_LON0);
+
+export const ThumbQuake: React.FC = () => (
+  <Frame>
+    {/* 반도와 일본 — 어디를 자른 것인지 */}
+    <div style={{ position: "absolute", left: 0, right: 0, top: 150, height: 300, opacity: 0.95 }}>
+      <svg
+        viewBox={`${lonX(QK_LON0)} 300 ${QK_W} ${(300 / 1080) * QK_W}`}
+        preserveAspectRatio="xMidYMid slice"
+        style={{ width: "100%", height: "100%", display: "block" }}
+      >
+        {MAP_LANDS.map((l, i) => (
+          <path key={i} d={l.d} fill={M.land} stroke={M.coast} strokeWidth={2} />
+        ))}
+        {MAP_KOREA.map((d, i) => (
+          <path key={`k${i}`} d={d} fill={M.land} stroke={M.coast} strokeWidth={2} />
+        ))}
+      </svg>
+    </div>
+
+    {/* 단면 */}
+    <div style={{ position: "absolute", left: 0, right: 0, top: 490, height: (350 / QK_W) * 1080 }}>
+      <svg
+        viewBox={`${lonX(QK_LON0)} 0 ${QK_W} 350`}
+        preserveAspectRatio="none"
+        style={{ width: "100%", height: "100%", display: "block" }}
+      >
+        {[200, 400, 600].map((d) => (
+          <line
+            key={d}
+            x1={lonX(QK_LON0)}
+            y1={(d / MAX_DEPTH) * 350}
+            x2={lonX(QK_LON1)}
+            y2={(d / MAX_DEPTH) * 350}
+            stroke="#5A5045"
+            strokeWidth={1.6}
+          />
+        ))}
+        <line
+          x1={lonX(TRENCH_LON)}
+          y1={0}
+          x2={lonX(TRENCH_LON)}
+          y2={350}
+          stroke="#C4B79B"
+          strokeWidth={3}
+        />
+        {PROFILE.map((q, i) => (
+          <circle
+            key={i}
+            cx={lonX(q.lon)}
+            cy={(q.d / MAX_DEPTH) * 350}
+            r={qRadius(q.m) * 0.95}
+            fill={colorOf(q.d)}
+            opacity={0.85}
+          />
+        ))}
+        {/* 가장 깊은 것 */}
+        <circle
+          cx={lonX(MARKED.deepest.lon)}
+          cy={(MARKED.deepest.d / MAX_DEPTH) * 350}
+          r={14}
+          fill="none"
+          stroke="#F3E7CC"
+          strokeWidth={4}
+        />
+      </svg>
+    </div>
+
+    <Face
+      topic="함경북도 앞바다"
+      big="645"
+      unit="km"
+      label="그 밑에서 지진이 난 깊이"
+      band={BAND.quake}
     />
   </Frame>
 );
