@@ -346,6 +346,101 @@ npx remotion still <편> out/f0.png --frame=0
 고친 뒤 0프레임 찬 비율이 0.0%에서 2.6~4.2%로 올라갔다. 훅이 2.3초
 짧아져 열 편 길이가 전부 바뀌었고 BGM도 다시 잘랐다.
 
+## 60초가 상한이다 — 취향이 아니라 차단 조건
+
+표준시 편이 **전 세계 차단**됐다. 스튜디오 통지는 이렇게 나왔다.
+
+> 저작권 소유자가 설정한 길이 제한을 초과하는 소유권 주장이 제기된
+> 콘텐츠가 포함되어 있어 Shorts 동영상을 재생할 수 없습니다.
+>
+> 소유권 주장: Half Mystery — Kevin MacLeod / 저작권 오디오
+> 전 세계에서 동영상이 차단되고 수익을 창출할 수 없게 됩니다.
+
+**표준시 편은 60.17초다. 5프레임 초과였다.**
+
+### 규정
+
+YouTube 도움말(`support.google.com/youtube/answer/6013276`) 원문:
+
+> 2024년 10월 15일부터 1~3분 길이의 모든 새로운 세로 동영상은
+> YouTube에서 Shorts 동영상으로 분류됩니다.
+>
+> 길이가 1분을 넘는 Shorts 동영상에 활성 상태의 Content ID 소유권
+> 주장이 있는 경우 **정책과 관계없이** YouTube에서 차단됩니다.
+>
+> 1~3분 길이의 Shorts 동영상: 활성 소유권 주장이 적용된 경우 **정책과
+> 관계없이** 소유권 주장이 제기된 동영상이 차단됩니다.
+
+**'정책과 관계없이'가 핵심이다.** 3분을 넘는 일반 동영상은 소유권자가
+'수익 창출'을 걸어두면 계속 볼 수 있다. 1~3분 쇼츠는 주장이 살아 있는
+것만으로 차단된다. 곡을 바꿔서 되는 문제가 아니고 **길이가 조건이다.**
+
+### 왜 클레임이 걸렸나 — 피할 수 없는 것이었다
+
+incompetech의 Content ID 안내(`incompetech.com/music/royalty-free/youtube-contentid.html`):
+
+> If someone registers my music as belonging to them, it can take months
+> to unwind the false claim... By making this change, and having the music
+> **pre-registered**, it stops the baddies and bad data from claiming my
+> music incorrectly.
+
+**Kevin MacLeod가 본인 음악을 직접 Content ID에 등록해 뒀다.** 제3자가
+도둑 등록하는 것을 막으려고. 그래서 클레임은 버그가 아니라 설계된
+동작이고, **곡을 어떻게 고르든 걸린다.**
+
+풀는 방법은 정해져 있다.
+
+> Place Credit. Somewhere in the **text description**, you should put a
+> credit, something like: "SongTitle" by Kevin MacLeod. Be sure to add
+> credits **BEFORE YOU DISPUTE THE CLAIM**.
+>
+> Dispute the claim... released within **72 hours** and likely much faster.
+>
+> 여러 편이면 일괄 해제: `https://forms.gle/xSmgLPuXtkvTxPHe6`
+> 그래도 안 되면 `help@incompetech.com`
+
+이 문서에 표기 문구를 적어두고 "CC BY라 상업적 이용까지 자유롭다"로
+끝냈다. **표기 문구를 설명란에 넣는 것이 예의가 아니라 클레임 해제의
+전제 조건이라는 걸 안 적었다.** 라이선스가 자유로운 것과 Content ID에
+등록돼 있지 않은 것은 다른 문제인데 같은 것으로 봤다.
+
+### 지금 상태
+
+`python3 scripts/check-lengths.py`
+
+| 편 | 길이 | |
+|---|---|---|
+| 임진왜란 20초 판 | 20.20초 | 괜찮음 |
+| 태풍 20초 판 | 20.20초 | 괜찮음 |
+| 인구 | 40.00초 | 괜찮음 |
+| 태풍 | 57.17초 | 괜찮음 |
+| **표준시** | **60.17초** | **차단됨** |
+| 간척 | 61.20초 | 1.20초 초과 |
+| 단전 | 64.00초 | 4.00초 초과 |
+| 봉수 | 65.00초 | 5.00초 초과 |
+| 한반도 밑 | 73.60초 | 13.60초 초과 |
+| 실록 사고 | 79.00초 | 19.00초 초과 |
+| 통신사 | 85.43초 | 25.43초 초과 |
+| 임진왜란 | 92.00초 | 32.00초 초과 |
+| 6·25 | 98.47초 | 38.47초 초과 |
+| 철도 | 140.00초 | 80.00초 초과 |
+
+**열넷 중 열이 지뢰 위에 있다.**
+
+### 규칙
+
+1. **쇼츠는 59초 이하.** 경계는 60.0초지만 5프레임에 한 편이 죽는 걸
+   봤다. 자막 한 줄 고치면 길이가 바뀌는 구조라 경계에 붙여둘 이유가 없다.
+2. **표기 문구는 설명란 텍스트에.** 영상 안에 넣은 것은 자동으로 못 읽는다.
+3. **렌더 전에 `scripts/check-lengths.py`를 돌린다.** BGM 길이 확인과
+   같은 자리에서.
+
+### 앞서 '길이는 원인이 아닐 수도 있다'고 적은 것
+
+아래 「길이 — 짐작 대신 두 판을 올린다」는 길이가 노출에 영향을 주는지
+모르니 두 판을 올려 보자는 것이었다. 그 실험은 여전히 유효하지만
+**전제가 바뀌었다.** 60초는 이제 실험 변수가 아니라 상한이다.
+
 ## 길이 — 짐작 대신 두 판을 올린다
 
 평균 83.8초, 최장 142.3초(철도)다. 쇼츠에서 완주율이 유지되는 구간의
