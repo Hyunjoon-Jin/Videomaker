@@ -21,7 +21,7 @@ YouTube 오디오 보관함은 스튜디오 로그인이 필요해 이 환경에
 일이 없다. 지도가 그려지는 동안 화면 밑에 깔려 시간이 가고 있다는 것만
 알려주면 된다. 그건 다른 문제고, 훨씬 손에 잡힌다.
 
-네 겹을 쌓는다.
+세 겹을 쌓는다.
 
   패드   화음. 음 하나를 배음 여섯 개로 쌓고 각각 몇 센트씩 어긋나게
          둔다. 어긋난 배음들이 서로 스치면서 나는 느린 맥놀이가
@@ -29,10 +29,13 @@ YouTube 오디오 보관함은 스튜디오 로그인이 필요해 이 환경에
          달리 줘서 그 스침이 규칙적으로 들리지 않게 한다.
   저음   근음 한 옥타브 아래 사인. 휴대폰에서는 거의 안 들리지만 이게
          없으면 이어폰에서 바닥이 빈다.
-  맥     2초마다 한 번. 화음의 5도를 짧게 때리고 지수적으로 죽인다.
-         밀어붙이지 않으면서 시간을 세는 것은 이 층이 한다.
   공기   아주 낮은 잡음을 느리게 부풀렸다 줄인다. 이게 없으면 소리가
          너무 깨끗해서 죽은 것처럼 들린다.
+
+'맥' 층이 하나 더 있었다 — 2초마다 화음의 5도를 짧게 때리고 지수적으로
+죽여 시간을 세게 하려던 것이다. 순음을 지수적으로 죽이면 그게 정확히
+오르골이라, 빼라는 말을 듣고 뺐다. 이 채널의 바탕에 시계는 필요 없다.
+화면에 이미 연도 계기판이 돌고 있다.
 
 여기에 잔향을 건다. scipy가 없어 FDN(피드백 지연망)을 직접 짰다 —
 서로 소수(素數)인 지연선 넷을 되먹이고, 되먹임 고리 안에 1극 저역통과를
@@ -89,7 +92,6 @@ PIECES = {
             ["D3", "F3", "A3"],     # Dm
             ["D3", "G3", "A3"],     # Dsus4 — 안 풀고 매달아 둔다
         ],
-        pulse="A3",
         bright=0.72,
     ),
 }
@@ -157,33 +159,6 @@ def sub(chord: list[str], n: int) -> np.ndarray:
     t = np.arange(n) / SR
     f = hz(chord[0]) / 2
     return 0.24 * np.sin(2 * np.pi * f * t) * adsr(n, 0.9, 0.6, 0.92, 2.4)
-
-
-def pulse(note: str, n: int, every: float, rng) -> np.ndarray:
-    """
-    2초마다 한 번. 시간을 세는 층.
-
-    짧은 잡음 한 조각을 앞에 붙여 때리는 느낌을 만들고, 그 뒤로 순음
-    둘(1도와 2배음)을 지수적으로 죽인다. 잡음이 없으면 '삐' 소리고,
-    잡음만 있으면 타악기다. 둘을 겹쳐야 나무를 두드린 것처럼 들린다.
-    """
-    out = np.zeros(n)
-    f = hz(note)
-    step = int(every * SR)
-    dur = int(1.6 * SR)
-    tt = np.arange(dur) / SR
-    body = (np.sin(2 * np.pi * f * tt) + 0.35 * np.sin(2 * np.pi * f * 2 * tt))
-    body *= np.exp(-tt * 3.2)
-    tick = rng.normal(0, 1, int(0.012 * SR))
-    tick *= np.exp(-np.arange(len(tick)) / (0.004 * SR)) * 0.5
-    for i0 in range(0, n, step):
-        # 세기를 조금씩 흔든다. 똑같으면 기계가 된다.
-        g = 0.34 * rng.uniform(0.82, 1.0)
-        seg = body[: min(dur, n - i0)]
-        out[i0: i0 + len(seg)] += g * seg
-        tk = tick[: min(len(tick), n - i0)]
-        out[i0: i0 + len(tk)] += g * 0.55 * tk
-    return out
 
 
 def air(n: int, rng) -> np.ndarray:
@@ -307,7 +282,6 @@ def build(key: str, seconds: float, seed: int = 7) -> np.ndarray:
         i += bar
         c += 1
     mono = mono[:total]
-    mono += pulse(p["pulse"], total, 2.0, rng)
     mono += air(total, rng)
     mono = reverb(mono)
 
