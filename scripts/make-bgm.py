@@ -147,6 +147,24 @@ def bowed(f0: float, n: int, cutoff: float, rng) -> np.ndarray:
     시간 영역에서 오실레이터를 서른둘씩 돌리면 느리다. 어차피 통째로
     들고 있으니 주파수 영역에 배음을 직접 꽂고 한 번에 되돌린다. 버퍼가
     11초라 빈 간격이 0.09Hz다 — 반올림 오차는 안 들린다.
+
+    ── n/2를 곱하는 이유 ──
+
+    처음에 이걸 빼먹고 무음을 만들었다. numpy의 irfft는 1/n 정규화를
+    포함한다. 빈 하나에 크기 A를 꽂고 되돌리면 나오는 사인의 진폭이
+    A가 아니라 2A/n이다. n이 11초×48000 = 528,000이라 진폭이 백만분의
+    이로 줄어든다.
+
+    그렇게 만든 판을 들려주고 "아무 소리도 안 들리고 파도 소리만 난다"는
+    말을 들었다. 패드가 통째로 죽고 저음층(58~73Hz, 휴대폰에서 안 들림)과
+    공기층 잡음만 남았는데, RMS 정규화가 그 잡음을 목표 음량까지 끌어올린
+    것이다. 정규화는 무엇이 남았든 그것을 크게 만든다.
+
+    더 나쁜 건 지표가 이걸 못 잡았다는 것이다. 잡음은 스펙트럼이 넓고
+    고르기 점수가 좋게 나온다. 중역 48%, 고르기 3.68로 채택 곡들 한복판에
+    앉아 있었는데 내용은 잡음이었다. 그래서 아래 build()에서 층별 실효값을
+    같이 찍는다 — 무엇이 실제로 소리를 내고 있는지 보이지 않으면 같은
+    일이 또 난다.
     """
     X = np.zeros(n // 2 + 1, dtype=complex)
     df = SR / n
@@ -157,7 +175,7 @@ def bowed(f0: float, n: int, cutoff: float, rng) -> np.ndarray:
             break
         amp = (1.0 / k) / np.sqrt(1 + (f / cutoff) ** 4)
         X[b] += amp * np.exp(1j * rng.uniform(0, 2 * np.pi))
-    return np.fft.irfft(X, n)
+    return np.fft.irfft(X, n) * (n / 2)
 
 
 def pad(chord: list[str], n: int, cutoff: float, rng) -> np.ndarray:
@@ -316,18 +334,31 @@ def build(key: str, seconds: float, seed: int = 7) -> np.ndarray:
     span = int(11.0 * SR)
     total = int(math.ceil(seconds * SR))
     mono = np.zeros(total + span)
+    # 층별 실효값. 한 층이 죽어도 정규화가 남은 층을 키워버려 파일은
+    # 멀쩡해 보인다. 실제로 패드가 통째로 죽고 잡음만 남은 판을 한 번
+    # 내보냈다. 무엇이 소리를 내고 있는지 눈으로 봐야 한다.
+    LV: dict[str, float] = {}
     i = 0
     c = 0
     while i < total:
         ch = p["chords"][c % len(p["chords"])]
-        seg = pad(ch, span, p["cutoff"], rng) + sub(ch, span)
+        a_pad = pad(ch, span, p["cutoff"], rng)
+        a_sub = sub(ch, span)
+        if c == 0:
+            LV["패드"] = float(np.sqrt(np.mean(a_pad ** 2)))
+            LV["저음"] = float(np.sqrt(np.mean(a_sub ** 2)))
         n = min(span, len(mono) - i)
-        mono[i:i + n] += seg[:n]
+        mono[i:i + n] += (a_pad + a_sub)[:n]
         i += bar
         c += 1
     mono = mono[:total]
-    mono += air(total, rng)
+    a_air = air(total, rng)
+    LV["공기"] = float(np.sqrt(np.mean(a_air ** 2)))
+    mono += a_air
     mono = reverb(mono)
+
+    ref = LV["패드"] or 1.0
+    build.levels = {k: v / ref for k, v in LV.items()}  # type: ignore[attr-defined]
 
     # 큰 숨.
     #
@@ -391,6 +422,11 @@ def main() -> None:
     print(f"{out} · {seconds:.1f}s · 직접 합성 (소유권 주장 대상 아님)")
     print(f"   중역 200~4000Hz {mid * 100:.0f}%  (고른 음원들이 43~88%)")
     print(f"   고르기 {even:.2f}          (고른 음원들이 3.3~4.9)")
+    lv = getattr(build, "levels", {})
+    if lv:
+        # 패드를 1로 놓은 상대 실효값. 패드가 죽으면 여기서 바로 보인다.
+        line = "  ".join(f"{k} {v:.3f}" for k, v in lv.items())
+        print(f"   층별 세기(패드=1)  {line}")
     print(f"   {PIECES[key]['why']}")
 
 
