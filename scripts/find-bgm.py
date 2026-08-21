@@ -85,6 +85,9 @@ BAD = ["비영리", "변경금지", "NC", "ND", "제2유형", "제3유형", "제
 # 20초 미만은 효과음으로 본다. 이 목록에 효과음이 수천 건 섞여 있다.
 MIN_SEC = 20.0
 
+# 편 하나에 필요한 길이. 이만큼 고른 구간이 곡 안에 있는지를 본다.
+NEED = 58.0
+
 
 def get(url: str, referer: str = BASE) -> bytes:
     req = urllib.request.Request(url, headers={
@@ -125,18 +128,34 @@ def search(word: str, pages: int = 1) -> list[str]:
     return out
 
 
+# 이용조건은 대개 글자가 아니라 아이콘의 alt에 들어 있다. 처음에 본문
+# 텍스트만 긁었더니 여덟 건 중 일곱 건이 "공표년도 창작년도"를 물어왔다.
+LIC_IMG = re.compile(
+    r'<img[^>]*(?:alt|title)="([^"]*(?:공공누리|CC BY|만료|기증)[^"]*)"', re.I)
+
+
 def detail(sn: str) -> dict:
-    """제목과 이용조건 문구를 긁어온다."""
-    t = text_of(get(f"{VIEW}?wrtSn={sn}&menuNo=200020"))
+    """제목과 이용조건을 긁어온다."""
+    raw = get(f"{VIEW}?wrtSn={sn}&menuNo=200020").decode("utf-8", "replace")
+    t = text_of(raw.encode("utf-8"))
     title = ""
     m = re.search(r"저작물명\s*(.{2,60}?)\s*저작\(권\)자", t)
     if m:
         title = m.group(1)
+
+    # 사이드바 검색 필터에도 CC-BY-NC 같은 것이 잔뜩 있어서 문서 전체에서
+    # 첫 번째를 집으면 엉뚱한 걸 문다. '이용조건' 라벨 뒤부터 찾는다.
     lic = ""
-    m = re.search(r"이용조건\s*(.{4,160}?)\s*(?:공표년도|분류)", t)
-    if m:
-        lic = m.group(1)
-    return {"sn": sn, "title": title, "license": lic}
+    i = raw.find("이용조건")
+    if i > 0:
+        m = LIC_IMG.search(raw, i)
+        if m:
+            lic = m.group(1).strip()
+    if not lic:
+        m = re.search(r"이용조건\s*(.{4,160}?)\s*(?:공표년도|분류)", t)
+        if m and "공표년도" not in m.group(1):
+            lic = m.group(1)
+    return {"sn": sn, "title": title, "license": lic or "(못 읽음 — 직접 확인)"}
 
 
 def fetch_audio(sn: str) -> str | None:
@@ -174,17 +193,45 @@ def decode(path: str) -> "np.ndarray | None":
     return pcm.reshape(-1, 2).astype(np.float64) / 32768.0
 
 
-def measure(a: "np.ndarray") -> tuple[float, float, float]:
-    m = a.mean(axis=1)
+def band_mid(m: "np.ndarray") -> float:
     X = np.abs(np.fft.rfft(m * np.hanning(len(m))))
     f = np.fft.rfftfreq(len(m), 1 / SR)
-    band = (f >= 200) & (f <= 4000)
-    mid = float(X[band].sum() / (X.sum() or 1))
+    return float(X[(f >= 200) & (f <= 4000)].sum() / (X.sum() or 1))
+
+
+def best_window(a: "np.ndarray", need: float) -> dict:
+    """
+    곡 안에서 가장 고른 need초 구간을 찾는다.
+
+    처음에 곡 전체로 재고 고르기가 낮다고 후보를 버렸다. 그건 잘못된
+    검사다. fetch-bgm.py가 하던 일이 원래 '곡 안에서 잘라 쓸 구간을
+    고르는 것'이었다. 곡에는 도입부도 있고 끝맺음도 있어서 전체로 재면
+    당연히 편차가 크게 나온다. 우리가 알고 싶은 것은 '이 곡 안에 쓸 만한
+    58초가 있는가'다.
+
+    0.25초 RMS 포락선을 만들어 두고 창을 밀며 고르기를 잰다.
+    """
+    m = a.mean(axis=1)
+    total = len(m) / SR
+    if total < need:
+        return {"sec": total, "start": 0.0, "mid": band_mid(m),
+                "even": 0.0, "fits": False}
     w = int(0.25 * SR)
     env = np.array([np.sqrt(np.mean(m[i:i + w] ** 2))
-                    for i in range(0, max(1, len(m) - w), w)])
-    even = float(env.mean() / (env.std() or 1e-9))
-    return len(m) / SR, mid, even
+                    for i in range(0, len(m) - w, w)])
+    span = int(need / 0.25)
+    best = (-1.0, 0)
+    for s0 in range(0, len(env) - span, 4):   # 1초 간격으로 훑는다
+        e = env[s0:s0 + span]
+        sd = e.std() or 1e-9
+        sc = e.mean() / sd
+        if sc > best[0]:
+            best = (sc, s0)
+    even, s0 = best
+    t0 = s0 * 0.25
+    seg = m[int(t0 * SR): int((t0 + need) * SR)]
+    return {"sec": total, "start": t0, "mid": band_mid(seg),
+            "even": float(even), "fits": True}
 
 
 def main() -> None:
@@ -214,21 +261,20 @@ def main() -> None:
             a = decode(p)
             if a is None or len(a) == 0:
                 continue
-            sec, mid, even = measure(a)
-            if sec < MIN_SEC:
+            w = best_window(a, NEED)
+            if w["sec"] < MIN_SEC or not w["fits"]:
                 os.remove(p)
                 continue
             bad = [b for b in BAD if b in d["license"]]
-            rows.append({**d, "sec": sec, "mid": mid, "even": even,
-                         "bad": bad, "path": p, "word": word})
+            rows.append({**d, **w, "bad": bad, "path": p, "word": word})
 
-    rows.sort(key=lambda r: (bool(r["bad"]), -r["mid"]))
-    print(f"\n{'wrtSn':<10}{'길이':>7}{'중역':>6}{'고르기':>7}  제목 / 이용조건")
+    rows.sort(key=lambda r: (bool(r["bad"]), -r["even"]))
+    print(f"\n{'wrtSn':<10}{'전체':>7}{'구간':>8}{'중역':>6}{'고르기':>7}  제목")
     for r in rows:
         flag = "  ✗ " + ",".join(r["bad"]) if r["bad"] else ""
-        print(f"{r['sn']:<10}{r['sec']:>6.1f}s{r['mid']*100:>5.0f}%{r['even']:>7.2f}  "
-              f"{r['title'][:30]}{flag}")
-        print(f"{'':24}{r['license'][:96]}")
+        print(f"{r['sn']:<10}{r['sec']:>6.0f}s{r['start']:>7.0f}s"
+              f"{r['mid']*100:>5.0f}%{r['even']:>7.2f}  {r['title'][:30]}{flag}")
+        print(f"{'':24}{r['license'][:90]}")
     print(f"\n{len(rows)}건. 이용조건을 직접 읽고 고를 것 — "
           "비영리·변경금지·공공누리 2~4유형은 이 채널에서 못 쓴다.")
 
