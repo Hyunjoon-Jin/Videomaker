@@ -114,9 +114,7 @@ TRACKS = [
         "Grim Idol이 고르기는 4.10으로 더 높았지만 어두운 타격이라 전쟁 편 "
         "톤이고, 중역도 44%뿐이다.",
     ),
-    # 조선왕조실록 사고(bgm-sl)는 여기서 뺐다. 9편부터는 직접 합성한
-    # 음원을 쓴다 — scripts/make-bgm.py. 이 목록에 남겨두면 이 스크립트를
-    # 인자 없이 한 번 돌리는 순간 합성본을 Lost Time으로 덮어쓴다.
+    # 조선왕조실록 사고(bgm-sl)는 여기서 뺐다. 아래 GONGU 목록으로 옮겼다.
     (
         "public/bgm-qk.wav", "Windswept", 56.0, 73.6,
         "한반도 밑 — 땅속 600km를 훑어 내려가는 편이라 넓고 느린 것이 맞는다. "
@@ -135,6 +133,30 @@ TRACKS = [
         "public/bgm-rail.wav", "Lost Frontier", 9.0, 140.1,
         "철도 — 넓고 계속 나아가는 느낌. 200~4000Hz 비중이 84%로 후보 중 "
         "가장 또렷하다. 전쟁 편들과 톤도 달라야 한다.",
+    ),
+]
+
+# ── 공유마당 계통 ────────────────────────────────────
+#
+# 9편부터 여기서 가져온다. incompetech 쪽은 1~8편이 이미 그 음원으로
+# 올라가 있어 남겨두는 것뿐이고, 새 편은 이 목록에 붙인다.
+#
+# 파일은 scripts/find-bgm.py가 data/bgm-src/gongu-<wrtSn>.mp3로 받아둔다.
+# 받는 것과 자르는 것을 나눈 이유는, 훑어서 고르는 일과 정해진 것을
+# 편 길이에 맞춰 자르는 일이 성격이 다르기 때문이다. 앞은 탐색이고
+# 뒤는 재현이다.
+#
+# (출력, wrtSn, 곡 이름, 저작권자, 시작 초, 길이 초, 왜 이 곡인지)
+GONGU = [
+    (
+        "public/bgm-sl.wav", "13263551", "국악연주곡_여민락 68-5",
+        "한국저작권위원회", 19.0, 57.9,
+        "조선왕조실록 사고 — 여민락은 세종 때 만든 정악이고, 이 편의 첫 "
+        "비트가 1445년 세종 27년이다. 소리가 편에 맞는 게 아니라 편의 "
+        "연도에 맞는다. 곡 자체는 저작권 만료라 공유재산이고, 실연과 녹음을 "
+        "한국저작권위원회가 CC BY로 공개했다. 80초짜리 중 19초부터가 가장 "
+        "고르다(중역 73%, 고르기 2.93). "
+        "https://gongu.copyright.or.kr/gongu/wrt/wrt/view.do?wrtSn=13263551",
     ),
 ]
 
@@ -197,10 +219,19 @@ def main() -> None:
     # 열한 곡을 매번 디코딩할 이유가 없어서 이름으로 걸러낼 수 있게 했다.
     #   python3 scripts/fetch-bgm.py tyc qk
     only = sys.argv[1:]
-    for out, name, start, dur, why in TRACKS:
+    jobs = ([(o, n, s0, d, w, None) for o, n, s0, d, w in TRACKS]
+            + [(o, t, s0, d, w, sn) for o, sn, t, _au, s0, d, w in GONGU])
+    for out, name, start, dur, why, sn in jobs:
         if only and not any(k in out for k in only):
             continue
-        a = decode(fetch(name))
+        if sn:
+            src = os.path.join(CACHE, f"gongu-{sn}.mp3")
+            if not os.path.exists(src):
+                sys.exit(f"{src}가 없다. 먼저 "
+                         f"python3 scripts/find-bgm.py --get {sn}")
+            a = decode(src)
+        else:
+            a = decode(fetch(name))
         i0 = int(start * SR)
         seg = a[i0: i0 + int(dur * SR)].copy()
         if len(seg) < int(dur * SR):
@@ -232,7 +263,9 @@ def main() -> None:
             seg *= 0.95 / peak
 
         write_wav(out, seg)
-        print(f"{out} · {dur:.1f}s · {name} @{start:.0f}s · {os.path.getsize(out)//1024}KB")
+        tag = "공유마당" if sn else "incompetech"
+        print(f"{out} · {dur:.1f}s · {name} @{start:.0f}s · {tag} · "
+              f"{os.path.getsize(out)//1024}KB")
         print(f"   {why}")
 
 
