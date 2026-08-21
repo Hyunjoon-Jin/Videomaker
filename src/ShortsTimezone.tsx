@@ -62,7 +62,21 @@ const BEATS = TZ_EVENTS.map((e, i) => {
  */
 const SPANS = layoutBeats(BEATS, HOOK, 0);
 const BODY_END = SPANS[SPANS.length - 1].t2;
-const OUTRO = Math.round(11.5 * FPS);
+/**
+ * 마무리 9.5초.
+ *
+ * 11.5초였고 편 전체가 60.17초였다. 5프레임 초과로 전 세계 차단됐다 —
+ * 1분을 넘는 쇼츠에 Content ID 소유권 주장이 살아 있으면 소유권자
+ * 정책과 관계없이 차단된다(support.google.com/youtube/answer/15424877).
+ *
+ * 마무리에 들어가는 것은 표 두 줄과 닫는 두 줄인데, 마지막 줄이 4.7초에
+ * 다 뜬다. 11.5초는 그 뒤로 6.8초를 더 잡고 있었다. 9.5초로 줄여도
+ * 4.8초가 남아 읽는 데 모자라지 않는다. 58.17초가 된다.
+ *
+ * 근본 대책은 클레임이 안 걸리는 음원으로 가는 것이고 이건 그때까지의
+ * 조치다. 60초 아래면 주장이 걸려도 차단이 아니라 수익만 넘어간다.
+ */
+const OUTRO = Math.round(9.5 * FPS);
 export const TZ_DURATION = BODY_END + OUTRO;
 
 const LAST_YEAR = TZ_EVENTS[TZ_EVENTS.length - 1].year;
