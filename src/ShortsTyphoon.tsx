@@ -507,7 +507,7 @@ export const ShortsTyphoon: React.FC<{ cut?: boolean }> = ({ cut = false }) => {
           </div>
           )}
           <div style={{ color: "#5E5648", fontSize: 20 }}>
-            상륙값은 기록, 경로와 위험반원은 근사 (자세한 설명은 고정댓글)
+            상륙값은 기록, 경로와 위험반원은 근사
           </div>
         </div>
       )}

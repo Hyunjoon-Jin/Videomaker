@@ -296,7 +296,7 @@ export const ShortsWar: React.FC = () => {
             </span>
           </div>
           <div style={{ color: "#8A8070", fontSize: 20 }}>
-            날짜는 음력 · 좌표는 실측값, 그 사이는 추정 (자세한 설명은 고정댓글)
+            날짜는 음력 · 좌표는 실측값, 그 사이는 추정
           </div>
         </div>
       )}

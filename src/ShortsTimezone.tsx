@@ -390,7 +390,7 @@ export const ShortsTimezone: React.FC = () => {
           style={{ position: "absolute", bottom: BOTTOM_INSET, left: TEXT_X, right: SAFE_RIGHT }}
         >
           <div style={{ color: "#8A8070", fontSize: 20, lineHeight: 1.5 }}>
-            날짜·법령은 기록값 · 시차는 경도에서 계산한 평균값 (고정댓글)
+            날짜·법령은 기록값 · 시차는 경도에서 계산한 평균값
           </div>
         </div>
       )}

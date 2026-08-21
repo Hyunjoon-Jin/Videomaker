@@ -551,7 +551,7 @@ export const ShortsKoreanWar: React.FC = () => {
             <Key color={ZONE_C} label="유격 지역" hatch />
           </div>
           <div style={{ color: "#8A8070", fontSize: 20 }}>
-            좌표는 실측값, 그 사이는 추정 (자세한 설명은 고정댓글)
+            좌표는 실측값, 그 사이는 추정
           </div>
         </div>
       )}

@@ -384,7 +384,7 @@ export const ShortsRail: React.FC = () => {
             <Key color={DEAD} label="끊긴 구간" dashed />
           </div>
           <div style={{ color: "#8A8070", fontSize: 20 }}>
-            연도는 전 구간 개통 기준 · 선형은 근사 (자세한 설명은 고정댓글)
+            연도는 전 구간 개통 기준 · 선형은 근사
           </div>
         </div>
       )}

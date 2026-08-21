@@ -300,9 +300,9 @@ export const ShortsGanchuk: React.FC = () => {
       {uiOn && !inOutro && (
         <div style={{ position: "absolute", bottom: BOTTOM_INSET, left: TEXT_X, right: SAFE_RIGHT }}>
           <div style={{ color: "#8A8070", fontSize: 20, lineHeight: 1.4 }}>
-            연도와 면적은 기록값 · 테두리는 만의 모양을 따르되 정밀 측량은 아니다
+            연도와 면적은 기록값 · 테두리는 만의 모양을 따른 근사
             <br />
-            안에 남은 호수는 넓이만 맞춰 가운데 앉힌 것 (고정댓글)
+            안에 남은 호수는 넓이만 맞춰 가운데 앉힌 것
           </div>
         </div>
       )}

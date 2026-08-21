@@ -345,7 +345,7 @@ export const ShortsTongsinsa: React.FC = () => {
             <Legend color={INK.indigoHot} dashed text="해로" />
           </div>
           <div style={{ color: "#8A8070", fontSize: 20 }}>
-            날짜는 사행록 기록값(음력) · 그 사이 위치는 거리에 비례한 보간 (고정댓글)
+            날짜는 사행록 기록값(음력) · 그 사이 위치는 거리에 비례한 보간
           </div>
         </div>
       )}

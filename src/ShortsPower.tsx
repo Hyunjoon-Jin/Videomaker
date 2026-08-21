@@ -428,7 +428,7 @@ export const ShortsPower: React.FC = () => {
             </span>
           </div>
           <div style={{ color: "#8A8070", fontSize: 20 }}>
-            용량과 연도는 기록값 · 선은 실제 선로가 아니라 공급 관계 (고정댓글)
+            용량과 연도는 기록값 · 선은 실제 선로가 아니라 공급 관계
           </div>
         </div>
       )}

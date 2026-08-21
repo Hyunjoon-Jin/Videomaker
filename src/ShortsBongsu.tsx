@@ -388,7 +388,7 @@ export const ShortsBongsu: React.FC = () => {
             ))}
           </div>
           <div style={{ color: "#8A8070", fontSize: 20 }}>
-            봉수 위치는 실측값 · 시각은 규정 12시간을 길이로 나눈 값 (고정댓글)
+            봉수 위치는 실측값 · 시각은 규정 12시간을 길이로 나눈 값
           </div>
         </div>
       )}

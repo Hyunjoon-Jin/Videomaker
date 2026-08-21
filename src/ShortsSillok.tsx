@@ -494,7 +494,7 @@ export const ShortsSillok: React.FC = () => {
           style={{ position: "absolute", bottom: BOTTOM_INSET, left: TEXT_X, right: SAFE_RIGHT }}
         >
           <div style={{ color: "#8A8070", fontSize: 20, lineHeight: 1.5 }}>
-            날짜·일수는 기록값 · 좌표는 현재 지명 위치 · 거리는 직선 합 (고정댓글)
+            날짜·일수는 기록값 · 좌표는 현재 지명 위치 · 거리는 직선 합
           </div>
         </div>
       )}

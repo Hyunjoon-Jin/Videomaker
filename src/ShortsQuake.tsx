@@ -480,7 +480,7 @@ export const ShortsQuake: React.FC = () => {
           style={{ position: "absolute", bottom: BOTTOM_INSET, left: TEXT_X, right: SAFE_RIGHT }}
         >
           <div style={{ color: "#8A8070", fontSize: 20, lineHeight: 1.5 }}>
-            USGS 지진 목록 · 핵실험·붕괴 제외 · 단면은 북위 36~44도 (고정댓글)
+            USGS 지진 목록 · 핵실험·붕괴 제외 · 단면은 북위 36~44도
           </div>
         </div>
       )}
