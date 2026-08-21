@@ -1,0 +1,380 @@
+#!/usr/bin/env python3
+"""BGM을 직접 합성한다 — 소유권 주장이 걸릴 수 없는 음원.
+
+## 왜 다시 여기로 왔나
+
+처음에 사인파로 곡을 짜보려다 실패하고 Kevin MacLeod의 CC BY 음원으로
+갈아탔다. 그런데 CC BY와 'Content ID에 등록돼 있지 않다'는 다른 문제였다.
+MacLeod는 제3자의 도둑 등록을 막으려고 본인 음악을 Content ID에 직접
+등록해 뒀고, 그래서 그 음원을 쓰면 클레임이 매번 걸린다. 1분을 넘는
+쇼츠는 주장이 살아 있는 동안 차단된다. 표준시 편이 그렇게 죽었다.
+
+설명란에 표기 문구를 넣고 편마다 이의를 제기하면 풀리기는 한다. 하지만
+그건 올릴 때마다 손이 가는 일이고, 애초에 안 걸리게 하는 것과 다르다.
+YouTube 오디오 보관함은 스튜디오 로그인이 필요해 이 환경에서 못 받는다.
+남은 길은 직접 만드는 것이다.
+
+## 지난번 실패에서 바뀐 것
+
+전에는 '곡'을 쓰려고 했다. 멜로디를 짜고 화성을 붙이려니 사인파 몇 개로
+될 일이 아니었다. 이번에는 **바탕**을 만든다. 이 채널의 BGM은 앞에 나설
+일이 없다. 지도가 그려지는 동안 화면 밑에 깔려 시간이 가고 있다는 것만
+알려주면 된다. 그건 다른 문제고, 훨씬 손에 잡힌다.
+
+네 겹을 쌓는다.
+
+  패드   화음. 음 하나를 배음 여섯 개로 쌓고 각각 몇 센트씩 어긋나게
+         둔다. 어긋난 배음들이 서로 스치면서 나는 느린 맥놀이가
+         '신시사이저 소리'와 '악기 소리'를 가른다. 배음마다 LFO 속도를
+         달리 줘서 그 스침이 규칙적으로 들리지 않게 한다.
+  저음   근음 한 옥타브 아래 사인. 휴대폰에서는 거의 안 들리지만 이게
+         없으면 이어폰에서 바닥이 빈다.
+  맥     2초마다 한 번. 화음의 5도를 짧게 때리고 지수적으로 죽인다.
+         밀어붙이지 않으면서 시간을 세는 것은 이 층이 한다.
+  공기   아주 낮은 잡음을 느리게 부풀렸다 줄인다. 이게 없으면 소리가
+         너무 깨끗해서 죽은 것처럼 들린다.
+
+여기에 잔향을 건다. scipy가 없어 FDN(피드백 지연망)을 직접 짰다 —
+서로 소수(素數)인 지연선 넷을 되먹이고, 되먹임 고리 안에 1극 저역통과를
+넣어 높은 음이 먼저 사라지게 했다. 실제 공간이 그렇게 울린다. 앞단에
+올패스 둘을 둬서 초기 반사를 흩는다.
+
+## 귀가 없으므로 숫자로 검사한다
+
+이 파일을 만든 쪽은 소리를 들을 수 없다. 그래서 fetch-bgm.py가 음원을
+고를 때 쓰던 두 지표를 그대로 가져와 만든 것에 되건다.
+
+  중역 비중   200~4000Hz가 전체 에너지에서 차지하는 몫. 휴대폰 스피커가
+              그 대역만 제대로 낸다. 고른 곡들이 43~88%였다.
+  고르기      0.25초 RMS 포락선의 평균 ÷ 표준편차. 조용해졌다 커졌다
+              하면 잘라 쓸 때 곡이 이상해진다. 고른 곡들이 3.3~4.9였다.
+
+두 값을 출력한다. 범위 밖이면 층별 음량을 고쳐야 한다는 뜻이다.
+
+사용:  python3 scripts/make-bgm.py sl 79.0
+       python3 scripts/make-bgm.py --list
+"""
+import math
+import sys
+import wave
+
+import numpy as np
+
+SR = 48000
+
+# ── 음이름 → 주파수 ──────────────────────────────────
+A4 = 440.0
+NAMES = {"C": -9, "C#": -8, "D": -7, "D#": -6, "E": -5, "F": -4,
+         "F#": -3, "G": -2, "G#": -1, "A": 0, "A#": 1, "B": 2}
+
+
+def hz(note: str) -> float:
+    """'D3' → 146.83Hz"""
+    name, octv = note[:-1], int(note[-1])
+    return A4 * 2 ** ((NAMES[name] + (octv - 4) * 12) / 12)
+
+
+# ── 편마다 다른 화성 ─────────────────────────────────
+# 여덟 박자(=8초)에 화음 하나. 넷이 한 바퀴라 32초에 돌아온다.
+# 편의 성격은 진행이 정한다. 자리를 못 뜨는 편은 근음이 안 움직이고,
+# 옮겨 다니는 편은 근음이 내려간다.
+PIECES = {
+    "sl": dict(
+        why="조선왕조실록 사고 — 지키는 편. 밀어붙이면 안 되고 느슨해도 "
+            "안 된다. 근음이 D에서 한 번도 못 벗어나게 두고 위 성부만 "
+            "움직인다. 자리를 지키는 소리가 그렇다.",
+        chords=[
+            ["D3", "F3", "A3"],     # Dm
+            ["D3", "F3", "A#3"],    # Bb/D — 근음 그대로, 5도만 반음 위로
+            ["D3", "F3", "A3"],     # Dm
+            ["D3", "G3", "A3"],     # Dsus4 — 안 풀고 매달아 둔다
+        ],
+        pulse="A3",
+        bright=0.72,
+    ),
+}
+
+
+def adsr(n: int, a: float, d: float, s: float, r: float) -> np.ndarray:
+    """구간 하나에 씌울 포락선. 초 단위."""
+    A, D, R = int(a * SR), int(d * SR), int(r * SR)
+    S = max(0, n - A - D - R)
+    return np.concatenate([
+        np.linspace(0, 1, A, endpoint=False) ** 1.6,
+        np.linspace(1, s, D, endpoint=False),
+        np.full(S, s),
+        np.linspace(s, 0, n - A - D - S) ** 1.4,
+    ])[:n]
+
+
+def pad(chord: list[str], n: int, bright: float, rng) -> np.ndarray:
+    """
+    화음 하나.
+
+    음마다 배음 여섯. 배음의 세기는 1/k^1.4로 떨어뜨려 톱니와 사인
+    사이쯤에 둔다. 그냥 사인이면 오르골처럼 얇고, 톱니면 거칠다.
+
+    각 배음을 ±6센트 안에서 어긋나게 두는 것이 핵심이다. 정확히 맞으면
+    합성음 특유의 '한 덩어리'로 들리는데, 어긋나면 서로 스치며 느린
+    맥놀이가 생기고 그게 악기 소리에 가깝다. LFO 속도도 배음마다 달리
+    줘서 그 스침에 주기가 안 생기게 한다.
+
+    기음을 0.5로 눌러 둔다. D3가 147Hz라 200Hz 아래로 떨어지는데, 여기에
+    무게가 실리면 휴대폰 스피커가 못 내는 대역에 에너지를 버리는 셈이다.
+    처음에 안 누르고 재봤더니 중역 비중이 36%였다. 같은 이유로 화음을
+    한 옥타브 위로 한 벌 더 겹친다 — 그쪽은 배음이 통째로 대역 안이다.
+    """
+    t = np.arange(n) / SR
+    out = np.zeros(n)
+    # 세 옥타브를 겹친다. 아래 한 벌만 쓰면 800~4000Hz가 통째로 비어
+    # 휴대폰에서 어둡게만 들린다. D3의 배음은 881Hz에서 끝나는데,
+    # 두 옥타브 위를 얹으면 그 배음이 587~3524Hz에 깔린다. 위로 갈수록
+    # 세게 줄여야 날카로워지지 않는다.
+    for octv, gain in ((1.0, 1.0), (2.0, 0.58), (4.0, 0.30)):
+        for note in chord:
+            f0 = hz(note) * octv
+            for k in range(1, 7):
+                amp = bright ** (k - 1) / k ** 1.4
+                if k == 1:
+                    amp *= 0.5
+                cents = rng.uniform(-6, 6)
+                f = f0 * k * 2 ** (cents / 1200)
+                lfo = 1 + 0.16 * np.sin(2 * np.pi * rng.uniform(0.07, 0.23) * t
+                                        + rng.uniform(0, 6.28))
+                out += gain * amp * lfo * np.sin(
+                    2 * np.pi * f * t + rng.uniform(0, 6.28))
+    # 붙임음이 길다. 다음 화음의 머리와 겹쳐 파임을 메운다.
+    return out * adsr(n, 1.2, 0.8, 0.88, 2.8) / (len(chord) * 3.0)
+
+
+def sub(chord: list[str], n: int) -> np.ndarray:
+    """
+    근음 한 옥타브 아래. 휴대폰에선 거의 안 들리지만 이어폰에서 바닥.
+
+    0.5였는데 0.24로 내렸다. 73Hz는 통째로 대역 밖이라 세게 넣을수록
+    중역 비중만 깎아 먹는다. 바닥이 있다는 것만 알면 된다.
+    """
+    t = np.arange(n) / SR
+    f = hz(chord[0]) / 2
+    return 0.24 * np.sin(2 * np.pi * f * t) * adsr(n, 0.9, 0.6, 0.92, 2.4)
+
+
+def pulse(note: str, n: int, every: float, rng) -> np.ndarray:
+    """
+    2초마다 한 번. 시간을 세는 층.
+
+    짧은 잡음 한 조각을 앞에 붙여 때리는 느낌을 만들고, 그 뒤로 순음
+    둘(1도와 2배음)을 지수적으로 죽인다. 잡음이 없으면 '삐' 소리고,
+    잡음만 있으면 타악기다. 둘을 겹쳐야 나무를 두드린 것처럼 들린다.
+    """
+    out = np.zeros(n)
+    f = hz(note)
+    step = int(every * SR)
+    dur = int(1.6 * SR)
+    tt = np.arange(dur) / SR
+    body = (np.sin(2 * np.pi * f * tt) + 0.35 * np.sin(2 * np.pi * f * 2 * tt))
+    body *= np.exp(-tt * 3.2)
+    tick = rng.normal(0, 1, int(0.012 * SR))
+    tick *= np.exp(-np.arange(len(tick)) / (0.004 * SR)) * 0.5
+    for i0 in range(0, n, step):
+        # 세기를 조금씩 흔든다. 똑같으면 기계가 된다.
+        g = 0.34 * rng.uniform(0.82, 1.0)
+        seg = body[: min(dur, n - i0)]
+        out[i0: i0 + len(seg)] += g * seg
+        tk = tick[: min(len(tick), n - i0)]
+        out[i0: i0 + len(tk)] += g * 0.55 * tk
+    return out
+
+
+def air(n: int, rng) -> np.ndarray:
+    """느리게 부푸는 잡음. 소리가 너무 깨끗해서 죽어 보이는 것을 막는다."""
+    x = rng.normal(0, 1, n)
+    # 1극 저역통과를 두 번 걸어 쉭쉭거리는 고역을 눌러 둔다.
+    for a in (0.02, 0.02):
+        y = np.zeros(n)
+        acc = 0.0
+        for i in range(0, n, 4096):  # 블록 단위로 재귀를 돌린다
+            blk = x[i: i + 4096]
+            b = np.empty(len(blk))
+            for j, v in enumerate(blk):
+                acc = acc + a * (v - acc)
+                b[j] = acc
+            y[i: i + len(blk)] = b
+        x = y
+    t = np.arange(n) / SR
+    env = 0.5 + 0.5 * np.sin(2 * np.pi * 0.031 * t)
+    return 0.035 * x / (np.std(x) or 1) * env
+
+
+def highpass(x: np.ndarray, fc: float = 55.0) -> np.ndarray:
+    """
+    fc 아래를 부드럽게 깎는다.
+
+    재귀 필터는 400만 샘플을 파이썬 반복문으로 도는 것이라 느리다.
+    어차피 실시간이 아니고 통째로 들고 있으니 주파수 영역에서 한 번에
+    처리한다. 이 대역은 휴대폰에서 안 나오면서 에너지만 차지한다.
+    """
+    X = np.fft.rfft(x)
+    f = np.fft.rfftfreq(len(x), 1 / SR)
+    # 급하게 자르면 울린다. 2차 정도의 완만한 기울기로 깎는다.
+    X *= (f / fc) ** 2 / (1 + (f / fc) ** 2)
+    return np.fft.irfft(X, len(x))
+
+
+def onepole(x: np.ndarray, a: float) -> np.ndarray:
+    """1극 저역통과. 되먹임 고리 안에서 높은 음을 먼저 죽이는 데 쓴다."""
+    y = np.empty_like(x)
+    acc = 0.0
+    for i, v in enumerate(x):
+        acc = acc + a * (v - acc)
+        y[i] = acc
+    return y
+
+
+def allpass(x: np.ndarray, delay: int, g: float) -> np.ndarray:
+    """초기 반사를 흩는다. 울림을 늘리지 않고 밀도만 올린다."""
+    y = np.zeros(len(x))
+    buf = np.zeros(delay)
+    p = 0
+    for i, v in enumerate(x):
+        b = buf[p]
+        o = -g * v + b
+        buf[p] = v + g * o
+        p = (p + 1) % delay
+        y[i] = o
+    return y
+
+
+def reverb(x: np.ndarray, mix: float = 0.42) -> np.ndarray:
+    """
+    피드백 지연망.
+
+    scipy가 없어 직접 짰다. 서로 소수인 지연선 넷을 되먹이면 울림이
+    금속처럼 뭉치지 않는다. 되먹임 고리마다 1극 저역통과를 넣어 높은
+    음이 먼저 사라지게 했다 — 실제 공간이 그렇게 울린다.
+    """
+    d = allpass(allpass(x, 331, 0.7), 461, 0.7)
+    wet = np.zeros(len(x))
+    for ms, fb, damp in ((37, 0.78, 0.36), (43, 0.76, 0.30),
+                         (53, 0.74, 0.24), (61, 0.72, 0.20)):
+        n = int(ms / 1000 * SR)
+        line = np.zeros(len(x))
+        buf = np.zeros(n)
+        p = 0
+        acc = 0.0
+        for i, v in enumerate(d):
+            b = buf[p]
+            line[i] = b
+            acc = acc + damp * (b - acc)   # 고리 안 감쇠
+            buf[p] = v + fb * acc
+            p = (p + 1) % n
+        wet += line
+    wet /= 4
+    return (1 - mix) * x + mix * wet
+
+
+def measure(x: np.ndarray) -> tuple[float, float]:
+    """fetch-bgm.py가 곡을 고를 때 쓰던 두 지표. 귀 대신이다."""
+    m = x.mean(axis=1) if x.ndim > 1 else x
+    X = np.abs(np.fft.rfft(m * np.hanning(len(m))))
+    f = np.fft.rfftfreq(len(m), 1 / SR)
+    band = ((f >= 200) & (f <= 4000))
+    mid = float(X[band].sum() / (X.sum() or 1))
+    w = int(0.25 * SR)
+    env = np.array([np.sqrt(np.mean(m[i:i + w] ** 2))
+                    for i in range(0, len(m) - w, w)])
+    even = float(env.mean() / (env.std() or 1e-9))
+    return mid, even
+
+
+def build(key: str, seconds: float, seed: int = 7) -> np.ndarray:
+    p = PIECES[key]
+    rng = np.random.default_rng(seed)
+    bar = int(8.0 * SR)
+    # 화음을 8초마다 세우되 길이는 11초로 준다. 3초가 겹쳐 앞 화음의
+    # 붙임음이 다음 화음의 머리를 받쳐준다. 딱 8초씩 끊어 붙였더니
+    # 8초마다 소리가 0으로 떨어져 고르기가 2.25까지 내려갔다.
+    span = int(11.0 * SR)
+    total = int(math.ceil(seconds * SR))
+    mono = np.zeros(total + span)
+    i = 0
+    c = 0
+    while i < total:
+        ch = p["chords"][c % len(p["chords"])]
+        seg = pad(ch, span, p["bright"], rng) + sub(ch, span)
+        n = min(span, len(mono) - i)
+        mono[i:i + n] += seg[:n]
+        i += bar
+        c += 1
+    mono = mono[:total]
+    mono += pulse(p["pulse"], total, 2.0, rng)
+    mono += air(total, rng)
+    mono = reverb(mono)
+
+    # 큰 숨.
+    #
+    # 겹치게 고치고 나니 고르기가 15.4까지 올라갔다. 자를 때 안전하다는
+    # 뜻이라 흠은 아닌데, 60초 내내 세기가 똑같으면 음악이 아니라
+    # 웅웅거림이다. 24초 주기로 ±14% 흔들어 숨을 넣는다. 두 주기가
+    # 겹치게 해서 '느리게 뛰는 심장' 같은 규칙성이 안 생기게 했다.
+    t = np.arange(total) / SR
+    breath = (1
+              + 0.14 * np.sin(2 * np.pi * t / 24.0 - 1.2)
+              + 0.06 * np.sin(2 * np.pi * t / 37.0))
+    mono *= breath
+    mono = highpass(mono)
+
+    # 좌우를 아주 조금 어긋나게 해 넓힌다. 크게 벌리면 휴대폰
+    # 모노 스피커에서 상쇄돼 오히려 얇아진다.
+    d = int(0.011 * SR)
+    L = mono
+    R = np.concatenate([np.zeros(d), mono[:-d]])
+    return np.stack([L, 0.97 * R], axis=1)
+
+
+def finish(x: np.ndarray, fade_in=1.2, fade_out=3.0, rms=0.14) -> np.ndarray:
+    """fetch-bgm.py의 마무리와 같은 처리 — 두 계통의 음량을 맞춘다."""
+    fi, fo = int(fade_in * SR), int(fade_out * SR)
+    x[:fi] *= np.linspace(0, 1, fi)[:, None]
+    x[-fo:] *= np.linspace(1, 0, fo)[:, None]
+    x *= rms / (float(np.sqrt(np.mean(x ** 2))) or 1.0)
+    TH = 0.75
+    m = np.abs(x) > TH
+    x[m] = np.sign(x[m]) * (TH + (1 - TH) * np.tanh((np.abs(x[m]) - TH) / (1 - TH)))
+    peak = float(np.max(np.abs(x)))
+    if peak > 0.95:
+        x *= 0.95 / peak
+    return x
+
+
+def write_wav(path: str, x: np.ndarray) -> None:
+    pcm = (np.clip(x, -1, 1) * 32767).astype("<i2")
+    with wave.open(path, "wb") as w:
+        w.setnchannels(2)
+        w.setsampwidth(2)
+        w.setframerate(SR)
+        w.writeframes(pcm.tobytes())
+
+
+def main() -> None:
+    if len(sys.argv) < 2 or sys.argv[1] == "--list":
+        for k, v in PIECES.items():
+            print(f"{k:>4}  {v['why']}")
+        return
+    key = sys.argv[1]
+    seconds = float(sys.argv[2]) if len(sys.argv) > 2 else 60.0
+    out = f"public/bgm-{key}.wav"
+    x = finish(build(key, seconds))
+    write_wav(out, x)
+    # 페이드 구간을 빼고 잰다. 1.2초 인·3.0초 아웃까지 넣고 고르기를
+    # 재면 페이드가 편차로 잡혀 짧은 판일수록 점수가 실제보다 나빠진다.
+    core = x[int(1.4 * SR): -int(3.2 * SR)] if seconds > 8 else x
+    mid, even = measure(core)
+    print(f"{out} · {seconds:.1f}s · 직접 합성 (소유권 주장 대상 아님)")
+    print(f"   중역 200~4000Hz {mid * 100:.0f}%  (고른 음원들이 43~88%)")
+    print(f"   고르기 {even:.2f}          (고른 음원들이 3.3~4.9)")
+    print(f"   {PIECES[key]['why']}")
+
+
+if __name__ == "__main__":
+    main()

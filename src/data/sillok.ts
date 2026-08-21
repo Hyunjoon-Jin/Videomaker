@@ -223,6 +223,30 @@ export interface SEvent {
   zoom?: number;
 }
 
+/**
+ * 열 비트에서 일곱으로 줄였다.
+ *
+ * 79.00초였다. 1분을 넘는 쇼츠는 Content ID 소유권 주장이 살아 있는
+ * 동안 소유권자 정책과 관계없이 차단된다. 표준시 편이 60.17초로 그렇게
+ * 죽었다. 9편부터는 직접 합성한 음원을 써서 주장이 걸릴 일이 없지만,
+ * 60초는 그것과 별개로 지킨다.
+ *
+ * 무엇을 뺐나.
+ *
+ * '임진왜란'을 따로 세우지 않고 '불탄 사고 셋'의 머리말로 넣었다.
+ * 부산 상륙과 한양 함락은 임진왜란 편이 하는 얘기고, 이 편에서
+ * 필요한 것은 '그래서 사고가 탔다'까지다.
+ *
+ * '다시 관의 손으로'와 '해주에서 강화로'를 한 비트로 합쳤다. 둘 다
+ * 옮긴 이야기라 따로 세우면 같은 말을 두 번 한다. 지도 위 경로는
+ * 그대로 일곱 점을 다 지나가므로 '여섯 번 옮겨 715km'는 살아 있다.
+ *
+ * '모두 다섯 질'은 '다시 다섯 곳에'의 머리말로 접었다. 다섯 질과
+ * 다섯 곳은 같은 사실의 두 면이라 한 화면에 같이 서도 된다.
+ *
+ * 안 건드린 것 — '하루도 빈 날 없이'. 370일 계수기가 이 편의 심장이다.
+ * 체류를 9.0초에서 7.0초로만 줄였다.
+ */
 export const S_EVENTS: SEvent[] = [
   {
     year: 1445.85,
@@ -232,15 +256,8 @@ export const S_EVENTS: SEvent[] = [
     phase: "sago", impact: 0.7, zoom: 1.5,
   },
   {
-    year: 1592.28,
-    kicker: "1592년 4월 13일",
-    title: "임진왜란",
-    detail: "부산 상륙 · 스무날 만에 한양 함락",
-    phase: "sago", impact: 1, zoom: 1.6,
-  },
-  {
     year: 1592.42,
-    kicker: "1592년",
+    kicker: "1592년 · 임진왜란",
     title: "불탄 사고 셋",
     detail: "춘추관·충주·성주 · 남은 것은 전주 하나",
     phase: "burn", impact: 1, zoom: 1.7,
@@ -260,36 +277,22 @@ export const S_EVENTS: SEvent[] = [
     phase: "flight", at: 1, watch: true, impact: 1, zoom: 3.2,
   },
   {
-    year: 1593.52,
-    kicker: "1593년 7월 9일 · 아산",
-    title: "다시 관의 손으로",
-    detail: "충청감사 이산보에게 · 2차 진주성 함락 뒤",
-    phase: "flight", at: 3, impact: 0.9, zoom: 2.4,
-  },
-  {
     year: 1596.9,
     kicker: "1593~1596년",
-    title: "해주에서 강화로",
-    detail: "3년 사이 두 번 더",
-    phase: "flight", at: 5, impact: 0.7, zoom: 2.2,
+    title: "관의 손으로, 다시 세 번",
+    detail: "아산·해주·강화 · 3년 사이",
+    phase: "flight", at: 5, impact: 0.9, zoom: 2.3,
   },
   {
     year: 1597.7,
     kicker: "1597년 9월 · 정유재란",
     title: "묘향산 보현사",
-    detail: "여섯 번 옮겨 715km · 전란이 끝날 때까지 여기",
+    detail: "여섯 번 옮겨 715km · 전란이 끝날 때까지",
     phase: "flight", at: 6, impact: 1, zoom: 1.9,
   },
   {
-    year: 1606.0,
-    kicker: "1603~1606년",
-    title: "모두 다섯 질",
-    detail: "살아남은 전주본을 원본 삼아 세 질을 더",
-    phase: "spread", impact: 1, zoom: 1.6,
-  },
-  {
     year: 1606.6,
-    kicker: "1606년",
+    kicker: "1606년 · 다섯 질로",
     title: "다시 다섯 곳에",
     detail: "춘추관·마니산·태백산·묘향산·오대산",
     phase: "spread", impact: 1, zoom: 1.45,

@@ -39,11 +39,18 @@ const HOOK = Math.round(2.2 * FPS);
  * 자막 길이로 재면 4초가 나오는데, 4초짜리 370일은 답이 아니라 경유지다.
  *
  * 계수기가 0에서 370까지 올라가는 것을 보여주는 데 필요한 만큼 세운다.
+ *
+ * 9.0초였는데 7.0초로 줄였다. 편을 60초 아래로 내리면서 손댄 곳인데,
+ * 계수기가 도는 속도만 빨라지고 0에서 370까지 다 보이는 것은 같다.
+ *
+ * 인덱스를 박아두지 않고 watch 표시로 찾는다. 전에는 { 4: 9.0 }이라고
+ * 적어놨는데, 비트를 셋 빼면서 이 비트가 4번에서 3번으로 밀렸다.
+ * 그대로 뒀으면 엉뚱한 비트가 7초를 받고 계수기는 제 시간을 못 받는다.
  */
-const HOLD: Record<number, number> = { 4: 9.0 };
-const BEATS = S_EVENTS.map((e, i) => {
+const WATCH_HOLD = 7.0;
+const BEATS = S_EVENTS.map((e) => {
   const b = beatFor(e.year, { title: e.title, detail: e.detail }, e.impact ?? 0.4, FPS);
-  return HOLD[i] ? { ...b, hold: Math.round(HOLD[i] * FPS) } : b;
+  return e.watch ? { ...b, hold: Math.round(WATCH_HOLD * FPS) } : b;
 });
 
 /**
@@ -54,7 +61,8 @@ const BEATS = S_EVENTS.map((e, i) => {
  */
 const SPANS = layoutBeats(BEATS, HOOK, 0);
 const BODY_END = SPANS[SPANS.length - 1].t2;
-const OUTRO = Math.round(12 * FPS);
+/** 12초였다. 마무리는 다섯 질의 행방 표 하나라 9.5초면 읽힌다. */
+const OUTRO = Math.round(9.5 * FPS);
 export const SILLOK_DURATION = BODY_END + OUTRO;
 
 const LAST_YEAR = S_EVENTS[S_EVENTS.length - 1].year;
@@ -115,8 +123,14 @@ export const ShortsSillok: React.FC = () => {
   const inOutro = frame >= BODY_END;
   const phase = inOutro ? "spread" : ev?.phase ?? "sago";
 
-  /** 불이 붙는 진행도 — 세 사고가 0.4초씩 밀려 꺼진다 */
-  const burnAt = SPANS[2].t1;
+  /**
+   * 불이 붙는 진행도 — 세 사고가 0.4초씩 밀려 꺼진다.
+   *
+   * SPANS[2]라고 박아뒀었다. 비트를 줄이면서 불타는 비트가 2번에서
+   * 1번으로 밀렸고, 그대로 뒀으면 사고가 이미 다 탄 뒤에 불이 붙는다.
+   * 국면으로 찾는다.
+   */
+  const burnAt = SPANS[S_EVENTS.findIndex((e) => e.phase === "burn")].t1;
   const burn = (k: number) =>
     interpolate(frame, [burnAt + k * 12, burnAt + k * 12 + 26], [0, 1], {
       extrapolateLeft: "clamp",
