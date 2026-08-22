@@ -172,6 +172,7 @@ const BAND = {
   tz: "#4E4867",        // 남보라 — 새벽하늘
   sillok: "#63333F",    // 자단빛 — 책갑 물들이던 색
   quake: "#5E2E1C",     // 녹슨 쇠 — 땅속. 6·25의 붉은 흙과 갈리게 더 어둡게
+  datum: "#3F4C55",     // 청사진 — 측량 도면의 회청색. 태풍의 쪽빛보다 탁하게
 } as const;
 
 /**
@@ -783,3 +784,73 @@ export const ThumbQuake: React.FC = () => (
     />
   </Frame>
 );
+
+/* ── 12. 좌표 365m ────────────────────────────────────
+   다른 편들과 달리 전국 지도가 아니다. 365m는 반도 투영에서 0.33단위라
+   지도로는 아무것도 안 보인다. 그래서 이 썸네일만 미터 좌표계다 —
+   격자 한 칸이 100m고, 두 점이 그 위에서 갈라진다.
+
+   그리드에 나란히 놓았을 때 확대된 판 하나만 다른 것이 오히려 눈에
+   걸린다. 그게 이 편이 다른 편과 다른 점이기도 하다.
+
+   경복궁 궁역은 안 그린다. 이 배율에서 궁역 남북 780m는 1716px이라
+   그림 영역(1090px)을 넘어가서, 남는 건 화면을 가로지르는 선 두 개뿐이다.
+   200px에서 살아남는 것은 점 둘과 그 사이의 빗금뿐이다.
+
+   글자도 SVG 안에 넣는다. 밖에 두면 slice 배율만큼 어긋난다 — 처음에
+   그렇게 했다가 둘째 점이 화면 밖으로 나갔다. */
+export const ThumbDatum: React.FC = () => {
+  /** 미터 → px */
+  const k = 2.2;
+  const ax = 330;
+  const ay = 240;
+  // 남동으로 어긋난다 — 옛 좌표를 새 지도에 찍었을 때의 방향이다.
+  const bx = ax + 188 * k;
+  const by = ay + 303 * k;
+  return (
+    <Frame>
+      <AbsoluteFill style={{ opacity: 0.95 }}>
+        <svg
+          viewBox="0 0 1080 1920"
+          preserveAspectRatio="xMidYMid slice"
+          style={{ width: "100%", height: "100%", display: "block" }}
+        >
+          {/* 100m 격자 — 눈금이 있어야 365m가 길이로 읽힌다 */}
+          {[...Array(6)].map((_, i) => (
+            <g key={i} stroke="#2E3840" strokeWidth={3}>
+              <line x1={i * 100 * k} y1={0} x2={i * 100 * k} y2={1090} />
+              <line x1={0} y1={i * 100 * k} x2={1080} y2={i * 100 * k} />
+            </g>
+          ))}
+
+          <line
+            x1={ax}
+            y1={ay}
+            x2={bx}
+            y2={by}
+            stroke={M.hot}
+            strokeWidth={14}
+            strokeDasharray="34 24"
+          />
+          <circle cx={ax} cy={ay} r={26} fill="#F3E7CC" stroke="#17140F" strokeWidth={8} />
+          <circle cx={bx} cy={by} r={26} fill={M.hot} stroke="#17140F" strokeWidth={8} />
+
+          <text x={ax + 48} y={ay + 20} fontSize={60} fontWeight={900} fill="#F3E7CC">
+            지금 좌표
+          </text>
+          <text x={bx + 48} y={by + 20} fontSize={60} fontWeight={900} fill={M.hot}>
+            옛 좌표
+          </text>
+        </svg>
+      </AbsoluteFill>
+
+      <Face
+        topic="2010년 세계측지계"
+        big="365"
+        unit="m"
+        label="우리나라 좌표가 한꺼번에 움직인 거리"
+        band={BAND.datum}
+      />
+    </Frame>
+  );
+};

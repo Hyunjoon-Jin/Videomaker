@@ -16,7 +16,7 @@ import { ShortsQuake, QUAKE_DURATION } from "./ShortsQuake";
 import { ShortsSunrise, SUNRISE_DURATION } from "./ShortsSunrise";
 import { ShortsDatum, DATUM_DURATION } from "./ShortsDatum";
 import { ChannelBanner, ChannelIcon, ChannelWatermark } from "./Channel";
-import { ThumbBongsu, ThumbGanchuk, ThumbKoreanWar, ThumbPower, ThumbRail, ThumbQuake, ThumbSillok, ThumbTimezone, ThumbTongsinsa, ThumbTyphoon, ThumbWar } from "./Thumbs";
+import { ThumbBongsu, ThumbGanchuk, ThumbKoreanWar, ThumbPower, ThumbRail, ThumbQuake, ThumbSillok, ThumbTimezone, ThumbTongsinsa, ThumbTyphoon, ThumbWar, ThumbDatum } from "./Thumbs";
 import { FPS, SHORT_H, SHORT_W } from "./theme";
 
 export const RemotionRoot: React.FC = () => (
@@ -174,6 +174,7 @@ export const RemotionRoot: React.FC = () => (
       ["ThumbTimezone", ThumbTimezone],
       ["ThumbSillok", ThumbSillok],
       ["ThumbQuake", ThumbQuake],
+      ["ThumbDatum", ThumbDatum],
     ] as const).map(([id, comp]) => (
       <Composition
         key={id}
