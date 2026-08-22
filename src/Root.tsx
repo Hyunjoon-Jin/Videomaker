@@ -13,6 +13,7 @@ import { ShortsGanchuk, GANCHUK_DURATION } from "./ShortsGanchuk";
 import { ShortsTimezone, TZ_DURATION } from "./ShortsTimezone";
 import { ShortsSillok, SILLOK_DURATION } from "./ShortsSillok";
 import { ShortsQuake, QUAKE_DURATION } from "./ShortsQuake";
+import { ShortsSunrise, SUNRISE_DURATION } from "./ShortsSunrise";
 import { ChannelBanner, ChannelIcon, ChannelWatermark } from "./Channel";
 import { ThumbBongsu, ThumbGanchuk, ThumbKoreanWar, ThumbPower, ThumbRail, ThumbQuake, ThumbSillok, ThumbTimezone, ThumbTongsinsa, ThumbTyphoon, ThumbWar } from "./Thumbs";
 import { FPS, SHORT_H, SHORT_W } from "./theme";
@@ -137,6 +138,15 @@ export const RemotionRoot: React.FC = () => (
       id="ShortsQuake"
       component={ShortsQuake}
       durationInFrames={QUAKE_DURATION}
+      fps={FPS}
+      width={SHORT_W}
+      height={SHORT_H}
+    />
+    {/* 기획 12 — 해가 가장 먼저 뜨는 곳 */}
+    <Composition
+      id="ShortsSunrise"
+      component={ShortsSunrise}
+      durationInFrames={SUNRISE_DURATION}
       fps={FPS}
       width={SHORT_W}
       height={SHORT_H}
