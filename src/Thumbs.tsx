@@ -13,6 +13,7 @@ import { ZONE_XY, dikePath, polyPath } from "./data/ganchuk";
 import { AKASHI, MERIDIANS, SEOUL, meridianPath, meridianX } from "./data/timezone";
 import { FLIGHT, OLD_SAGO, flightPathTo } from "./data/sillok";
 import { MAP_KOREA, MAP_LANDS, MARKED, MAX_DEPTH, PROFILE, TRENCH_LON, colorOf, lonX, radiusOf as qRadius } from "./data/quake";
+import { HERO as EX_HERO } from "./data/extremes";
 import { C, INK } from "./theme";
 import { Grain } from "./Grain";
 import { useFonts } from "./fonts";
@@ -173,6 +174,7 @@ const BAND = {
   sillok: "#63333F",    // 자단빛 — 책갑 물들이던 색
   quake: "#5E2E1C",     // 녹슨 쇠 — 땅속. 6·25의 붉은 흙과 갈리게 더 어둡게
   datum: "#3F4C55",     // 청사진 — 측량 도면의 회청색. 태풍의 쪽빛보다 탁하게
+  extremes: "#7E6A6E", // 마른 자줏빛 흙 — 더위도 추위도 아닌 색. 한쪽 편을 들면 안 된다
 } as const;
 
 /**
@@ -850,6 +852,68 @@ export const ThumbDatum: React.FC = () => {
         unit="m"
         label="우리나라 좌표가 한꺼번에 움직인 거리"
         band={BAND.datum}
+      />
+    </Frame>
+  );
+};
+
+/* ── 13. 가장 더운 곳과 가장 추운 곳 ───────────────────
+   막대 하나가 위아래로 뻗는 그림. 다른 편들의 썸네일은 전부 지도인데
+   이것만 막대라 그리드에서 눈에 걸린다.
+
+   지도는 뒤에 남긴다. 막대만 두면 무슨 채널인지 모른다. 홍천 자리에서
+   막대가 솟아야 '땅 이야기'로 읽힌다. */
+export const ThumbExtremes: React.FC = () => {
+  const cx = 540;
+  const zero = 640;
+  // 1℃ = 9.6px. 41.0은 위로 394px, -28.1은 아래로 270px.
+  const k = 9.6;
+  const w = 190;
+  return (
+    <Frame>
+      <AbsoluteFill style={{ opacity: 0.95 }}>
+        <svg
+          viewBox="150 180 780 1387"
+          preserveAspectRatio="xMidYMid slice"
+          style={{ width: "100%", height: "100%", display: "block" }}
+        >
+          {PROVINCES.map((p) => (
+            <path key={p.id} d={p.d} fill={M.land} stroke={M.coast} strokeWidth={2.2} />
+          ))}
+        </svg>
+      </AbsoluteFill>
+
+      <AbsoluteFill>
+        <svg
+          viewBox="0 0 1080 1920"
+          preserveAspectRatio="xMidYMid slice"
+          style={{ width: "100%", height: "100%", display: "block" }}
+        >
+          <rect x={cx - w / 2} y={zero - EX_HERO.hi * k} width={w} height={EX_HERO.hi * k} fill="#C4553A" />
+          <rect x={cx - w / 2} y={zero} width={w} height={-EX_HERO.lo * k} fill="#5C87A8" />
+          <line x1={cx - w} y1={zero} x2={cx + w} y2={zero} stroke="#17140F" strokeWidth={7} />
+
+          <text x={cx} y={zero - EX_HERO.hi * k - 26} fontSize={80} fontWeight={900}
+                fill="#E8A88F" textAnchor="middle">
+            {EX_HERO.hi.toFixed(1)}℃
+          </text>
+          <text x={cx} y={zero - EX_HERO.lo * k + 84} fontSize={80} fontWeight={900}
+                fill="#9DBBD1" textAnchor="middle">
+            {EX_HERO.lo.toFixed(1)}℃
+          </text>
+          <text x={cx} y={zero - 24} fontSize={66} fontWeight={900} fill="#17140F"
+                textAnchor="middle">
+            {EX_HERO.name}
+          </text>
+        </svg>
+      </AbsoluteFill>
+
+      <Face
+        topic="한 지점이 겪은 폭"
+        big="69.1"
+        unit="℃"
+        label="가장 더운 곳과 가장 추운 곳이 같은 곳"
+        band={BAND.extremes}
       />
     </Frame>
   );
