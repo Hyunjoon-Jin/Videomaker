@@ -13,7 +13,7 @@ import { ZONE_XY, dikePath, polyPath } from "./data/ganchuk";
 import { AKASHI, MERIDIANS, SEOUL, meridianPath, meridianX } from "./data/timezone";
 import { FLIGHT, OLD_SAGO, flightPathTo } from "./data/sillok";
 import { MAP_KOREA, MAP_LANDS, MARKED, MAX_DEPTH, PROFILE, TRENCH_LON, colorOf, lonX, radiusOf as qRadius } from "./data/quake";
-import { TOP as EX_TOP } from "./data/extremes";
+import { YEARS as EX_YEARS } from "./data/race";
 import { C, INK } from "./theme";
 import { Grain } from "./Grain";
 import { useFonts } from "./fonts";
@@ -867,7 +867,7 @@ export const ThumbDatum: React.FC = () => {
    일출 편에서 독도를 뺀 것과 같은 이유다. 이름 자리에는 물음표가
    선다 — 숫자 둘은 다 보여주고 어디인지만 감춘다. */
 export const ThumbExtremes: React.FC = () => {
-  const hero = EX_TOP[0];
+  const hero = EX_YEARS[EX_YEARS.length - 1].top[0];
   const cx = 540;
   const zero = 640;
   // 1℃ = 9.0px. 40.1은 위로 361px, -32.6은 아래로 293px.

@@ -8,475 +8,281 @@ import {
 } from "remotion";
 import provinces from "./data/provinces.json";
 import {
-  ALL,
-  COUNTDOWN,
-  EX_BEATS,
-  FOILS,
-  TOP,
-  T_MAX,
-  T_MIN,
-  tNorm,
-  year,
-} from "./data/extremes";
-import { beatFor, beatIndexAt, layoutBeats } from "./beats";
+  AX_MAX,
+  AX_MIN,
+  BODY_FRAMES,
+  FROM,
+  SPOTS,
+  TOP_N,
+  YEARS,
+  castAt,
+  raceAt,
+  rankOf,
+} from "./data/race";
 import { C, FPS, INK } from "./theme";
 import { Grain } from "./Grain";
-import { Typed } from "./Typed";
 import { useFonts } from "./fonts";
-import { BOTTOM_INSET, SAFE_RIGHT, SAFE_TOP, OUTRO_PAD, TEXT_X } from "./safe";
+import { BOTTOM_INSET, SAFE_RIGHT, SAFE_TOP, TEXT_X } from "./safe";
 
 const PROVINCES: Array<{ id: string; d: string }> = provinces.provinces;
 
 const HOOK = Math.round(2.2 * FPS);
-
-/**
- * 자막이 짧아지면 체류도 짧아진다.
- *
- * beatFor는 글자 수로 체류를 정하는데, 이 편은 자막이 한 줄뿐이라
- * 3초가 채 안 나온다. 그런데 화면에서는 막대가 자라고 순위가 한 칸씩
- * 쌓이는 동작이 있어서 글자보다 그림이 오래 걸린다. 그래서 비트마다
- * 얹는다. 1위는 더 얹는다 — 마지막 칸은 서 있어야 한다.
- */
-const EXTRA = [1.0, 1.1, 1.1, 1.1, 1.4, 2.4];
-
-const BEATS = EX_BEATS.map((e, i) => {
-  const b = beatFor(i, { title: e.line }, e.impact, FPS);
-  return { ...b, hold: b.hold + Math.round(EXTRA[i] * FPS) };
-});
-const SPANS = layoutBeats(BEATS, HOOK, 0);
-const BODY_END = SPANS[SPANS.length - 1].t2;
-const OUTRO = Math.round(8.0 * FPS);
+const OUTRO = Math.round(5.6 * FPS);
+const BODY_END = HOOK + BODY_FRAMES;
 export const EX_DURATION = BODY_END + OUTRO;
 
-/** 여름 — 달군 쇠 */
+/** 여름 쪽 끝 — 달군 쇠 */
 const HOT = "#C4553A";
-const HOT_DIM = "#6E3325";
-/** 겨울 — 언 물 */
-const COLD = "#5C87A8";
-const COLD_DIM = "#2F4A5E";
+/** 겨울 쪽 끝 — 언 물 */
+const COLD = "#4E7A9B";
 const BG = "#14120F";
 
-/*
- * 막대판 자리.
- *
- * 처음에 아래를 1470까지 내렸더니 막대 밑의 폭 숫자(67.4)가 자막의
- * 첫 줄과 겹쳤다. 판을 통째로 올려 자막 위로 자리를 비운다. 값 밑에
- * 연도 한 줄이 더 붙으면서 한 번 더 올렸다.
- */
-const CH_TOP = 600;
-const CH_BOT = 1300;
-const CH_H = CH_BOT - CH_TOP;
-/** 0℃ 선 */
-const ZERO_Y = CH_BOT - CH_H * tNorm(0);
-const ty = (t: number) => CH_BOT - CH_H * tNorm(t);
+/** 순위표 자리 */
+const ROW_TOP = 592;
+const ROW_H = 104;
+const BAR_H = 62;
 
-const CH_L = TEXT_X;
-const CH_R = 1080 - SAFE_RIGHT;
-
-/** 카운트다운 다섯 칸 */
-const COL_W = (CH_R - CH_L) / COUNTDOWN.length;
-const BAR_W = Math.round(COL_W * 0.52);
-
-/** 순위 밖 둘은 가운데에 따로 세운다 */
-const FOIL_W = 150;
-
-/**
- * 전국 96개.
- *
- * 순위표가 아니라 '전국이 이 범위 안에 있다'는 분포다. 사이를 띄우지
- * 않고 계단 하나로 잇는다. 이름도 눈금도 안 붙인다.
- */
-const NAT = [...ALL].sort((a, b) => b.gap - a.gap);
-const NAT_W = (CH_R - CH_L) / NAT.length;
-
-function natPath(key: "hi" | "lo"): string {
-  const d: string[] = [`M${CH_L} ${ZERO_Y}`];
-  NAT.forEach((s, i) => {
-    const y = ty(s[key]);
-    d.push(`L${CH_L + i * NAT_W} ${y}`, `L${CH_L + (i + 1) * NAT_W} ${y}`);
-  });
-  d.push(`L${CH_R} ${ZERO_Y}`, "Z");
-  return d.join("");
-}
-
-/** 위아래로 뻗는 막대 한 벌 */
-const Bar: React.FC<{
-  s: { hi: number; lo: number; gap: number; name: string; hiDt: string; loDt: string };
-  cx: number;
-  w: number;
-  g: number;
-  lit: boolean;
-  rank?: number;
-}> = ({ s, cx, w, g, lit, rank }) => {
-  const hiH = (ZERO_Y - ty(s.hi)) * g;
-  const loH = (ty(s.lo) - ZERO_Y) * g;
-  return (
-    <g>
-      <rect x={cx - w / 2} y={ZERO_Y - hiH} width={w} height={hiH} fill={lit ? HOT : HOT_DIM} />
-      <rect x={cx - w / 2} y={ZERO_Y} width={w} height={loH} fill={lit ? COLD : COLD_DIM} />
-      {g > 0.85 && (
-        <>
-          {/* 값 위·아래에 그 기록이 난 해를 단다. 언제 잰 값인지 없으면
-              막대가 '지금 이 동네 기온'처럼 읽힌다. */}
-          <text
-            x={cx}
-            y={ZERO_Y - hiH - 54}
-            fontSize={lit ? 26 : 22}
-            fontWeight={700}
-            fill={lit ? "#A87C68" : "#6E5A4E"}
-            textAnchor="middle"
-          >
-            {year(s.hiDt)}
-          </text>
-          <text
-            x={cx}
-            y={ZERO_Y - hiH - 16}
-            fontSize={lit ? 36 : 28}
-            fontWeight={900}
-            fill={lit ? "#E8A88F" : "#9C7A6C"}
-            textAnchor="middle"
-          >
-            {s.hi.toFixed(1)}
-          </text>
-          <text
-            x={cx}
-            y={ZERO_Y + loH + 38}
-            fontSize={lit ? 36 : 28}
-            fontWeight={900}
-            fill={lit ? "#9DBBD1" : "#6B8395"}
-            textAnchor="middle"
-          >
-            {s.lo.toFixed(1)}
-          </text>
-          <text
-            x={cx}
-            y={ZERO_Y + loH + 72}
-            fontSize={lit ? 26 : 22}
-            fontWeight={700}
-            fill={lit ? "#77909F" : "#4E6270"}
-            textAnchor="middle"
-          >
-            {year(s.loDt)}
-          </text>
-          {/* 순위와 이름은 0선 위에 얹는다. 막대 안이라 어디에도 안 걸린다. */}
-          {rank !== undefined && (
-            <text
-              x={cx}
-              y={ZERO_Y - 58}
-              fontSize={lit ? 40 : 32}
-              fontWeight={900}
-              fill={lit ? INK.brass : "#7A6E5C"}
-              textAnchor="middle"
-              style={{ paintOrder: "stroke", stroke: BG, strokeWidth: 8 }}
-            >
-              {rank}위
-            </text>
-          )}
-          <text
-            x={cx}
-            y={ZERO_Y - 14}
-            fontSize={lit ? 34 : 27}
-            fontWeight={lit ? 900 : 700}
-            fill={lit ? INK.bone : "#8A8172"}
-            textAnchor="middle"
-            style={{ paintOrder: "stroke", stroke: BG, strokeWidth: 8 }}
-          >
-            {s.name}
-          </text>
-          {/* 폭 — 이 편이 세는 값이라 막대 아래에 크게 */}
-          <text
-            x={cx}
-            y={ZERO_Y + loH + 128}
-            fontSize={lit ? 44 : 32}
-            fontWeight={900}
-            fill={lit ? C.text : "#6F6656"}
-            textAnchor="middle"
-          >
-            {s.gap.toFixed(1)}℃
-          </text>
-        </>
-      )}
-    </g>
-  );
-};
+/** 이름 칸과 온도축 */
+const NAME_X = TEXT_X;
+const AX_L = TEXT_X + 196;
+const AX_R = 1080 - SAFE_RIGHT + 30;
+const AX_W = AX_R - AX_L;
+/** 온도 → x */
+const tx = (t: number) => AX_L + ((t - AX_MIN) / (AX_MAX - AX_MIN)) * AX_W;
 
 export const ShortsExtremes: React.FC = () => {
   useFonts();
   const frame = useCurrentFrame();
 
-  const bi = Math.max(0, beatIndexAt(SPANS, frame));
-  const ev = EX_BEATS[bi];
   const inOutro = frame >= BODY_END;
+  const t = Math.max(0, Math.min(BODY_FRAMES - 1, frame - HOOK));
+  /** 마무리에서는 마지막 해에서 멈춘다 */
+  const shown = raceAt(inOutro ? BODY_FRAMES - 1 : t);
+  const F = shown.frame;
+  const P = shown.prev;
+  const pp = inOutro ? 1 : shown.p;
 
   const hookOut = interpolate(frame, [HOOK - 14, HOOK], [1, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  const uiOn = frame >= HOOK - 4;
 
-  const outroIn = interpolate(frame, [BODY_END, BODY_END + 22], [0, 1], {
+  const outroIn = interpolate(frame, [BODY_END, BODY_END + 20], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
-  /** 칸 하나가 자라는 진행 — 그 칸이 켜지는 비트부터 */
-  const grow = (idx: number) => {
-    const i = EX_BEATS.findIndex((b) => b.n > idx);
-    const at = i < 0 ? SPANS[0].t1 : SPANS[i].t1;
-    return interpolate(frame, [at, at + Math.round(0.6 * FPS)], [0, 1], {
-      extrapolateLeft: "clamp",
-      extrapolateRight: "clamp",
-    });
-  };
-
-  const foilOn = interpolate(
-    frame,
-    [SPANS[0].t1, SPANS[0].t1 + Math.round(0.5 * FPS), SPANS[1].t0, SPANS[1].t1],
-    [0, 1, 1, 0],
-    { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
-  );
-
-  /** 전국 분포는 1위가 선 뒤에 깔린다 */
-  const last = SPANS[SPANS.length - 1];
-  const natOn = interpolate(
-    frame,
-    [last.t1 + Math.round(1.6 * FPS), last.t1 + Math.round(2.4 * FPS)],
-    [0, 1],
-    { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
-  );
-
-  const n = inOutro ? COUNTDOWN.length : ev.n;
+  const cast = castAt(F, P);
 
   return (
     <AbsoluteFill style={{ backgroundColor: BG, fontFamily: "Pretendard" }}>
       <Audio src={staticFile("bgm-ex.wav")} volume={0.9} />
 
-      {/* ── 지도 — 뒤에 옅게. 켜진 지점에 점만 찍는다 ── */}
-      <AbsoluteFill style={{ opacity: inOutro ? 0.3 : 0.6 }}>
+      {/* ── 지도 — 뒤에 옅게. 순위표에 오른 곳에 점만 찍힌다 ── */}
+      <AbsoluteFill style={{ opacity: 0.32 }}>
         <svg
           viewBox="150 180 780 1000"
           preserveAspectRatio="xMidYMin slice"
           style={{ width: "100%", height: "100%", display: "block" }}
         >
-          {PROVINCES.map((p) => (
-            <path key={p.id} d={p.d} fill="#231F19" stroke="#38312A" strokeWidth={1.6} />
+          {PROVINCES.map((s) => (
+            <path key={s.id} d={s.d} fill="#231F19" stroke="#38312A" strokeWidth={1.6} />
           ))}
-          {/* 이름은 안 단다. 막대가 이미 들고 있어서 겹치기만 한다. */}
-          {COUNTDOWN.slice(0, n).map((s, i) => (
-            <circle
-              key={s.stn}
-              cx={s.x}
-              cy={s.y}
-              r={i === n - 1 ? 12 : 7}
-              fill={i === n - 1 ? INK.bone : "#6B6355"}
-            />
-          ))}
+          {Object.keys(F.rank).map((stn) => {
+            const s = SPOTS[stn];
+            if (!s) return null;
+            const first = F.rank[stn] === 0;
+            return (
+              <circle
+                key={stn}
+                cx={s.x}
+                cy={s.y}
+                r={first ? 13 : 7}
+                fill={first ? INK.bone : "#6B6355"}
+              />
+            );
+          })}
         </svg>
       </AbsoluteFill>
 
-      {/* ── 계기판 — 무엇을 세는 값인지 한 번만 적는다 ── */}
-      {uiOn && !inOutro && (
-        <div style={{ position: "absolute", top: SAFE_TOP, left: TEXT_X, right: SAFE_RIGHT }}>
-          <div style={{ color: C.dim, fontSize: 30, fontWeight: 700, letterSpacing: 2 }}>
-            역대 최고 − 역대 최저
-          </div>
-          <div style={{ color: C.text, fontSize: 72, fontWeight: 900, lineHeight: 1.15 }}>
-            기온 폭 순위
-          </div>
+      {/* ── 계기판 — 연도. 이 편에서 유일하게 흐르는 것. ── */}
+      <div style={{ position: "absolute", top: SAFE_TOP, left: TEXT_X, right: SAFE_RIGHT }}>
+        <div style={{ color: C.dim, fontSize: 28, fontWeight: 700, letterSpacing: 2 }}>
+          그 해까지의 역대 최고 − 역대 최저
         </div>
-      )}
+        <div style={{ display: "flex", alignItems: "baseline", gap: 20 }}>
+          <span
+            style={{
+              color: C.text,
+              fontSize: 108,
+              fontWeight: 900,
+              lineHeight: 1.06,
+              fontVariantNumeric: "tabular-nums",
+            }}
+          >
+            {F.year}
+          </span>
+          <span style={{ color: C.dim, fontSize: 32, fontWeight: 800 }}>
+            관측 {F.n}곳
+          </span>
+        </div>
+      </div>
 
-      {/* ── 막대판 ── */}
-      {uiOn && !inOutro && (
-        <AbsoluteFill>
-          <svg viewBox="0 0 1080 1920" style={{ width: "100%", height: "100%", display: "block" }}>
-            {natOn > 0 && (
-              <g opacity={natOn * 0.28}>
-                <path d={natPath("hi")} fill="#5A2A1E" />
-                <path d={natPath("lo")} fill="#263D4D" />
+      {/* ── 순위표 ── */}
+      <AbsoluteFill>
+        <svg viewBox="0 0 1080 1920" style={{ width: "100%", height: "100%", display: "block" }}>
+          <defs>
+            <linearGradient id="exBar" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor={COLD} />
+              <stop offset="100%" stopColor={HOT} />
+            </linearGradient>
+          </defs>
+
+          {/* 0℃ — 막대가 겨울 쪽과 여름 쪽으로 갈리는 자리 */}
+          <line
+            x1={tx(0)}
+            y1={ROW_TOP - 30}
+            x2={tx(0)}
+            y2={ROW_TOP + ROW_H * TOP_N - 30}
+            stroke="#463E33"
+            strokeWidth={2}
+          />
+          <text
+            x={tx(0)}
+            y={ROW_TOP - 42}
+            fontSize={24}
+            fontWeight={700}
+            fill={C.dim}
+            textAnchor="middle"
+          >
+            0℃
+          </text>
+
+          {cast.map((stn) => {
+            const r0 = rankOf(P, stn);
+            const r1 = rankOf(F, stn);
+            const r = r0 + (r1 - r0) * pp;
+            // 표 밖으로 밀려나는 줄은 흐려지며 내려간다
+            let fade = r > TOP_N - 0.5 ? Math.max(0, 1 - (r - (TOP_N - 0.5)) * 2.2) : 1;
+            // 마무리에서는 다섯 칸만 남긴다. 열 칸을 다 두면 마지막 줄이
+            // 10위 막대 위에 겹쳐 앉는다.
+            if (inOutro && r1 >= 5) fade *= 1 - outroIn;
+            if (fade <= 0) return null;
+
+            const row = F.row[stn] ?? P.row[stn];
+            const from = P.row[stn] ?? row;
+            // 자리와 막대 끝만 움직인다. 숫자는 그 해 값 그대로다 —
+            // 기록은 깨질 때 계단으로 뛰는 값이라 중간값을 보여주면
+            // 없던 숫자가 뜬다.
+            const lo = from.lo + (row.lo - from.lo) * pp;
+            const hi = from.hi + (row.hi - from.hi) * pp;
+            const y = ROW_TOP + r * ROW_H;
+            const lead = r1 === 0;
+            const x0 = tx(lo);
+            const x1 = tx(hi);
+
+            return (
+              <g key={stn} opacity={fade}>
+                {/* 밀려나는 줄에는 순위를 안 적는다. rankOf가 표 밖을
+                    TOP_N으로 주므로 그대로 쓰면 '11위'가 뜬다. */}
+                {r1 < TOP_N && (
+                  <text
+                    x={NAME_X}
+                    y={y + BAR_H * 0.74}
+                    fontSize={lead ? 46 : 38}
+                    fontWeight={900}
+                    fill={lead ? INK.brass : "#6F6656"}
+                    style={{ fontVariantNumeric: "tabular-nums" }}
+                  >
+                    {r1 + 1}
+                  </text>
+                )}
+                <text
+                  x={NAME_X + 74}
+                  y={y + BAR_H * 0.74}
+                  fontSize={lead ? 46 : 40}
+                  fontWeight={lead ? 900 : 800}
+                  fill={lead ? INK.bone : "#9B9282"}
+                >
+                  {row.name}
+                </text>
+
+                {/* 막대는 길이가 아니라 구간이다. 그 지점이 겪은 최저에서
+                    최고까지를 온도축 위에 그대로 눕힌다. */}
+                <rect
+                  x={x0}
+                  y={y}
+                  width={Math.max(2, x1 - x0)}
+                  height={BAR_H}
+                  rx={4}
+                  fill="url(#exBar)"
+                  opacity={lead ? 1 : 0.55}
+                />
+                <text
+                  x={(x0 + x1) / 2}
+                  y={y + BAR_H * 0.72}
+                  fontSize={lead ? 42 : 34}
+                  fontWeight={900}
+                  fill={lead ? "#17130E" : "#1E1A14"}
+                  textAnchor="middle"
+                  style={{ fontVariantNumeric: "tabular-nums" }}
+                >
+                  {row.gap.toFixed(1)}
+                </text>
               </g>
-            )}
+            );
+          })}
+        </svg>
+      </AbsoluteFill>
 
-            <line x1={CH_L} y1={ZERO_Y} x2={CH_R} y2={ZERO_Y} stroke="#5A5348" strokeWidth={2} />
-            <text x={CH_R + 8} y={ZERO_Y + 9} fontSize={26} fontWeight={700} fill={C.dim}>
-              0℃
-            </text>
-
-            {/* 순위 밖 둘 — 첫 비트에만. '이 둘은 답이 아니다'를 먼저 치운다. */}
-            {foilOn > 0 && (
-              <g opacity={foilOn}>
-                {FOILS.map((s, i) => (
-                  <Bar
-                    key={s.stn}
-                    s={s}
-                    cx={540 + (i - 0.5) * (FOIL_W + 60)}
-                    w={FOIL_W}
-                    g={1}
-                    lit={false}
-                    rank={s.rank}
-                  />
-                ))}
-              </g>
-            )}
-
-            {/* 카운트다운 — 5위가 왼쪽, 1위가 오른쪽. 오른쪽으로 갈수록 길어진다. */}
-            {COUNTDOWN.slice(0, n).map((s, i) => (
-              <Bar
-                key={s.stn}
-                s={s}
-                cx={CH_L + COL_W * i + COL_W / 2}
-                w={BAR_W}
-                g={grow(i)}
-                lit={i === n - 1}
-                rank={s.rank}
-              />
-            ))}
-          </svg>
-        </AbsoluteFill>
-      )}
-
-      {/* ── 자막 — 한 줄. 순위·이름·숫자는 막대가 들고 있다. ── */}
-      {uiOn && !inOutro && (
+      {/* ── 마무리 한 줄 ── */}
+      {inOutro && (
         <div
           style={{
             position: "absolute",
             left: TEXT_X,
             right: SAFE_RIGHT,
-            bottom: BOTTOM_INSET + 64,
+            bottom: BOTTOM_INSET + 236,
+            color: C.text,
+            fontSize: 52,
+            fontWeight: 900,
+            lineHeight: 1.3,
+            opacity: outroIn,
+            wordBreak: "keep-all",
           }}
         >
-          <Typed
-            text={ev.line}
-            start={SPANS[bi].t1}
-            cps={13}
-            style={{ display: "block", color: C.text, fontSize: 52, fontWeight: 900, lineHeight: 1.24 }}
-          />
+          88년 동안 1위는 셋뿐 — 서울, 춘천, 양평
         </div>
       )}
 
-      {/* ── 마무리 ── */}
-      {inOutro && (
-        <>
-          <AbsoluteFill style={{ backgroundColor: "rgba(20,18,15,0.68)", opacity: outroIn }} />
-          <AbsoluteFill
-            style={{
-              justifyContent: "flex-end",
-              padding: `0 ${SAFE_RIGHT}px ${OUTRO_PAD}px ${TEXT_X}px`,
-              opacity: outroIn,
-            }}
-          >
-            <div
-              style={{
-                color: C.dim,
-                fontSize: 30,
-                fontWeight: 700,
-                letterSpacing: 2,
-                marginBottom: 16,
-              }}
-            >
-              역대 기온 폭
-            </div>
-
-            {TOP.map((s, i) => {
-              const at = BODY_END + Math.round((0.5 + i * 0.3) * FPS);
-              const on = interpolate(frame, [at, at + 10], [0, 1], {
-                extrapolateLeft: "clamp",
-                extrapolateRight: "clamp",
-              });
-              const hero = i === 0;
-              return (
-                <div
-                  key={s.stn}
-                  style={{
-                    display: "flex",
-                    alignItems: "baseline",
-                    gap: 22,
-                    marginTop: 8,
-                    opacity: on,
-                    transform: `translateY(${(1 - on) * 12}px)`,
-                  }}
-                >
-                  <span
-                    style={{
-                      color: hero ? INK.brass : "#6F6656",
-                      fontSize: hero ? 46 : 38,
-                      fontWeight: 900,
-                      minWidth: 62,
-                    }}
-                  >
-                    {s.rank}
-                  </span>
-                  <span
-                    style={{
-                      color: hero ? INK.bone : C.dim,
-                      fontSize: hero ? 50 : 42,
-                      fontWeight: hero ? 900 : 800,
-                      flex: 1,
-                    }}
-                  >
-                    {s.name}
-                  </span>
-                  <span
-                    style={{
-                      color: hero ? C.text : C.dim,
-                      fontSize: hero ? 54 : 44,
-                      fontWeight: 900,
-                      fontVariantNumeric: "tabular-nums",
-                    }}
-                  >
-                    {s.gap.toFixed(1)}℃
-                  </span>
-                </div>
-              );
-            })}
-
-            <div
-              style={{
-                color: C.text,
-                fontSize: 46,
-                fontWeight: 800,
-                lineHeight: 1.34,
-                marginTop: 26,
-                opacity: interpolate(
-                  frame,
-                  [BODY_END + Math.round(3.4 * FPS), BODY_END + Math.round(4.1 * FPS)],
-                  [0, 1],
-                  { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
-                ),
-              }}
-            >
-              다섯 곳 다 바다에서 먼 내륙
-            </div>
-          </AbsoluteFill>
-        </>
-      )}
-
-      {/* ── 훅 ── */}
+      {/* ── 훅 — 0프레임에 순위표가 이미 떠 있고 그 위에 얹힌다 ── */}
       {hookOut > 0 && (
         <AbsoluteFill
           style={{
             opacity: hookOut,
-            backgroundColor: "rgba(20,18,15,0.56)",
+            backgroundColor: "rgba(20,18,15,0.74)",
             justifyContent: "center",
             padding: `0 ${SAFE_RIGHT}px 0 ${TEXT_X}px`,
           }}
         >
-          <div style={{ color: "#E8A88F", fontSize: 132, fontWeight: 900, lineHeight: 1.04 }}>
-            +40.1℃
-          </div>
-          <div style={{ color: "#9DBBD1", fontSize: 132, fontWeight: 900, lineHeight: 1.04 }}>
-            −32.6℃
+          <div style={{ color: INK.brass, fontSize: 46, fontWeight: 800, marginBottom: 10 }}>
+            {FROM} → {YEARS[YEARS.length - 1].y}
           </div>
           <div
             style={{
               color: C.text,
-              fontSize: 54,
-              fontWeight: 800,
-              marginTop: 24,
+              fontSize: 100,
+              fontWeight: 900,
+              lineHeight: 1.14,
               wordBreak: "keep-all",
             }}
           >
-            기온 폭 전국 1위인 동네
+            기온 폭
+            <br />
+            전국 순위
+          </div>
+          <div style={{ color: C.dim, fontSize: 42, fontWeight: 800, marginTop: 22 }}>
+            대구도 대관령도 없음
           </div>
         </AbsoluteFill>
       )}
