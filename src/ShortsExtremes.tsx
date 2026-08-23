@@ -16,6 +16,7 @@ import {
   T_MAX,
   T_MIN,
   tNorm,
+  year,
 } from "./data/extremes";
 import { beatFor, beatIndexAt, layoutBeats } from "./beats";
 import { C, FPS, INK } from "./theme";
@@ -59,10 +60,11 @@ const BG = "#14120F";
  * 막대판 자리.
  *
  * 처음에 아래를 1470까지 내렸더니 막대 밑의 폭 숫자(67.4)가 자막의
- * 첫 줄과 겹쳤다. 판을 통째로 올려 자막 위로 100px을 비운다.
+ * 첫 줄과 겹쳤다. 판을 통째로 올려 자막 위로 자리를 비운다. 값 밑에
+ * 연도 한 줄이 더 붙으면서 한 번 더 올렸다.
  */
-const CH_TOP = 660;
-const CH_BOT = 1360;
+const CH_TOP = 600;
+const CH_BOT = 1300;
 const CH_H = CH_BOT - CH_TOP;
 /** 0℃ 선 */
 const ZERO_Y = CH_BOT - CH_H * tNorm(0);
@@ -99,7 +101,7 @@ function natPath(key: "hi" | "lo"): string {
 
 /** 위아래로 뻗는 막대 한 벌 */
 const Bar: React.FC<{
-  s: { hi: number; lo: number; gap: number; name: string };
+  s: { hi: number; lo: number; gap: number; name: string; hiDt: string; loDt: string };
   cx: number;
   w: number;
   g: number;
@@ -114,6 +116,18 @@ const Bar: React.FC<{
       <rect x={cx - w / 2} y={ZERO_Y} width={w} height={loH} fill={lit ? COLD : COLD_DIM} />
       {g > 0.85 && (
         <>
+          {/* 값 위·아래에 그 기록이 난 해를 단다. 언제 잰 값인지 없으면
+              막대가 '지금 이 동네 기온'처럼 읽힌다. */}
+          <text
+            x={cx}
+            y={ZERO_Y - hiH - 54}
+            fontSize={lit ? 26 : 22}
+            fontWeight={700}
+            fill={lit ? "#A87C68" : "#6E5A4E"}
+            textAnchor="middle"
+          >
+            {year(s.hiDt)}
+          </text>
           <text
             x={cx}
             y={ZERO_Y - hiH - 16}
@@ -133,6 +147,16 @@ const Bar: React.FC<{
             textAnchor="middle"
           >
             {s.lo.toFixed(1)}
+          </text>
+          <text
+            x={cx}
+            y={ZERO_Y + loH + 72}
+            fontSize={lit ? 26 : 22}
+            fontWeight={700}
+            fill={lit ? "#77909F" : "#4E6270"}
+            textAnchor="middle"
+          >
+            {year(s.loDt)}
           </text>
           {/* 순위와 이름은 0선 위에 얹는다. 막대 안이라 어디에도 안 걸린다. */}
           {rank !== undefined && (
@@ -162,7 +186,7 @@ const Bar: React.FC<{
           {/* 폭 — 이 편이 세는 값이라 막대 아래에 크게 */}
           <text
             x={cx}
-            y={ZERO_Y + loH + 104}
+            y={ZERO_Y + loH + 128}
             fontSize={lit ? 44 : 32}
             fontWeight={900}
             fill={lit ? C.text : "#6F6656"}
@@ -325,7 +349,7 @@ export const ShortsExtremes: React.FC = () => {
             text={ev.line}
             start={SPANS[bi].t1}
             cps={13}
-            style={{ display: "block", color: C.text, fontSize: 58, fontWeight: 900 }}
+            style={{ display: "block", color: C.text, fontSize: 52, fontWeight: 900, lineHeight: 1.24 }}
           />
         </div>
       )}

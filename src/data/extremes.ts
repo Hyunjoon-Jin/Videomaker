@@ -89,11 +89,16 @@ export interface ExBeat {
 }
 
 export const EX_BEATS: ExBeat[] = [
-  { line: "대구는 31위, 대관령은 22위", impact: 0.9, foil: true, n: 0 },
-  { line: "-27.9℃는 1969년 2월", impact: 0.5, n: 1 },
-  { line: "겨울만으로 4위", impact: 0.5, n: 2 },
-  { line: "1981년 1월 5일의 기록", impact: 0.5, n: 3 },
-  { line: "2018년 8월, 8년간 전국 최고", impact: 0.9, n: 4 },
+  { line: "대구 31위, 대관령 22위", impact: 0.9, foil: true, n: 0 },
+  { line: "1966년부터 관측한 값", impact: 0.5, n: 1 },
+  { line: "여름은 제일 낮은데 4위", impact: 0.5, n: 2 },
+  { line: "여기까지 셋 다 내륙", impact: 0.5, n: 3 },
+  { line: "8년간 전국 최고기온 기록", impact: 0.9, n: 4 },
   // 1·2·3위(양평·홍천·충주)의 최저 기록이 전부 1981-01-05이다.
-  { line: "1·2·3위가 같은 날 얼었음", impact: 1, n: 5 },
+  { line: "1·2·3위 모두 동일한 날 최저기온 기록", impact: 1, n: 5 },
 ];
+
+/** "2018-08-01" → "2018" */
+export function year(d: string): string {
+  return d.slice(0, 4);
+}
