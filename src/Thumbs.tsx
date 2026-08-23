@@ -13,7 +13,7 @@ import { ZONE_XY, dikePath, polyPath } from "./data/ganchuk";
 import { AKASHI, MERIDIANS, SEOUL, meridianPath, meridianX } from "./data/timezone";
 import { FLIGHT, OLD_SAGO, flightPathTo } from "./data/sillok";
 import { MAP_KOREA, MAP_LANDS, MARKED, MAX_DEPTH, PROFILE, TRENCH_LON, colorOf, lonX, radiusOf as qRadius } from "./data/quake";
-import { HERO as EX_HERO } from "./data/extremes";
+import { TOP as EX_TOP } from "./data/extremes";
 import { C, INK } from "./theme";
 import { Grain } from "./Grain";
 import { useFonts } from "./fonts";
@@ -857,17 +857,21 @@ export const ThumbDatum: React.FC = () => {
   );
 };
 
-/* ── 13. 가장 더운 곳과 가장 추운 곳 ───────────────────
+/* ── 13. 역대 기온 폭 1위 ─────────────────────────────
    막대 하나가 위아래로 뻗는 그림. 다른 편들의 썸네일은 전부 지도인데
-   이것만 막대라 그리드에서 눈에 걸린다.
+   이것만 막대라 그리드에서 눈에 걸린다. 지도는 뒤에 남긴다 — 막대만
+   두면 무슨 채널인지 모른다.
 
-   지도는 뒤에 남긴다. 막대만 두면 무슨 채널인지 모른다. 홍천 자리에서
-   막대가 솟아야 '땅 이야기'로 읽힌다. */
+   **지점 이름을 안 쓴다.** 편이 5위부터 거꾸로 세어 1위를 마지막에
+   놓는 구조라, 썸네일에 답을 적으면 카운트다운이 할 일이 없다.
+   일출 편에서 독도를 뺀 것과 같은 이유다. 이름 자리에는 물음표가
+   선다 — 숫자 둘은 다 보여주고 어디인지만 감춘다. */
 export const ThumbExtremes: React.FC = () => {
+  const hero = EX_TOP[0];
   const cx = 540;
   const zero = 640;
-  // 1℃ = 9.6px. 41.0은 위로 394px, -28.1은 아래로 270px.
-  const k = 9.6;
+  // 1℃ = 9.0px. 40.1은 위로 361px, -32.6은 아래로 293px.
+  const k = 9.0;
   const w = 190;
   return (
     <Frame>
@@ -889,30 +893,30 @@ export const ThumbExtremes: React.FC = () => {
           preserveAspectRatio="xMidYMid slice"
           style={{ width: "100%", height: "100%", display: "block" }}
         >
-          <rect x={cx - w / 2} y={zero - EX_HERO.hi * k} width={w} height={EX_HERO.hi * k} fill="#C4553A" />
-          <rect x={cx - w / 2} y={zero} width={w} height={-EX_HERO.lo * k} fill="#5C87A8" />
+          <rect x={cx - w / 2} y={zero - hero.hi * k} width={w} height={hero.hi * k} fill="#C4553A" />
+          <rect x={cx - w / 2} y={zero} width={w} height={-hero.lo * k} fill="#5C87A8" />
           <line x1={cx - w} y1={zero} x2={cx + w} y2={zero} stroke="#17140F" strokeWidth={7} />
 
-          <text x={cx} y={zero - EX_HERO.hi * k - 26} fontSize={80} fontWeight={900}
+          <text x={cx} y={zero - hero.hi * k - 26} fontSize={78} fontWeight={900}
                 fill="#E8A88F" textAnchor="middle">
-            {EX_HERO.hi.toFixed(1)}℃
+            +{hero.hi.toFixed(1)}℃
           </text>
-          <text x={cx} y={zero - EX_HERO.lo * k + 84} fontSize={80} fontWeight={900}
+          <text x={cx} y={zero - hero.lo * k + 84} fontSize={78} fontWeight={900}
                 fill="#9DBBD1" textAnchor="middle">
-            {EX_HERO.lo.toFixed(1)}℃
+            −{Math.abs(hero.lo).toFixed(1)}℃
           </text>
-          <text x={cx} y={zero - 24} fontSize={66} fontWeight={900} fill="#17140F"
+          <text x={cx} y={zero - 20} fontSize={104} fontWeight={900} fill="#17140F"
                 textAnchor="middle">
-            {EX_HERO.name}
+            ?
           </text>
         </svg>
       </AbsoluteFill>
 
       <Face
-        topic="한 지점이 겪은 폭"
-        big="69.1"
+        topic="역대 최고 − 역대 최저"
+        big={hero.gap.toFixed(1)}
         unit="℃"
-        label="가장 더운 곳과 가장 추운 곳이 같은 곳"
+        label="기온 폭 전국 1위 동네의 기록"
         band={BAND.extremes}
       />
     </Frame>

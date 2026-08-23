@@ -1,11 +1,14 @@
 /**
- * 가장 더운 곳과 가장 추운 곳이 같은 곳 — 투영과 비트.
+ * 역대 기온 폭 순위 — 투영과 비트.
  *
- * 야마: 41.0도를 겪은 곳과 -28.1도를 겪은 곳이 같은 자리다. 홍천이다.
- * '제일 더운 곳'과 '제일 추운 곳'을 따로 찾는 것이 틀린 물음이었다.
+ * 야마: 우리나라에서 기온이 가장 크게 벌어지는 곳은 대구도 대관령도
+ * 아니다. 5위부터 거꾸로 세어 1위를 맨 마지막에 놓는다.
+ *
+ * '기온 폭'은 그 지점이 관측을 시작한 뒤 겪은 역대 최고에서 역대
+ * 최저를 뺀 값이다. 연교차(달 평균의 차)와는 다른 것이라 화면에서도
+ * 연교차라고 쓰지 않는다.
  *
  * 숫자는 전부 scripts/prep-extremes.py가 기상청에서 받은 것이다.
- * 여기서는 화면에 쓸 모양으로만 바꾼다.
  */
 import raw from "./extremes.json";
 import { project } from "./places";
@@ -19,15 +22,13 @@ export interface Stn {
   alt: number;
   /** 관측 시작일 "1971-09-27" */
   start: string;
-  /** 역대 일최고기온과 그날 */
   hi: number;
   hiDt: string;
-  /** 역대 일최저기온과 그날 */
   lo: number;
   loDt: string;
   /** 최고 - 최저 */
   gap: number;
-  /** 전체 기간 교차 순위 */
+  /** 전체 기간 순위 */
   rank: number;
   x: number;
   y: number;
@@ -38,116 +39,61 @@ const place = <T extends { lat: number; lon: number }>(s: T) => ({
   ...project(s.lon, s.lat),
 });
 
-/** 96개 지점 전부 — 마무리에서 전국 막대를 그린다 */
+/** 96개 전부 — 마지막에 전국 분포를 깐다 */
 export const ALL: Stn[] = raw.all.map(place);
 
-/** 본문에 세우는 일곱. 배열 순서가 곧 등장 순서다. */
-export const CAST: Array<Stn & { why: string; commonRank: number | null }> =
-  raw.cast.map(place);
+/** 1위부터 5위까지. 화면은 이걸 거꾸로 읽는다. */
+export const TOP: Stn[] = raw.top.map(place);
 
-/** 주인공 */
-export const HERO = CAST[0];
+/** 순위 밖인데 이름값은 제일 큰 둘 — 대구, 대관령 */
+export const FOILS: Stn[] = raw.foils.map(place);
+
+/** 카운트다운 순서 — 5위, 4위, 3위, 2위, 1위 */
+export const COUNTDOWN: Stn[] = [...TOP].reverse();
 
 export const RANK = raw.rank;
 export const CORR = raw.corr;
 
-/** 막대가 닿는 위·아래 끝. 전국 값이 다 들어가는 범위로 고정한다. */
+/** 막대가 닿는 위·아래 끝 */
 export const T_MAX = 45;
 export const T_MIN = -35;
 
-/** 온도 → 0(=T_MIN)에서 1(=T_MAX) 사이 */
 export function tNorm(t: number): number {
   return (t - T_MIN) / (T_MAX - T_MIN);
 }
 
-/** "2018-08-01" → "2018년 8월 1일" */
-export function dLabel(d: string): string {
-  const [y, m, dd] = d.split("-").map(Number);
-  return `${y}년 ${m}월 ${dd}일`;
-}
-
-/** 소수 한 자리에 도 기호. 영하는 마이너스로 적는다 — 화면에서 '영하'는 길다. */
 export function deg(t: number): string {
   return `${t.toFixed(1)}℃`;
-}
-
-export interface ExBeat {
-  kicker: string;
-  title: string;
-  detail: string;
-  impact: number;
-  /** 이 비트에서 켜지는 지점 수. CAST 앞에서부터 센다. */
-  cast: number;
-  /** 계기판에 거는 날짜. 없으면 앞 비트 것을 유지한다. */
-  date?: string;
-  /** 여름 막대만 / 겨울 막대만 / 둘 다 */
-  show: "hi" | "lo" | "both";
-  /** 마무리 직전에 전국을 켠다 */
-  nation?: boolean;
 }
 
 /**
  * 비트.
  *
- * 순서가 논증이다. 여름 기록을 먼저 보여주고(홍천이 오래 1위였다),
- * 겨울 기록을 켜면 같은 막대가 아래로도 뻗는다. 그 다음에 '한쪽만
- * 잘하는 곳'들을 옆에 세운다. 대관령은 아래만, 양산은 위만 길다.
+ * 자막을 한 줄로 줄였다.
  *
- * '전국 1위'라고 쓰지 않는다. 기준(전체 기간 / 1988년 이후 공통기간)에
- * 따라 양평과 홍천이 바뀐다. 기록값과 비교만 놓으면 순위를 말하지
- * 않고도 읽힌다. 기간 이야기는 고정댓글에 적는다.
+ * 앞판은 kicker(순위) + title(지점명) + detail 세 줄이었는데, 순위도
+ * 지점명도 두 숫자도 전부 막대에 이미 적혀 있다. 자막이 화면을 두 번
+ * 말하고 있었다. 읽을 것이 늘었을 뿐 아는 것은 안 늘었다.
+ *
+ * 그래서 자막은 **화면에 없는 것 한 가지만** 말한다. 날짜, 순위 밖의
+ * 사실, 그 지점에 대해 숫자가 말 못 하는 것. 한 줄, 스무 자 안쪽이다.
  */
+export interface ExBeat {
+  /** 화면에 없는 것 한 가지 */
+  line: string;
+  impact: number;
+  /** 순위 밖 둘(대구·대관령)을 세우는 비트 */
+  foil?: boolean;
+  /** 이 비트에서 보이는 카운트다운 칸 수 */
+  n: number;
+}
+
 export const EX_BEATS: ExBeat[] = [
-  {
-    date: "2018-08-01",
-    kicker: "2018년 8월 1일",
-    title: "강원도 홍천 41.0℃",
-    detail: "이날부터 8년간 우리나라 최고기온",
-    impact: 1,
-    cast: 1,
-    show: "hi",
-  },
-  {
-    date: "1981-01-05",
-    kicker: "37년을 거슬러",
-    title: "같은 홍천에서 -28.1℃",
-    detail: "한 지점이 겪은 폭이 69.1℃",
-    impact: 1,
-    cast: 1,
-    show: "both",
-  },
-  {
-    kicker: "그럼 대관령은",
-    title: "제일 높은데 여름에 짐",
-    detail: "해발 772m, 역대 최고가 33.2℃",
-    impact: 0.9,
-    cast: 4,
-    show: "both",
-  },
-  {
-    kicker: "대프리카는",
-    title: "여름은 40.0℃, 겨울이 멈춤",
-    detail: "그 최고 기록도 1942년 것",
-    impact: 0.5,
-    cast: 5,
-    show: "both",
-  },
-  {
-    date: "2026-08-02",
-    kicker: "2026년 8월 2일",
-    title: "양산 42.5℃, 기록이 깨짐",
-    detail: "그런데 이 동네 최저는 -11.7℃뿐",
-    impact: 1,
-    cast: 6,
-    show: "both",
-  },
-  {
-    kicker: "한쪽만 잘하면 못 이김",
-    title: "양쪽 다 극단인 자리",
-    detail: "해발 높이와는 거의 상관없음",
-    impact: 0.9,
-    cast: 7,
-    show: "both",
-    nation: true,
-  },
+  { line: "대구는 31위, 대관령은 22위", impact: 0.9, foil: true, n: 0 },
+  { line: "-27.9℃는 1969년 2월", impact: 0.5, n: 1 },
+  { line: "겨울만으로 4위", impact: 0.5, n: 2 },
+  { line: "1981년 1월 5일의 기록", impact: 0.5, n: 3 },
+  { line: "2018년 8월, 8년간 전국 최고", impact: 0.9, n: 4 },
+  // 1·2·3위(양평·홍천·충주)의 최저 기록이 전부 1981-01-05이다.
+  { line: "1·2·3위가 같은 날 얼었음", impact: 1, n: 5 },
 ];
