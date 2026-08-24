@@ -16,9 +16,10 @@ import { ShortsQuake, QUAKE_DURATION } from "./ShortsQuake";
 import { ShortsSunrise, SUNRISE_DURATION } from "./ShortsSunrise";
 import { ShortsDatum, DATUM_DURATION } from "./ShortsDatum";
 import { ShortsExtremes, EX_DURATION } from "./ShortsExtremes";
+import { ShortsSnow, SNOW_DURATION } from "./ShortsSnow";
 import { ShortsCanopus, CANOPUS_DURATION } from "./ShortsCanopus";
 import { ChannelBanner, ChannelIcon, ChannelWatermark } from "./Channel";
-import { ThumbBongsu, ThumbGanchuk, ThumbKoreanWar, ThumbPower, ThumbRail, ThumbQuake, ThumbSillok, ThumbTimezone, ThumbTongsinsa, ThumbTyphoon, ThumbWar, ThumbDatum, ThumbExtremes, ThumbCanopus } from "./Thumbs";
+import { ThumbBongsu, ThumbGanchuk, ThumbKoreanWar, ThumbPower, ThumbRail, ThumbQuake, ThumbSillok, ThumbTimezone, ThumbTongsinsa, ThumbTyphoon, ThumbWar, ThumbDatum, ThumbExtremes, ThumbCanopus, ThumbSnow } from "./Thumbs";
 import { FPS, SHORT_H, SHORT_W } from "./theme";
 
 export const RemotionRoot: React.FC = () => (
@@ -181,6 +182,15 @@ export const RemotionRoot: React.FC = () => (
       width={SHORT_W}
       height={SHORT_H}
     />
+    {/* 기획 16 — 눈이 가장 많이 온 날은 하루가 만든다 */}
+    <Composition
+      id="ShortsSnow"
+      component={ShortsSnow}
+      durationInFrames={SNOW_DURATION}
+      fps={FPS}
+      width={SHORT_W}
+      height={SHORT_H}
+    />
     {/* 썸네일 — 쇼츠와 같은 9:16 */}
     {([
       ["ThumbWar", ThumbWar],
@@ -197,6 +207,7 @@ export const RemotionRoot: React.FC = () => (
       ["ThumbDatum", ThumbDatum],
       ["ThumbExtremes", ThumbExtremes],
       ["ThumbCanopus", ThumbCanopus],
+      ["ThumbSnow", ThumbSnow],
     ] as const).map(([id, comp]) => (
       <Composition
         key={id}

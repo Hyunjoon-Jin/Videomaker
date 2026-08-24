@@ -14,6 +14,7 @@ import { AKASHI, MERIDIANS, SEOUL, meridianPath, meridianX } from "./data/timezo
 import { FLIGHT, OLD_SAGO, flightPathTo } from "./data/sillok";
 import { MAP_KOREA, MAP_LANDS, MARKED, MAX_DEPTH, PROFILE, TRENCH_LON, colorOf, lonX, radiusOf as qRadius } from "./data/quake";
 import { YEARS as EX_YEARS } from "./data/race";
+import { SITES as SNOW_SITES, DAY_NAMES as SNOW_DAY_NAMES } from "./data/snow";
 import {
   JEJU as CN_JEJU,
   LIMIT as CN_LIMIT,
@@ -182,6 +183,7 @@ const BAND = {
   datum: "#3F4C55",     // 청사진 — 측량 도면의 회청색. 태풍의 쪽빛보다 탁하게
   extremes: "#7E6A6E", // 마른 자줏빛 흙 — 더위도 추위도 아닌 색. 한쪽 편을 들면 안 된다
   canopus: "#2A3350",  // 감청 — 별이 뜨기 직전 하늘. 시간대 편의 남보라보다 푸르고 어둡게
+  snow: "#3A5570",     // 눈 그늘의 푸른빛. 노인성 편의 감청보다 밝고 회색기가 있다
 } as const;
 
 /**
@@ -997,6 +999,67 @@ export const ThumbCanopus: React.FC = () => {
         label="이 선 위에서는 안 뜨는 별"
         band={BAND.canopus}
         ink="#EDE6D6"
+      />
+    </Frame>
+  );
+};
+
+/* ── 15. 눈 ───────────────────────────────────────────
+   2004년 3월 5일에 켜진 여덟 곳만 남기고 나머지는 지운다.
+   200px에서 읽혀야 하는 것은 '충청·경북 한 덩어리'와 숫자 하나뿐이라
+   지점 이름도 대전 하나만 붙인다. */
+export const ThumbSnow: React.FC = () => {
+  const dj = SNOW_SITES.find((s) => s.name === "대전")!;
+  const eight = new Set(SNOW_DAY_NAMES);
+  return (
+    <Frame>
+      <AbsoluteFill>
+        <svg
+          viewBox="200 320 660 1170"
+          preserveAspectRatio="xMidYMid slice"
+          style={{ width: "100%", height: "100%", display: "block" }}
+        >
+          <defs>
+            <radialGradient id="thSnGlow">
+              <stop offset="0%" stopColor="#8FCBF0" stopOpacity={0.5} />
+              <stop offset="100%" stopColor="#8FCBF0" stopOpacity={0} />
+            </radialGradient>
+          </defs>
+
+          {PROVINCES.map((p) => (
+            <path key={p.id} d={p.d} fill={M.land} stroke={M.coast} strokeWidth={2.2} />
+          ))}
+
+          {/* 그날 눈이 떨어진 자리 한 덩어리 */}
+          <circle cx={dj.x + 30} cy={dj.y - 30} r={150} fill="url(#thSnGlow)" />
+
+          {SNOW_SITES.filter((s) => eight.has(s.name)).map((s) => (
+            <g key={s.id}>
+              <rect x={s.x - 7} y={s.y - s.v * 1.5} width={14} height={s.v * 1.5} fill="#EAF4FC" />
+              <circle cx={s.x} cy={s.y} r={9} fill="#EAF4FC" />
+            </g>
+          ))}
+
+          <text
+            x={dj.x - 118}
+            y={dj.y + 84}
+            fontSize={52}
+            fontWeight={900}
+            fill="#EAF4FC"
+            style={{ paintOrder: "stroke", stroke: "#141A24", strokeWidth: 12 }}
+          >
+            대전 49cm
+          </text>
+        </svg>
+      </AbsoluteFill>
+
+      <Face
+        topic="한 동네의 눈 기록을 만든 하루"
+        big="8"
+        unit="곳"
+        label="2004년 3월 5일 하루에 세워진 역대 1위"
+        band={BAND.snow}
+        ink="#EDF3FA"
       />
     </Frame>
   );
