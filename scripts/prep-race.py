@@ -126,10 +126,19 @@ def main():
     for y in range(start, END_YEAR + 1):
         rows = [(stn, run[stn][y]) for stn in run if y in run[stn]]
         rows.sort(key=lambda t: -t[1]["gap"])
+        # 전국 봉투 — 그 해까지 어느 지점에서든 나온 가장 높은 값과 낮은 값.
+        # 순위표에 못 드는 지점의 기록도 여기서는 잡힌다. 양산시는 기온 폭
+        # 69위라 표에 한 번도 못 오르지만 2026년 42.5도는 전국 최고다.
+        hot = max(rows, key=lambda t: t[1]["hi"])
+        cold = min(rows, key=lambda t: t[1]["lo"])
         years.append({
             "y": y,
             "n": len(rows),
             "top": [{"stn": s, "name": stns[s]["name"], **v} for s, v in rows[:TOP_N]],
+            "nation": {
+                "hi": hot[1]["hi"], "hiName": stns[hot[0]]["name"],
+                "lo": cold[1]["lo"], "loName": stns[cold[0]]["name"],
+            },
         })
 
     # ── 검산 ──────────────────────────────────────────
@@ -139,6 +148,14 @@ def main():
         sys.exit(f"마지막 해 1위가 양평이 아니다 — {last[0]['name']} {last[0]['gap']}")
     if abs(last[0]["gap"] - 72.7) > 0.11:
         sys.exit(f"양평 폭이 72.7과 다르다 — {last[0]['gap']}")
+
+    # 전국 최고는 2026년 양산시 42.5도여야 한다. 순위표에 못 오르는
+    # 지점이라 이 줄이 없으면 화면에서 통째로 빠진다.
+    nt = years[-1]["nation"]
+    if abs(nt["hi"] - 42.5) > 0.01 or nt["hiName"] != "양산시":
+        sys.exit(f"전국 최고가 양산시 42.5가 아니다 — {nt['hiName']} {nt['hi']}")
+    if abs(nt["lo"] + 32.6) > 0.01 or nt["loName"] != "양평":
+        sys.exit(f"전국 최저가 양평 -32.6이 아니다 — {nt['loName']} {nt['lo']}")
 
     # 순위가 실제로 바뀌는지. 안 바뀌면 이 편은 정지 화면이다.
     lead = [y["top"][0]["name"] for y in years]
@@ -168,6 +185,17 @@ def main():
     for y in years[:1] + years[len(years) // 3:len(years) // 3 + 1] + years[-1:]:
         head = " · ".join(f"{r['name']} {r['gap']}" for r in y["top"][:4])
         print(f"  {y['y']}  ({y['n']}곳)  {head}")
+    print("\n전국 기록이 깨진 해")
+    ph = pl = None
+    for yy in years:
+        n = yy["nation"]
+        if n["hi"] != ph:
+            print(f"  {yy['y']}  최고 {n['hi']} {n['hiName']}")
+            ph = n["hi"]
+        if n["lo"] != pl:
+            print(f"  {yy['y']}  최저 {n['lo']} {n['loName']}")
+            pl = n["lo"]
+
     print("\n1위가 바뀐 해")
     for i in range(1, len(years)):
         if lead[i] != lead[i - 1]:

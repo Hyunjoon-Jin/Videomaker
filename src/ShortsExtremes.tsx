@@ -38,7 +38,7 @@ const COLD = "#4E7A9B";
 const BG = "#14120F";
 
 /** 순위표 자리 */
-const ROW_TOP = 592;
+const ROW_TOP = 618;
 const ROW_H = 104;
 const BAR_H = 62;
 
@@ -47,6 +47,10 @@ const NAME_X = TEXT_X;
 const AX_L = TEXT_X + 196;
 const AX_R = 1080 - SAFE_RIGHT + 30;
 const AX_W = AX_R - AX_L;
+
+/** 전국 봉투 줄 */
+const NAT_Y = 502;
+const NAT_H = 44;
 /** 온도 → x */
 const tx = (t: number) => AX_L + ((t - AX_MIN) / (AX_MAX - AX_MIN)) * AX_W;
 
@@ -138,10 +142,52 @@ export const ShortsExtremes: React.FC = () => {
             </linearGradient>
           </defs>
 
+          {/*
+            전국 봉투.
+
+            순위표는 상위 열 곳만 담는데, 전국 최고기온은 그 열 곳에서
+            안 나온다 — 2026년 42.5도는 양산시 것이고 양산시는 기온 폭
+            69위다. 표만 보면 그 기록이 통째로 빠진다. 같은 온도축 위에
+            얇은 줄로 얹어 두면 아래 막대들이 전부 그 안에 들어앉는다.
+          */}
+          <rect
+            x={tx(F.nation.lo)}
+            y={NAT_Y}
+            width={tx(F.nation.hi) - tx(F.nation.lo)}
+            height={NAT_H}
+            rx={3}
+            fill="url(#exBar)"
+            opacity={0.34}
+          />
+          <text x={NAME_X} y={NAT_Y + NAT_H * 0.8} fontSize={30} fontWeight={800} fill={C.dim}>
+            전국
+          </text>
+          <text
+            x={tx(F.nation.lo) + 12}
+            y={NAT_Y + NAT_H * 0.78}
+            fontSize={26}
+            fontWeight={900}
+            fill="#B9D2E2"
+            style={{ fontVariantNumeric: "tabular-nums" }}
+          >
+            {F.nation.lo.toFixed(1)} {F.nation.loName}
+          </text>
+          <text
+            x={tx(F.nation.hi) - 12}
+            y={NAT_Y + NAT_H * 0.78}
+            fontSize={26}
+            fontWeight={900}
+            fill="#F0C6B6"
+            textAnchor="end"
+            style={{ fontVariantNumeric: "tabular-nums" }}
+          >
+            {F.nation.hiName} {F.nation.hi.toFixed(1)}
+          </text>
+
           {/* 0℃ — 막대가 겨울 쪽과 여름 쪽으로 갈리는 자리 */}
           <line
             x1={tx(0)}
-            y1={ROW_TOP - 30}
+            y1={NAT_Y}
             x2={tx(0)}
             y2={ROW_TOP + ROW_H * TOP_N - 30}
             stroke="#463E33"

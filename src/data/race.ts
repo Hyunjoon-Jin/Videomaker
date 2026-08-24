@@ -24,11 +24,26 @@ export interface Row {
   gap: number;
 }
 
+/**
+ * 전국 봉투 — 그 해까지 어느 지점에서든 나온 가장 높은 값과 낮은 값.
+ *
+ * 순위표에 못 드는 지점의 기록도 여기서는 잡힌다. 양산시는 기온 폭
+ * 69위라 표에 한 번도 못 오르지만 2026년 8월 2일 42.5도는 전국
+ * 최고기온이다. 이 줄이 없으면 그 기록이 화면에서 통째로 빠진다.
+ */
+export interface Nation {
+  hi: number;
+  hiName: string;
+  lo: number;
+  loName: string;
+}
+
 export interface YearRow {
   y: number;
   /** 그 해에 관측 중이던 지점 수 */
   n: number;
   top: Row[];
+  nation: Nation;
 }
 
 export const YEARS: YearRow[] = raw.years;
@@ -65,6 +80,8 @@ export interface Frame {
   year: number;
   /** 그 해 관측 지점 수 */
   n: number;
+  /** 그 해까지의 전국 최고·최저 */
+  nation: Nation;
   /** 지점번호 → 그 해 순위(0부터). 순위표 밖이면 TOP_N */
   rank: Record<string, number>;
   /** 지점번호 → 그 해 값 */
@@ -79,7 +96,7 @@ function frameOf(i: number): Frame {
     rank[r.stn] = k;
     row[r.stn] = r;
   });
-  return { year: y.y, n: y.n, rank, row };
+  return { year: y.y, n: y.n, nation: y.nation, rank, row };
 }
 
 const FRAMES: Frame[] = YEARS.map((_, i) => frameOf(i));
