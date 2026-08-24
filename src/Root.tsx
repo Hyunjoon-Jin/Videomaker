@@ -16,8 +16,9 @@ import { ShortsQuake, QUAKE_DURATION } from "./ShortsQuake";
 import { ShortsSunrise, SUNRISE_DURATION } from "./ShortsSunrise";
 import { ShortsDatum, DATUM_DURATION } from "./ShortsDatum";
 import { ShortsExtremes, EX_DURATION } from "./ShortsExtremes";
+import { ShortsCanopus, CANOPUS_DURATION } from "./ShortsCanopus";
 import { ChannelBanner, ChannelIcon, ChannelWatermark } from "./Channel";
-import { ThumbBongsu, ThumbGanchuk, ThumbKoreanWar, ThumbPower, ThumbRail, ThumbQuake, ThumbSillok, ThumbTimezone, ThumbTongsinsa, ThumbTyphoon, ThumbWar, ThumbDatum, ThumbExtremes } from "./Thumbs";
+import { ThumbBongsu, ThumbGanchuk, ThumbKoreanWar, ThumbPower, ThumbRail, ThumbQuake, ThumbSillok, ThumbTimezone, ThumbTongsinsa, ThumbTyphoon, ThumbWar, ThumbDatum, ThumbExtremes, ThumbCanopus } from "./Thumbs";
 import { FPS, SHORT_H, SHORT_W } from "./theme";
 
 export const RemotionRoot: React.FC = () => (
@@ -171,6 +172,15 @@ export const RemotionRoot: React.FC = () => (
       width={SHORT_W}
       height={SHORT_H}
     />
+    {/* 기획 15 — 서울에서는 안 보이고 제주에서는 보이는 별 */}
+    <Composition
+      id="ShortsCanopus"
+      component={ShortsCanopus}
+      durationInFrames={CANOPUS_DURATION}
+      fps={FPS}
+      width={SHORT_W}
+      height={SHORT_H}
+    />
     {/* 썸네일 — 쇼츠와 같은 9:16 */}
     {([
       ["ThumbWar", ThumbWar],
@@ -186,6 +196,7 @@ export const RemotionRoot: React.FC = () => (
       ["ThumbQuake", ThumbQuake],
       ["ThumbDatum", ThumbDatum],
       ["ThumbExtremes", ThumbExtremes],
+      ["ThumbCanopus", ThumbCanopus],
     ] as const).map(([id, comp]) => (
       <Composition
         key={id}

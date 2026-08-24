@@ -14,6 +14,12 @@ import { AKASHI, MERIDIANS, SEOUL, meridianPath, meridianX } from "./data/timezo
 import { FLIGHT, OLD_SAGO, flightPathTo } from "./data/sillok";
 import { MAP_KOREA, MAP_LANDS, MARKED, MAX_DEPTH, PROFILE, TRENCH_LON, colorOf, lonX, radiusOf as qRadius } from "./data/quake";
 import { YEARS as EX_YEARS } from "./data/race";
+import {
+  JEJU as CN_JEJU,
+  LIMIT as CN_LIMIT,
+  SEOUL as CN_SEOUL,
+  latY as cnLatY,
+} from "./data/canopus";
 import { C, INK } from "./theme";
 import { Grain } from "./Grain";
 import { useFonts } from "./fonts";
@@ -175,6 +181,7 @@ const BAND = {
   quake: "#5E2E1C",     // 녹슨 쇠 — 땅속. 6·25의 붉은 흙과 갈리게 더 어둡게
   datum: "#3F4C55",     // 청사진 — 측량 도면의 회청색. 태풍의 쪽빛보다 탁하게
   extremes: "#7E6A6E", // 마른 자줏빛 흙 — 더위도 추위도 아닌 색. 한쪽 편을 들면 안 된다
+  canopus: "#2A3350",  // 감청 — 별이 뜨기 직전 하늘. 시간대 편의 남보라보다 푸르고 어둡게
 } as const;
 
 /**
@@ -918,6 +925,78 @@ export const ThumbExtremes: React.FC = () => {
         unit="℃"
         label="기온 폭 전국 1위 동네의 기록"
         band={BAND.extremes}
+      />
+    </Frame>
+  );
+};
+
+/* ── 14. 노인성 ───────────────────────────────────────
+   가로선 하나. 위는 캄캄하고 아래에 별이 하나 낮게 떠 있다.
+   200px에서 읽혀야 하는 것은 '선이 서울과 제주를 갈랐다' 하나뿐이라
+   지점 이름도 둘만 남긴다. */
+export const ThumbCanopus: React.FC = () => {
+  // 반도가 색면(top 1090) 위에서 끝나도록 물러선 뷰박스.
+  // 세로 1200 svg가 1920px에 들어가 배율 1.6이 된다.
+  const VB = "180 350 677 1200";
+  const line = cnLatY(CN_LIMIT);
+  return (
+    <Frame>
+      <AbsoluteFill>
+        <svg
+          viewBox={VB}
+          preserveAspectRatio="xMidYMid slice"
+          style={{ width: "100%", height: "100%", display: "block" }}
+        >
+          <defs>
+            <radialGradient id="thCnGlow">
+              <stop offset="0%" stopColor="#FFF6DC" stopOpacity={0.95} />
+              <stop offset="100%" stopColor="#FFF6DC" stopOpacity={0} />
+            </radialGradient>
+          </defs>
+
+          {PROVINCES.map((p) => (
+            <path key={p.id} d={p.d} fill={M.land} stroke={M.coast} strokeWidth={2.2} />
+          ))}
+
+          {/* 선 위는 별이 안 뜨는 땅이다. 썸네일에서는 그늘이 아니라
+              통째로 덮어야 200px에서 갈린 것이 보인다. */}
+          <rect x={0} y={0} width={1000} height={line} fill="#141726" opacity={0.86} />
+          <line x1={0} y1={line} x2={1000} y2={line} stroke="#E0A83A" strokeWidth={7} />
+
+          {/* 별이 뜨는 쪽. 점은 제주에 얹는다 — 하늘 그림이 아니라 지도다. */}
+          <circle cx={CN_JEJU.x} cy={CN_JEJU.y} r={46} fill="url(#thCnGlow)" />
+          <circle cx={CN_JEJU.x} cy={CN_JEJU.y} r={11} fill="#FFF6DC" />
+
+          <text
+            x={CN_SEOUL.x + 18}
+            y={CN_SEOUL.y - 16}
+            fontSize={44}
+            fontWeight={900}
+            fill="#9AA0B4"
+            style={{ paintOrder: "stroke", stroke: "#141726", strokeWidth: 10 }}
+          >
+            서울
+          </text>
+          <text
+            x={CN_JEJU.x + 30}
+            y={CN_JEJU.y + 16}
+            fontSize={46}
+            fontWeight={900}
+            fill="#FFF6DC"
+            style={{ paintOrder: "stroke", stroke: "#2A2418", strokeWidth: 10 }}
+          >
+            제주
+          </text>
+        </svg>
+      </AbsoluteFill>
+
+      <Face
+        topic="노인성 — 시리우스 다음으로 밝은 별"
+        big="37.3"
+        unit="°N"
+        label="이 선 위에서는 안 뜨는 별"
+        band={BAND.canopus}
+        ink="#EDE6D6"
       />
     </Frame>
   );
