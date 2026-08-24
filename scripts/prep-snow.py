@@ -3,9 +3,13 @@
 
 ## 야마
 
-한 동네의 눈 기록은 그 동네가 겪은 수백 번의 겨울이 만든 것이 아니라
-딱 하루가 만든다. 92곳의 기록이 54일에 걸려 있고, 그중 17일이
-55곳(60%)을 만들었다. 제일 센 하루가 2004년 3월 5일 — 여덟 곳이다.
+눈이 가장 많이 온 대도시는 서울이 아니라 대구다.
+
+  서울  25.8cm  2010-01-04   전국 43위 / 92곳
+  대구  51.0cm  1953-01-18   전국 10위 — 서울의 1.98배
+
+서울의 2010년 1월 4일은 사람들이 기억하는 폭설이고, 그래서 척도가
+된다. cm는 감이 안 오지만 '그 폭설의 두 배'는 온다.
 
 ## 자료
 
@@ -35,9 +39,10 @@ data/kma-snow.json에 받아뒀다. 이 스크립트는 그 캐시를 읽는다.
 main()이 돌 때마다 확인하고 어긋나면 멈춘다.
 
   · 기록이 있는 지점이 92곳
+  · 서울이 25.8cm로 전국 43위 — 절반 아래다
+  · 광역시 1위가 대구이고 서울의 1.9배가 넘는다
+  · 전국 1위가 울릉도 150.9cm
   · 최다 기록일이 2004-03-05이고 여덟 곳
-  · 대전과 문경이 그날 49.0cm
-  · 대전의 2위가 1위의 절반 언저리 (49.0 → 25.2)
 
 사용:  python3 scripts/prep-snow.py [--fetch]
 출력:  src/data/snow.json
@@ -56,6 +61,15 @@ CACHE = os.path.join(ROOT, "data", "kma-snow.json")
 OUT = os.path.join(ROOT, "src", "data", "snow.json")
 
 AJAX = "https://data.kma.go.kr/climate/extremum/selectExtremumAjaxList.do"
+# 광역시. 세종은 관측소가 없다.
+METRO = ["서울", "부산", "대구", "인천", "광주", "대전", "울산"]
+
+# 화면이 세우는 차례 — 낮은 데서 올라가 대구에서 멈춘다.
+# 서울을 두 번째에 놓는 것이 이 편의 전부다. 사람들이 '역대급'으로
+# 기억하는 값이 광역시 중에서도 아래쪽이라는 게 바로 보인다.
+CAST = ["울산", "서울", "부산", "인천", "광주", "대전", "대구",
+        "대관령", "울릉도"]
+
 # 이 하루가 편의 전부다
 DAY = "2004-03-05"
 # 그 전날 밤 경기부터 시작했다. 이틀을 같이 보인다.
@@ -164,8 +178,37 @@ def main() -> None:
                                 "v": r["v"], "rank": i + 1})
         storm[d] = sorted(hit, key=lambda h: -h["v"])
 
+    ranked = sorted(sites, key=lambda s: -s["v"])
+    rank = {s["name"]: i + 1 for i, s in enumerate(ranked)}
+    byn = {s["name"]: s for s in sites}
+    seoul = byn["서울"]["v"]
+
+    # ── 검산 2 — 야마가 데이터로 서는지 ────────────────
+    if not (40 <= rank["서울"] <= 46):
+        sys.exit(f"서울이 전국 43위 언저리가 아니다 — {rank['서울']}위")
+    metro_top = max(METRO, key=lambda n: byn[n]["v"] if n in byn else -1)
+    if metro_top != "대구":
+        sys.exit(f"광역시 1위가 대구가 아니다 — {metro_top}")
+    if byn["대구"]["v"] / seoul < 1.9:
+        sys.exit(f"대구가 서울의 1.9배가 안 된다 — {byn['대구']['v'] / seoul:.2f}배")
+    if ranked[0]["name"] != "울릉도":
+        sys.exit(f"전국 1위가 울릉도가 아니다 — {ranked[0]['name']}")
+
+    # 화면이 훑는 차례. 낮은 데서 올라가다 대구에서 멈추고,
+    # 그 다음 전국으로 넓힌다.
+    cast = []
+    for n in CAST:
+        s0 = byn[n]
+        cast.append({**s0, "rank": rank[n], "ratio": round(s0["v"] / seoul, 2),
+                     "metro": n in METRO})
+
     out = {
-        "sites": sorted(sites, key=lambda s: -s["v"]),
+        "cast": cast,
+        "seoul": seoul,
+        "metro": [{**byn[n], "rank": rank[n], "ratio": round(byn[n]["v"] / seoul, 2)}
+                  for n in sorted(METRO, key=lambda n: -byn[n]["v"]) if n in byn],
+        "sites": [{**s, "rank": rank[s["name"]], "ratio": round(s["v"] / seoul, 2)}
+                  for s in ranked],
         "timeline": timeline,
         "day": DAY, "eve": EVE,
         "dayNames": sorted(byday[DAY], key=lambda n: -byname[n]["v"]),
@@ -180,6 +223,10 @@ def main() -> None:
     json.dump(out, open(OUT, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 
     print(f"검산 통과 — 지점 {len(sites)}곳, 기록일 {len(days)}개")
+    print(f"\n서울 {seoul}cm({byn['서울']['d']}) = 전국 {rank['서울']}위")
+    print("차례")
+    for c in cast:
+        print(f"  {c['name']:<6}{c['v']:>7.1f}cm  ×{c['ratio']:<5.2f} 전국 {c['rank']:>2}위  {c['d']}")
     print(f"둘 이상 겹친 날 {len(multi)}개가 {out['nFromMulti']}곳"
           f"({out['nFromMulti'] / len(sites) * 100:.0f}%)을 만들었다")
     print(f"\n최다 기록일 {DAY} — {top_n}곳")

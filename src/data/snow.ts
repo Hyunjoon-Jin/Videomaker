@@ -1,9 +1,13 @@
 /**
- * 역대 최대 적설이 세워진 날 — 투영과 타임라인.
+ * 역대 최대 적설 — 서울을 자로 놓고 잰다.
  *
- * 야마: 한 동네의 눈 기록은 그 동네가 겪은 수백 번의 겨울이 만든 것이
- * 아니라 딱 하루가 만든다. 92곳의 기록이 54일에 걸려 있고, 그중 하루가
- * 여덟 곳을 한꺼번에 세웠다 — 2004년 3월 5일.
+ * 야마: 눈이 가장 많이 온 대도시는 서울이 아니라 대구다.
+ *
+ *   서울  25.8cm  2010-01-04   전국 43위 / 92곳
+ *   대구  51.0cm  1953-01-18   전국 10위 — 서울의 1.98배
+ *
+ * cm는 감이 안 온다. 2010년 1월 4일 서울 폭설은 사람들 머릿속에 있다.
+ * 그래서 그 값을 자로 놓고 '그 폭설의 몇 배'로 잰다.
  *
  * 숫자는 전부 scripts/prep-snow.py가 낸 것이다.
  */
@@ -12,6 +16,10 @@ import { project } from "./places";
 
 export interface Site {
   id: string;
+  /** 92곳 중 몇 위 */
+  rank: number;
+  /** 서울 2010-01-04의 몇 배 */
+  ratio: number;
   name: string;
   lat: number;
   lon: number;
@@ -51,9 +59,16 @@ export const N_MULTI_DAYS: number = raw.nMultiDays;
 export const N_FROM_MULTI: number = raw.nFromMulti;
 
 const by = (n: string) => SITES.find((s) => s.name === n)!;
-/** 대전 — 49.0cm. 2위 25.2cm의 1.94배다. 이 한 장이 야마를 증명한다. */
-export const DAEJEON = by("대전");
+/** 자 — 사람들이 기억하는 값 */
+export const SEOUL = by("서울");
+/** 광역시 1위. 제일 더운 도시가 눈도 제일 많이 왔다. */
+export const DAEGU = by("대구");
 export const BIGGEST = SITES[0];
+
+/** 화면이 세우는 차례 — 낮은 데서 올라가 대구에서 멈춘다 */
+export const CAST: Site[] = (raw.cast as Array<{ name: string }>).map((c) => by(c.name));
+/** 광역시 일곱. 세종은 관측소가 없다. */
+export const METRO: Site[] = (raw.metro as Array<{ name: string }>).map((m) => by(m.name));
 
 /** 그날 여덟 곳. 값이 큰 순이다. */
 export const EIGHT: Site[] = DAY_NAMES.map(by);

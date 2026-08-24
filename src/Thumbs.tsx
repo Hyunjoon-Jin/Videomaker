@@ -1005,59 +1005,65 @@ export const ThumbCanopus: React.FC = () => {
 };
 
 /* ── 15. 눈 ───────────────────────────────────────────
-   2004년 3월 5일에 켜진 여덟 곳만 남기고 나머지는 지운다.
-   200px에서 읽혀야 하는 것은 '충청·경북 한 덩어리'와 숫자 하나뿐이라
-   지점 이름도 대전 하나만 붙인다. */
+   서울 막대 옆에 대구 막대. 200px에서 읽혀야 하는 것은 '두 배'라는
+   높이 차이 하나뿐이라 다른 도시는 넣지 않는다. */
 export const ThumbSnow: React.FC = () => {
-  const dj = SNOW_SITES.find((s) => s.name === "대전")!;
-  const eight = new Set(SNOW_DAY_NAMES);
+  const seoul = SNOW_SITES.find((s) => s.name === "서울")!;
+  const daegu = SNOW_SITES.find((s) => s.name === "대구")!;
+  const zero = 1010;
+  // 1cm = 15.6px. 51.0은 796px 올라간다.
+  const k = 15.6;
+  const w = 208;
+  const cols = [
+    { x: 350, s: seoul, c: "#6E7A8E" },
+    { x: 730, s: daegu, c: "#EAF4FC" },
+  ];
   return (
     <Frame>
-      <AbsoluteFill>
+      <AbsoluteFill style={{ opacity: 0.5 }}>
         <svg
-          viewBox="200 320 660 1170"
+          viewBox="200 250 700 1000"
           preserveAspectRatio="xMidYMid slice"
           style={{ width: "100%", height: "100%", display: "block" }}
         >
-          <defs>
-            <radialGradient id="thSnGlow">
-              <stop offset="0%" stopColor="#8FCBF0" stopOpacity={0.5} />
-              <stop offset="100%" stopColor="#8FCBF0" stopOpacity={0} />
-            </radialGradient>
-          </defs>
-
           {PROVINCES.map((p) => (
             <path key={p.id} d={p.d} fill={M.land} stroke={M.coast} strokeWidth={2.2} />
           ))}
+        </svg>
+      </AbsoluteFill>
 
-          {/* 그날 눈이 떨어진 자리 한 덩어리 */}
-          <circle cx={dj.x + 30} cy={dj.y - 30} r={150} fill="url(#thSnGlow)" />
-
-          {SNOW_SITES.filter((s) => eight.has(s.name)).map((s) => (
-            <g key={s.id}>
-              <rect x={s.x - 7} y={s.y - s.v * 1.5} width={14} height={s.v * 1.5} fill="#EAF4FC" />
-              <circle cx={s.x} cy={s.y} r={9} fill="#EAF4FC" />
-            </g>
-          ))}
-
-          <text
-            x={dj.x - 118}
-            y={dj.y + 84}
-            fontSize={52}
-            fontWeight={900}
-            fill="#EAF4FC"
-            style={{ paintOrder: "stroke", stroke: "#141A24", strokeWidth: 12 }}
-          >
-            대전 49cm
-          </text>
+      <AbsoluteFill>
+        <svg viewBox="0 0 1080 1920" style={{ width: "100%", height: "100%", display: "block" }}>
+          {cols.map((c) => {
+            const h = c.s.v * k;
+            return (
+              <g key={c.s.id}>
+                <rect x={c.x - w / 2} y={zero - h} width={w} height={h} fill={c.c} />
+                <text x={c.x} y={zero - h - 28} fontSize={82} fontWeight={900}
+                      fill={c.c} textAnchor="middle"
+                      style={{ paintOrder: "stroke", stroke: "#12161E", strokeWidth: 14 }}>
+                  {c.s.v.toFixed(0)}cm
+                </text>
+                <text x={c.x} y={zero + 62} fontSize={60} fontWeight={900}
+                      fill={c.c} textAnchor="middle"
+                      style={{ paintOrder: "stroke", stroke: "#12161E", strokeWidth: 14 }}>
+                  {c.s.name}
+                </text>
+              </g>
+            );
+          })}
+          {/* 서울 높이에 자를 긋는다. 대구가 그 두 배라는 게 이 한 장이다. */}
+          <line x1={90} y1={zero - seoul.v * k} x2={990} y2={zero - seoul.v * k}
+                stroke="#6E7A8E" strokeWidth={5} strokeDasharray="16 12" />
+          <line x1={90} y1={zero} x2={990} y2={zero} stroke="#12161E" strokeWidth={7} />
         </svg>
       </AbsoluteFill>
 
       <Face
-        topic="한 동네의 눈 기록을 만든 하루"
-        big="8"
-        unit="곳"
-        label="2004년 3월 5일 하루에 세워진 역대 1위"
+        topic="역대 최대 적설 · 특별시 · 광역시"
+        big="2.0"
+        unit="배"
+        label="서울에 온 눈과 대구에 온 눈"
         band={BAND.snow}
         ink="#EDF3FA"
       />
