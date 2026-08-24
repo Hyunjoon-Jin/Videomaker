@@ -229,6 +229,32 @@ export const ShortsExtremes: React.FC = () => {
                 >
                   {row.gap.toFixed(1)}
                 </text>
+
+                {/* 양 끝 안쪽에 그 끝이 무슨 값인지 작게 적는다. 막대가
+                    구간이라는 것을 아는 사람에게만 읽히면 안 된다 —
+                    왼쪽 끝은 겨울 기록, 오른쪽 끝은 여름 기록이다.
+                    가운데 폭 숫자와는 크기로 갈라 놓는다. */}
+                <text
+                  x={x0 + 14}
+                  y={y + BAR_H * 0.71}
+                  fontSize={24}
+                  fontWeight={800}
+                  fill={lead ? "#D8E7F0" : "#93AEBF"}
+                  style={{ fontVariantNumeric: "tabular-nums" }}
+                >
+                  {row.lo.toFixed(1)}
+                </text>
+                <text
+                  x={x1 - 14}
+                  y={y + BAR_H * 0.71}
+                  fontSize={24}
+                  fontWeight={800}
+                  fill={lead ? "#F6DDD3" : "#C39C8E"}
+                  textAnchor="end"
+                  style={{ fontVariantNumeric: "tabular-nums" }}
+                >
+                  {row.hi.toFixed(1)}
+                </text>
               </g>
             );
           })}
