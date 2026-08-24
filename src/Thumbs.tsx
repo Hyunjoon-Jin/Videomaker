@@ -14,7 +14,7 @@ import { AKASHI, MERIDIANS, SEOUL, meridianPath, meridianX } from "./data/timezo
 import { FLIGHT, OLD_SAGO, flightPathTo } from "./data/sillok";
 import { MAP_KOREA, MAP_LANDS, MARKED, MAX_DEPTH, PROFILE, TRENCH_LON, colorOf, lonX, radiusOf as qRadius } from "./data/quake";
 import { YEARS as EX_YEARS } from "./data/race";
-import { SITES as SNOW_SITES, DAY_NAMES as SNOW_DAY_NAMES } from "./data/snow";
+import { SITES as SNOW_SITES, BODY_CM as SNOW_BODY_CM } from "./data/snow";
 import {
   JEJU as CN_JEJU,
   LIMIT as CN_LIMIT,
@@ -1005,24 +1005,31 @@ export const ThumbCanopus: React.FC = () => {
 };
 
 /* ── 15. 눈 ───────────────────────────────────────────
-   서울 막대 옆에 대구 막대. 200px에서 읽혀야 하는 것은 '두 배'라는
-   높이 차이 하나뿐이라 다른 도시는 넣지 않는다. */
+   눈에 목까지 잠긴 사람 하나. 200px에서 읽혀야 하는 것은 그 그림과
+   숫자 둘(150.9cm, 1955)뿐이라 지점도 하나만 세운다.
+
+   처음에는 사람을 700px로 그렸는데 색면 위 1090px 안에서 눈이
+   사람을 거의 다 덮어 머리도 안 보였다. 색면 선을 지면으로 삼고
+   키를 900px로 키우니 머리와 어깨가 눈 위로 나온다. */
 export const ThumbSnow: React.FC = () => {
-  const seoul = SNOW_SITES.find((s) => s.name === "서울")!;
-  const daegu = SNOW_SITES.find((s) => s.name === "대구")!;
-  const zero = 1010;
-  // 1cm = 15.6px. 51.0은 796px 올라간다.
-  const k = 15.6;
-  const w = 208;
-  const cols = [
-    { x: 350, s: seoul, c: "#6E7A8E" },
-    { x: 730, s: daegu, c: "#EAF4FC" },
-  ];
+  const top = SNOW_SITES[0];
+  const ground = 1090;
+  const bodyPx = 900;
+  const k = bodyPx / SNOW_BODY_CM;
+  const manX = 700;
+  const head = ground - bodyPx;
+  const snowTop = ground - top.v * k;
+  const h = bodyPx;
+  const headR = h * 0.062;
+  const shoulder = head + h * 0.17;
+  const hip = head + h * 0.52;
+  const bodyW = h * 0.115;
+  const legW = h * 0.048;
   return (
     <Frame>
       <AbsoluteFill style={{ opacity: 0.5 }}>
         <svg
-          viewBox="200 250 700 1000"
+          viewBox="230 250 640 914"
           preserveAspectRatio="xMidYMid slice"
           style={{ width: "100%", height: "100%", display: "block" }}
         >
@@ -1034,36 +1041,44 @@ export const ThumbSnow: React.FC = () => {
 
       <AbsoluteFill>
         <svg viewBox="0 0 1080 1920" style={{ width: "100%", height: "100%", display: "block" }}>
-          {cols.map((c) => {
-            const h = c.s.v * k;
-            return (
-              <g key={c.s.id}>
-                <rect x={c.x - w / 2} y={zero - h} width={w} height={h} fill={c.c} />
-                <text x={c.x} y={zero - h - 28} fontSize={82} fontWeight={900}
-                      fill={c.c} textAnchor="middle"
-                      style={{ paintOrder: "stroke", stroke: "#12161E", strokeWidth: 14 }}>
-                  {c.s.v.toFixed(0)}cm
-                </text>
-                <text x={c.x} y={zero + 62} fontSize={60} fontWeight={900}
-                      fill={c.c} textAnchor="middle"
-                      style={{ paintOrder: "stroke", stroke: "#12161E", strokeWidth: 14 }}>
-                  {c.s.name}
-                </text>
-              </g>
-            );
-          })}
-          {/* 서울 높이에 자를 긋는다. 대구가 그 두 배라는 게 이 한 장이다. */}
-          <line x1={90} y1={zero - seoul.v * k} x2={990} y2={zero - seoul.v * k}
-                stroke="#6E7A8E" strokeWidth={5} strokeDasharray="16 12" />
-          <line x1={90} y1={zero} x2={990} y2={zero} stroke="#12161E" strokeWidth={7} />
+          {/* 눈 벽 — 사람 뒤에 둔다 */}
+          <rect x={0} y={snowTop} width={1080} height={ground - snowTop} fill="#EDF4FB" />
+
+          <g fill="#232C3A">
+            <circle cx={manX} cy={head + headR} r={headR} />
+            <rect x={manX - bodyW / 2} y={shoulder} width={bodyW} height={hip - shoulder} rx={h * 0.02} />
+            <rect x={manX - bodyW / 2 - legW * 0.9} y={shoulder + h * 0.01}
+                  width={legW * 0.8} height={h * 0.29} rx={legW * 0.4} />
+            <rect x={manX + bodyW / 2 + legW * 0.1} y={shoulder + h * 0.01}
+                  width={legW * 0.8} height={h * 0.29} rx={legW * 0.4} />
+            <rect x={manX - bodyW / 2 + h * 0.004} y={hip - h * 0.01}
+                  width={legW} height={ground - hip + h * 0.01} rx={legW * 0.4} />
+            <rect x={manX + bodyW / 2 - legW - h * 0.004} y={hip - h * 0.01}
+                  width={legW} height={ground - hip + h * 0.01} rx={legW * 0.4} />
+          </g>
+
+
+          {/* 키 자 */}
+          <line x1={manX + 62} y1={head} x2={manX + 130} y2={head} stroke="#8A94A6" strokeWidth={5} />
+          <text x={manX + 142} y={head + 16} fontSize={46} fontWeight={900} fill="#8D97A9">
+            {SNOW_BODY_CM}cm
+          </text>
+
+          {/* 흰 눈 위에 어두운 글씨 */}
+          <text x={62} y={snowTop + 128} fontSize={116} fontWeight={900} fill="#1B2330">
+            {top.v.toFixed(1)}cm
+          </text>
+          <text x={66} y={snowTop + 198} fontSize={54} fontWeight={900} fill="#5A6678">
+            어른 목까지
+          </text>
         </svg>
       </AbsoluteFill>
 
       <Face
-        topic="역대 최대 적설 · 특별시 · 광역시"
-        big="2.0"
-        unit="배"
-        label="서울에 온 눈과 대구에 온 눈"
+        topic={`${top.name} · 하루에 쌓인 눈 역대 1위`}
+        big={top.d.slice(0, 4)}
+        unit="년"
+        label={`${Number(top.d.slice(5, 7))}월 ${Number(top.d.slice(8))}일 하루에 온 눈`}
         band={BAND.snow}
         ink="#EDF3FA"
       />

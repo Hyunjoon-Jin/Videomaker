@@ -1,13 +1,13 @@
 /**
- * 역대 최대 적설 — 서울을 자로 놓고 잰다.
+ * 역대 최대 적설 — 사람 키를 자로 놓고 잰다.
  *
- * 야마: 눈이 가장 많이 온 대도시는 서울이 아니라 대구다.
+ * 야마: 하루에 눈이 어른 키만큼 온 곳이 있다.
  *
- *   서울  25.8cm  2010-01-04   전국 43위 / 92곳
- *   대구  51.0cm  1953-01-18   전국 10위 — 서울의 1.98배
+ *   울릉도  150.9cm  1955-01-20   키 170cm 사람이 목까지 잠긴다
+ *   대관령   92.0cm  1992-01-31   1위의 61%
  *
- * cm는 감이 안 온다. 2010년 1월 4일 서울 폭설은 사람들 머릿속에 있다.
- * 그래서 그 값을 자로 놓고 '그 폭설의 몇 배'로 잰다.
+ * cm는 감이 안 온다. 그렇다고 서울을 자로 쓰면 서울 중심이 된다.
+ * 자는 사람 키여야 한다 — 그건 누구에게나 같다.
  *
  * 숫자는 전부 scripts/prep-snow.py가 낸 것이다.
  */
@@ -20,6 +20,8 @@ export interface Site {
   rank: number;
   /** 서울 2010-01-04의 몇 배 */
   ratio: number;
+  /** 키 170cm의 몇 배. 1.0이면 통째로 잠긴다. */
+  body: number;
   name: string;
   lat: number;
   lon: number;
@@ -59,13 +61,14 @@ export const N_MULTI_DAYS: number = raw.nMultiDays;
 export const N_FROM_MULTI: number = raw.nFromMulti;
 
 const by = (n: string) => SITES.find((s) => s.name === n)!;
-/** 자 — 사람들이 기억하는 값 */
 export const SEOUL = by("서울");
-/** 광역시 1위. 제일 더운 도시가 눈도 제일 많이 왔다. */
 export const DAEGU = by("대구");
 export const BIGGEST = SITES[0];
+/** 자 — 서울도 대관령도 아닌 사람 키 */
+export const BODY_CM: number = raw.bodyCm;
+export const TOP_N: number = raw.topN;
 
-/** 화면이 세우는 차례 — 낮은 데서 올라가 대구에서 멈춘다 */
+/** 화면이 세우는 차례 — 전국 10위에서 1위로 */
 export const CAST: Site[] = (raw.cast as Array<{ name: string }>).map((c) => by(c.name));
 /** 광역시 일곱. 세종은 관측소가 없다. */
 export const METRO: Site[] = (raw.metro as Array<{ name: string }>).map((m) => by(m.name));
