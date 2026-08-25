@@ -31,15 +31,44 @@
   · Douglas-Peucker로 단순화 (TOL px)
   · 면적이 MIN_AREA px² 미만인 조각은 버린다
 
-## 자를 두 개 쓴다 — 둘 다 원문을 봤다
+## 자를 셋 쓴다 — 셋 다 근거가 있다
 
   ① 시속       63.7m/s × 3.6 = 229.3km/h
   ② 강풍특보   기상청 예보 안내(kma.go.kr/kma/biz/forecast05.jsp)
                 주의보  풍속 14m/s 이상 또는 순간 20m/s 이상
                 경보    풍속 21m/s 이상 또는 순간 26m/s 이상
+  ③ 바람의 힘  동압 q = ½ρv²  (ρ = 1.225kg/m³, 15℃·1기압 표준)
 
 이 자료가 최대순간풍속이므로 '순간 20 / 순간 26' 쪽과 바로 맞물린다.
 10분 평균 기준인 태풍 강도 등급과는 섞지 않는다.
+
+**③이 필요한 이유.** 시속만 쓰면 5위(189km/h)와 1위(229km/h)가
+21%밖에 안 벌어져 순위 차이가 화면에서 안 보인다. 힘은 속도의
+제곱에 비례하므로 같은 값이 48% 차이가 된다. 그리고 '㎡에 몇 kg'은
+시속보다 몸에 닿는다.
+
+  울릉도 52.4m/s → 171.5kgf/㎡
+  속초   63.7m/s → 253.4kgf/㎡   (어른 70kg 기준 3.6명)
+
+## 그날 무슨 일이 있었나
+
+2006년 10월 23일에 기록을 세운 것은 속초의 바람만이 아니다.
+같은 창구에서 받은 강수 극값(schElem=3, 1시간 최다강수량)을 보면
+그날이 이렇게 걸린다.
+
+  속초  최대순간풍속 63.7m/s   그 지점 1위 · 전국 1위
+  강릉  1시간 강수량 81.5mm    그 지점 3위
+  태백  최대순간풍속 22.8m/s   그 지점 10위
+
+**바람 전국 1위와 비 강릉 3위가 같은 날이다.**
+
+강릉의 그날 일강수량 304mm는 한국학중앙연구원 향토문화전자대전
+(디지털강릉문화대전 「자연재해」)에 강릉 일강수량 역대 3위로
+적혀 있다. 같은 문서가 2002년 루사의 870.5mm와 시간당 100.5mm를
+적고 있고, 그 값이 이 자료의 강릉 1시간 극값 1위(100.5mm,
+2002-08-31)와 정확히 맞아 교차 검증됐다.
+
+**피해 수치는 넣지 않는다.** 재해연보를 이 환경에서 못 받았다.
 
 ## 검산
 
@@ -74,6 +103,14 @@ GUST_WARN = 26.0
 # 견줄 것들 — 사람이 아는 속도
 CAR_KMH = 100.0
 KTX_KMH = 305.0
+# 공기 밀도(kg/m³). 15℃·1기압 표준값.
+RHO = 1.225
+# 어른 한 사람 무게로 잡는 값(kg). 힘을 사람 수로 옮길 때만 쓴다.
+PERSON_KG = 70.0
+
+# 그날 — 2006-10-23. 이 편의 1위가 세워진 날이다.
+DAY = "2006-10-23"
+RAIN_CACHE = os.path.join(ROOT, "data", "kma-rain.json")
 
 # 투영 — places.ts와 같은 식
 LON0, LAT0, KX, KY, OFFX = 124.21, 33.20, 80.20, 101.94, 230.9
@@ -217,6 +254,8 @@ def main():
             "v": r0["v"], "d": r0["d"],
             "kmh": round(r0["v"] * 3.6, 1),
             "warn": round(r0["v"] / GUST_WARN, 2),
+            # 동압 q = ½ρv² [Pa] → kgf/㎡
+            "kgf": round(0.5 * RHO * r0["v"] ** 2 / 9.80665, 1),
         })
 
     # ── 검산 ①  풍속 ──────────────────────────────────
@@ -247,7 +286,31 @@ def main():
     if not ull:
         sys.exit("울릉군 폴리곤이 하나도 안 남았다")
 
+    # ── 그날 ──────────────────────────────────────────
+    # 바람 1위가 세워진 날에 다른 기록도 걸려 있다. 같은 창구에서
+    # 받은 강수 극값을 뒤져 그날 것을 모은다.
+    day_hits = []
+    for name, cache, unit, lab in (("wind", CACHE, "m/s", "최대순간풍속"),
+                                   ("rain", RAIN_CACHE, "mm", "1시간 강수량")):
+        if not os.path.exists(cache):
+            continue
+        src = json.load(open(cache, encoding="utf-8"))
+        for v in src.values():
+            for i, r in enumerate(v["rows"]):
+                if r["d"] == DAY:
+                    day_hits.append({"name": v["name"], "kind": lab, "unit": unit,
+                                     "v": r["v"], "rank": i + 1})
+    day_hits.sort(key=lambda h: (h["rank"], -h["v"]))
+    if not any(h["name"] == "속초" and h["rank"] == 1 for h in day_hits):
+        sys.exit(f"{DAY}에 속초 1위가 안 잡힌다")
+    if not any(h["name"] == "강릉" and h["kind"] == "1시간 강수량" for h in day_hits):
+        sys.exit(f"{DAY}에 강릉 강수 기록이 안 잡힌다")
+
     out = {
+        "day": DAY,
+        "dayHits": day_hits,
+        "personKg": PERSON_KG,
+        "rho": RHO,
         "top": top,
         "sites": ranked,
         "map": paths,
@@ -268,6 +331,17 @@ def main():
               f"강풍경보의 {s['warn']:.2f}배  {s['d']}  관측시작 {s['y0']}")
     print(f"\n1위는 고속도로 100km/h의 {top[0]['kmh'] / CAR_KMH:.2f}배, "
           f"KTX {KTX_KMH:.0f}km/h의 {top[0]['kmh'] / KTX_KMH:.2f}배")
+    print(f"\n바람의 힘(㎡당) — 힘은 속도의 제곱이라 순위 차가 벌어진다")
+    for s0 in top:
+        print(f"  {s0['rank']}위 {s0['name']:<6}{s0['kgf']:>6.1f}kgf/㎡  "
+              f"어른 {s0['kgf'] / PERSON_KG:.1f}명")
+    print(f"  시속으로는 5위 대비 1위가 {top[0]['kmh'] / top[-1]['kmh']:.2f}배, "
+          f"힘으로는 {top[0]['kgf'] / top[-1]['kgf']:.2f}배")
+    print(f"  강풍경보(순간 {GUST_WARN:.0f}m/s)의 힘 = "
+          f"{0.5 * RHO * GUST_WARN ** 2 / 9.80665:.1f}kgf/㎡")
+    print(f"\n{DAY} 그날 걸린 기록")
+    for h in day_hits:
+        print(f"  {h['name']:<6}{h['kind']}  {h['v']}{h['unit']}  그 지점 {h['rank']}위")
 
 
 if __name__ == "__main__":

@@ -7,16 +7,18 @@ import {
   useCurrentFrame,
 } from "remotion";
 import {
-  CAR_KMH,
-  GUST_WARN,
-  KTX_KMH,
+  DAY,
+  DAY_HITS,
   MAP,
   N_SITES,
+  PERSON_KG,
   SOKCHO,
   STEPS,
   TOP,
+  WARN_KGF,
   WIDE,
   fmt,
+  forceOf,
 } from "./data/wind";
 import { FPS } from "./theme";
 import { Grain } from "./Grain";
@@ -41,7 +43,7 @@ const INK = "#EAF1F8";
  * 5위에서 1위로 올라간다. 위로 갈수록 길다 — 마지막 한 계단이
  * 이 편의 전부다.
  */
-const HOLD = [4.6, 4.4, 5.6, 8.4];
+const HOLD = [4.4, 4.2, 5.4, 7.6, 6.4];
 /** 카메라가 다음 지점으로 날아가는 시간 */
 const FLY = Math.round(1.1 * FPS);
 
@@ -65,14 +67,17 @@ function stepAt(frame: number): number {
   return 0;
 }
 
-/* ── 속도 눈금 ──────────────────────────────────────
-   m/s는 감이 안 온다. 시속으로 바꿔 사람이 아는 속도 옆에 세운다.
-   눈금은 화면에 붙박이고 값만 그 위를 옮겨 다닌다. */
-const SC_MAX = 320;
+/* ── 힘 눈금 ────────────────────────────────────────
+   처음에는 시속 눈금(0~320km/h)이었는데 5위 189와 1위 229가
+   화면에서 12%밖에 안 벌어져 순위 차이가 안 보였다.
+
+   힘은 속도의 제곱에 비례한다(동압 ½ρv²). 같은 값이 1.48배로
+   벌어지고, '㎡에 몇 kg'은 시속보다 몸에 닿는다. */
+const SC_MAX = 270;
 const SC_L = TEXT_X;
 const SC_R = 1080 - SAFE_RIGHT;
-const SC_Y = 1512;
-const sx = (kmh: number) => SC_L + (kmh / SC_MAX) * (SC_R - SC_L);
+const SC_Y = 1500;
+const sx = (kgf: number) => SC_L + (kgf / SC_MAX) * (SC_R - SC_L);
 
 const ease = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
 
@@ -136,12 +141,18 @@ export const ShortsWind: React.FC = () => {
     { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
   );
   const hero = step.sites[0];
-  const shown = started ? hero.v * rise : 0;
-  const isTop = si === STEPS.length - 1;
+  const isDay = !!step.day;
+  const shown = started ? hero.v * (isDay ? 1 : rise) : 0;
+  /** 1㎡에 걸리는 힘(kgf) */
+  const force = forceOf(shown);
+  const isTop = si >= STEPS.length - 2;
   const c = isTop ? HOT : WIND;
 
   /** 눈금 위에 이미 세워둔 지점들 */
-  const past = STEPS.slice(0, si).flatMap((s) => s.sites);
+  const past = STEPS.slice(0, si)
+    .filter((s) => !s.day)
+    .flatMap((s) => s.sites)
+    .filter((s) => s.id !== hero.id);
 
   return (
     <AbsoluteFill style={{ backgroundColor: BG, fontFamily: "Pretendard" }}>
@@ -201,7 +212,7 @@ export const ShortsWind: React.FC = () => {
       />
 
       {/* ── 계기판 ── */}
-      {started && !inOutro && (
+      {started && !inOutro && !isDay && (
         <div style={{ position: "absolute", left: TEXT_X, right: SAFE_RIGHT, top: SAFE_TOP }}>
           <div
             style={{
@@ -217,21 +228,20 @@ export const ShortsWind: React.FC = () => {
           <div style={{ display: "flex", alignItems: "baseline", gap: 20 }}>
             <span style={{ color: c, fontSize: 66, fontWeight: 900 }}>{hero.rank}위</span>
             <span style={{ color: c, fontSize: 84, fontWeight: 900 }}>
-              {step.sites.map((s) => s.name).join(" · ")}
+              {step.sites.map((s2) => s2.name).join(" · ")}
             </span>
           </div>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 18, marginTop: 12 }}>
-            <span
-              style={{
-                color: INK,
-                fontSize: 112,
-                fontWeight: 900,
-                lineHeight: 1,
-                fontVariantNumeric: "tabular-nums",
-              }}
-            >
-              시속 {Math.round(shown * 3.6)}km
-            </span>
+          <div
+            style={{
+              color: INK,
+              fontSize: 112,
+              fontWeight: 900,
+              lineHeight: 1,
+              marginTop: 12,
+              fontVariantNumeric: "tabular-nums",
+            }}
+          >
+            시속 {Math.round(shown * 3.6)}km
           </div>
           <div
             style={{
@@ -243,6 +253,17 @@ export const ShortsWind: React.FC = () => {
             }}
           >
             초속 {shown.toFixed(1)}m · 강풍경보의 {hero.warn.toFixed(2)}배
+          </div>
+          <div
+            style={{
+              color: c,
+              fontSize: 44,
+              fontWeight: 900,
+              marginTop: 8,
+              fontVariantNumeric: "tabular-nums",
+            }}
+          >
+            1㎡에 {Math.round(force)}kg · 어른 {(force / PERSON_KG).toFixed(1)}명
           </div>
           <div
             style={{
@@ -258,47 +279,128 @@ export const ShortsWind: React.FC = () => {
         </div>
       )}
 
-      {/* ── 속도 눈금 — 붙박이 ── */}
+      {/*
+        그날 판.
+
+        1위 숫자만 보여주면 '그래서 뭐'가 남는다. 같은 날 다른
+        기록도 걸려 있다는 것이 그날이 어떤 날이었는지를 말한다.
+      */}
+      {started && !inOutro && isDay && (
+        <div style={{ position: "absolute", left: TEXT_X, right: SAFE_RIGHT, top: SAFE_TOP }}>
+          <div
+            style={{
+              color: "#7E8898",
+              fontSize: 30,
+              fontWeight: 700,
+              letterSpacing: 2,
+              marginBottom: 8,
+            }}
+          >
+            그날 걸린 기록
+          </div>
+          <div
+            style={{
+              color: HOT,
+              fontSize: 84,
+              fontWeight: 900,
+              lineHeight: 1.06,
+              fontVariantNumeric: "tabular-nums",
+            }}
+          >
+            {fmt(DAY)}
+          </div>
+          <div style={{ marginTop: 26 }}>
+            {DAY_HITS.map((h, i) => {
+              const at = SLOTS[si].t0 + Math.round((0.5 + i * 0.6) * FPS);
+              const on = interpolate(frame, [at, at + 12], [0, 1], {
+                extrapolateLeft: "clamp",
+                extrapolateRight: "clamp",
+              });
+              const first = h.rank === 1;
+              return (
+                <div
+                  key={h.name + h.kind}
+                  style={{
+                    marginTop: 18,
+                    opacity: on,
+                    transform: `translateY(${(1 - on) * 12}px)`,
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 16 }}>
+                    <span style={{ color: first ? HOT : INK, fontSize: 48, fontWeight: 900 }}>
+                      {h.name}
+                    </span>
+                    <span
+                      style={{
+                        color: first ? HOT : INK,
+                        fontSize: 56,
+                        fontWeight: 900,
+                        fontVariantNumeric: "tabular-nums",
+                      }}
+                    >
+                      {h.v}
+                      {h.unit}
+                    </span>
+                    <span
+                      style={{
+                        color: first ? HOT : "#96A2B2",
+                        fontSize: 40,
+                        fontWeight: 900,
+                        fontVariantNumeric: "tabular-nums",
+                      }}
+                    >
+                      그 지점 {h.rank}위
+                    </span>
+                  </div>
+                  <div style={{ color: "#7E8898", fontSize: 32, fontWeight: 700, marginTop: 2 }}>
+                    {h.kind}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── 힘 눈금 — 붙박이 ── */}
       {!inOutro && (
         <svg
           viewBox="0 0 1080 1920"
           style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
         >
+          <text x={SC_L} y={SC_Y - 128} fontSize={29} fontWeight={800} fill="#6E7A8C">
+            바람이 1㎡에 미는 힘
+          </text>
+
           <line x1={SC_L} y1={SC_Y} x2={SC_R} y2={SC_Y} stroke="#39435A" strokeWidth={4} />
-          {[
-            { v: CAR_KMH, t: "고속도로 100" },
-            { v: KTX_KMH, t: `KTX ${KTX_KMH}` },
-          ].map((m) => (
-            <g key={m.t}>
-              <line x1={sx(m.v)} y1={SC_Y - 20} x2={sx(m.v)} y2={SC_Y + 20}
-                    stroke="#5A6678" strokeWidth={4} />
-              <text x={sx(m.v)} y={SC_Y + 60} fontSize={29} fontWeight={800}
-                    fill="#6E7A8C" textAnchor="middle">
-                {m.t}
-              </text>
-            </g>
-          ))}
+          {/* 강풍경보 기준의 힘. 다섯 곳이 전부 이 선의 네 배를 넘는다. */}
+          <g>
+            <line x1={sx(WARN_KGF)} y1={SC_Y - 18} x2={sx(WARN_KGF)} y2={SC_Y + 18}
+                  stroke="#5A6678" strokeWidth={4} />
+            <text x={sx(WARN_KGF)} y={SC_Y + 58} fontSize={28} fontWeight={800}
+                  fill="#6E7A8C" textAnchor="middle">
+              강풍경보
+            </text>
+          </g>
 
           {/* 지나온 지점은 남는다 */}
           {(() => {
-            // 4위 210 · 3위 216 · 2위 216이라 라벨이 통째로 겹친다.
-            // 왼쪽부터 훑어 34px 안에 들면 라벨을 접고 선만 남긴다.
             let lastLabel = -Infinity;
             return past
               .slice()
-              .sort((a, b) => a.kmh - b.kmh)
-              .map((s) => {
-                const x = sx(s.kmh);
-                const show = x - lastLabel >= 34;
+              .sort((a, b) => a.kgf - b.kgf)
+              .map((s2) => {
+                const x = sx(s2.kgf);
+                const show = x - lastLabel >= 40;
                 if (show) lastLabel = x;
                 return (
-                  <g key={s.id} opacity={0.5}>
-                    <line x1={x} y1={SC_Y - 54} x2={x} y2={SC_Y}
+                  <g key={s2.id} opacity={0.5}>
+                    <line x1={x} y1={SC_Y - 52} x2={x} y2={SC_Y}
                           stroke={WIND} strokeWidth={5} />
                     {show && (
-                      <text x={x} y={SC_Y - 66} fontSize={27} fontWeight={800}
+                      <text x={x} y={SC_Y - 64} fontSize={27} fontWeight={800}
                             fill={WIND} textAnchor="middle">
-                        {s.rank}위
+                        {s2.rank}위
                       </text>
                     )}
                   </g>
@@ -306,15 +408,17 @@ export const ShortsWind: React.FC = () => {
               });
           })()}
 
-          {/* 지금 지점 */}
+          {/* 지금 지점 — 막대로 채운다 */}
           {started && (
             <g>
-              <line x1={sx(shown * 3.6)} y1={SC_Y - 92} x2={sx(shown * 3.6)} y2={SC_Y}
+              <rect x={SC_L} y={SC_Y - 14} width={Math.max(0, sx(force) - SC_L)} height={14}
+                    fill={c} opacity={0.3} />
+              <line x1={sx(force)} y1={SC_Y - 96} x2={sx(force)} y2={SC_Y}
                     stroke={c} strokeWidth={8} />
-              <text x={sx(shown * 3.6)} y={SC_Y - 106} fontSize={38} fontWeight={900}
+              <text x={sx(force)} y={SC_Y - 110} fontSize={40} fontWeight={900}
                     fill={c} textAnchor="middle"
                     style={{ paintOrder: "stroke", stroke: BG, strokeWidth: 10 }}>
-                {Math.round(shown * 3.6)}
+                {Math.round(force)}kg
               </text>
             </g>
           )}

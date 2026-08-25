@@ -28,6 +28,8 @@ export interface Site {
   kmh: number;
   /** 강풍경보 기준(순간 26m/s)의 몇 배 */
   warn: number;
+  /** 1㎡에 걸리는 힘(kgf). 동압 ½ρv²를 무게로 옮긴 값. */
+  kgf: number;
   rank: number;
 }
 
@@ -41,6 +43,21 @@ export const GUST_WARN: number = raw.gustWarn;
 export const CAR_KMH: number = raw.carKmh;
 export const KTX_KMH: number = raw.ktxKmh;
 export const N_SITES: number = raw.nSites;
+export const PERSON_KG: number = raw.personKg;
+export const RHO: number = raw.rho;
+/** 1위가 세워진 날 */
+export const DAY: string = raw.day;
+/** 그날 걸린 기록들 — 바람만이 아니다 */
+export const DAY_HITS: Array<{
+  name: string; kind: string; unit: string; v: number; rank: number;
+}> = raw.dayHits;
+
+/** 풍속(m/s) → 1㎡에 걸리는 힘(kgf) */
+export function forceOf(v: number): number {
+  return (0.5 * RHO * v * v) / 9.80665;
+}
+/** 강풍경보 기준의 힘 */
+export const WARN_KGF = forceOf(GUST_WARN);
 
 /**
  * 화면이 세우는 차례 — 5위에서 1위로.
@@ -57,6 +74,8 @@ export interface Step {
   w: number;
   /** 화면에 없는 것 한 줄 */
   line: string;
+  /** 그날 걸린 기록을 펴는 판 */
+  day?: boolean;
 }
 
 const by = (n: string) => TOP.find((s) => s.name === n)!;
@@ -98,6 +117,15 @@ export const STEPS: Step[] = [
     // 육지라 해안선이 보여야 어디인지 안다
     w: 66,
     line: "태풍 매미가 세운 2위보다 센 바람 · 10월",
+  },
+  {
+    // 그날 판. 카메라는 속초에 그대로 둔다.
+    sites: [by("속초")],
+    cx: by("속초").x,
+    cy: by("속초").y,
+    w: 66,
+    line: "강릉은 그날 하루에 304mm — 강릉 역대 3위",
+    day: true,
   },
 ];
 

@@ -1128,7 +1128,7 @@ export const ThumbWind: React.FC = () => {
         topic="관측 이래 가장 센 바람"
         big={s.kmh.toFixed(0)}
         unit="km/h"
-        label={`${s.d.slice(0, 4)}년 ${Number(s.d.slice(5, 7))}월 ${Number(s.d.slice(8))}일 · 초속 ${s.v}m`}
+        label={`${s.d.slice(0, 4)}년 ${Number(s.d.slice(5, 7))}월 ${Number(s.d.slice(8))}일 · 1㎡에 ${Math.round(s.kgf)}kg`}
         band={BAND.wind}
         ink="#F6E8D2"
       />
