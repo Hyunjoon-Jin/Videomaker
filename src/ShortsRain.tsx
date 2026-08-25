@@ -16,7 +16,6 @@ import {
   PROG,
   SCALE,
   fmt,
-  rest,
 } from "./data/rain";
 import { FPS } from "./theme";
 import { Grain } from "./Grain";
@@ -28,11 +27,11 @@ const PROVINCES: Array<{ id: string; d: string }> = provinces.provinces;
 const HOOK = Math.round(2.2 * FPS);
 
 const BG = "#080B10";
-/** 그 한 시간 */
+/** 1시간 최대 */
 const RAIN = "#5FB8F0";
 /** 1위 */
 const HOT = "#F0A63C";
-/** 나머지 스물세 시간 */
+/** 당일 누적에서 1시간 최대를 뺀 나머지 */
 const REST = "#2E4159";
 const INK = "#EAF1F8";
 const DIM = "#7E8898";
@@ -66,12 +65,12 @@ function caseAt(frame: number): number {
 }
 
 /* ── 막대 ──────────────────────────────────────────
-   막대 하나가 그날 하루(일강수량)고, 아래쪽 색칠한 만큼이 그 한
-   시간(1시간 최다강수량)이다. 눈금이 넷에 공통이라 하루 총량도
+   막대 하나가 당일 누적 강수량(일강수량)이고, 아래쪽 색칠한 만큼이
+   1시간 최대(1시간 최다강수량)다. 눈금이 넷에 공통이라 당일 누적도
    같이 견줘진다 — 거제가 제일 길고 군산이 제일 짧다.
 
    16편에서 눈금이 12%밖에 안 벌어져 실패한 적이 있다. 여기서는
-   '한 시간'끼리는 23%밖에 안 벌어지지만 화면이 말하는 것은 그게
+   1시간 최대끼리는 23%밖에 안 벌어지지만 화면이 말하는 것은 그게
    아니라 **한 막대 안에서 색이 차지하는 비율**이라 상관이 없다. */
 const BASE = 1440;
 const TOP_Y = 900;
@@ -170,11 +169,11 @@ export const ShortsRain: React.FC = () => {
         <g transform="translate(700 620)">
           <rect x={0} y={-24} width={30} height={30} fill={RAIN} />
           <text x={44} y={2} fontSize={28} fontWeight={800} fill="#96A2B2">
-            그 한 시간
+            1시간 최대
           </text>
           <rect x={0} y={26} width={30} height={30} fill={REST} />
           <text x={44} y={52} fontSize={28} fontWeight={800} fill="#96A2B2">
-            나머지 스물세 시간
+            당일 누적 강수량
           </text>
           <line x1={0} y1={90} x2={30} y2={90} stroke="#8A97AA" strokeWidth={3}
                 strokeDasharray="8 6" />
@@ -211,10 +210,10 @@ export const ShortsRain: React.FC = () => {
                     stroke="#283446" strokeWidth={2} strokeDasharray="6 12" />
               <rect x={x} y={BASE - 14} width={BAR_W} height={14}
                     fill="none" stroke="#43506A" strokeWidth={3} />
-              {/* 그날 하루 */}
+              {/* 당일 누적 강수량 */}
               <rect x={x} y={BASE - hd} width={BAR_W} height={hd} fill={REST}
                     opacity={cur ? 1 : 0.65} />
-              {/* 그 한 시간 */}
+              {/* 1시간 최대 */}
               <rect x={x} y={BASE - hh} width={BAR_W} height={hh} fill={col}
                     opacity={cur ? 1 : 0.62} />
               {on && (
@@ -251,7 +250,7 @@ export const ShortsRain: React.FC = () => {
         {/*
           호우경보 기준선 — 세 시간 누적 90mm.
           막대보다 나중에 그린다. 앞에 그리면 라벨이 막대에 가려 잘린다.
-          넷 다 이 선을 한 시간 만에 넘는다.
+          넷 다 이 선을 1시간 만에 넘는다.
         */}
         <line
           x1={COL_L}
@@ -295,18 +294,7 @@ export const ShortsRain: React.FC = () => {
               fontVariantNumeric: "tabular-nums",
             }}
           >
-            그날 하루 {c.day.toFixed(1)}mm의 {c.pct}%
-          </div>
-          <div
-            style={{
-              color: "#96A2B2",
-              fontSize: 36,
-              fontWeight: 800,
-              marginTop: 6,
-              fontVariantNumeric: "tabular-nums",
-            }}
-          >
-            나머지 스물세 시간 {rest(c).toFixed(1)}mm
+            당일 누적 {c.day.toFixed(1)}mm의 {c.pct}%
           </div>
           <div
             style={{
@@ -430,7 +418,7 @@ export const ShortsRain: React.FC = () => {
               ),
             }}
           >
-            56년을 버틴 기록이 최근 두 해에 두 번 · 전국 {N_SITES}개 관측소
+            56년을 버틴 기록이 최근 2년에 2번 · 전국 {N_SITES}개 관측소
           </div>
         </AbsoluteFill>
       )}
@@ -446,7 +434,7 @@ export const ShortsRain: React.FC = () => {
           }}
         >
           <div style={{ color: RAIN, fontSize: 46, fontWeight: 800, marginBottom: 10 }}>
-            한 시간에 {HERO.hour}mm
+            1시간에 {HERO.hour}mm
           </div>
           <div
             style={{
@@ -457,7 +445,7 @@ export const ShortsRain: React.FC = () => {
               wordBreak: "keep-all",
             }}
           >
-            하루 올 비가 한 시간에
+            하루 올 비가 1시간에
           </div>
         </AbsoluteFill>
       )}
