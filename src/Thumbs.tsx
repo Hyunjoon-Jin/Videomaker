@@ -15,6 +15,7 @@ import { FLIGHT, OLD_SAGO, flightPathTo } from "./data/sillok";
 import { MAP_KOREA, MAP_LANDS, MARKED, MAX_DEPTH, PROFILE, TRENCH_LON, colorOf, lonX, radiusOf as qRadius } from "./data/quake";
 import { YEARS as EX_YEARS } from "./data/race";
 import { SITES as SNOW_SITES, BODY_CM as SNOW_BODY_CM } from "./data/snow";
+import { MAP as WD_MAP, SOKCHO as WD_SOKCHO } from "./data/wind";
 import {
   JEJU as CN_JEJU,
   LIMIT as CN_LIMIT,
@@ -184,6 +185,7 @@ const BAND = {
   extremes: "#7E6A6E", // 마른 자줏빛 흙 — 더위도 추위도 아닌 색. 한쪽 편을 들면 안 된다
   canopus: "#2A3350",  // 감청 — 별이 뜨기 직전 하늘. 시간대 편의 남보라보다 푸르고 어둡게
   snow: "#3A5570",     // 눈 그늘의 푸른빛. 노인성 편의 감청보다 밝고 회색기가 있다
+  wind: "#8A5A22",     // 삭은 황토 — 바람이 훑고 간 색. 봉수의 잉걸불보다 어둡다
 } as const;
 
 /**
@@ -1081,6 +1083,54 @@ export const ThumbSnow: React.FC = () => {
         label={`${Number(top.d.slice(5, 7))}월 ${Number(top.d.slice(8))}일 하루에 온 눈`}
         band={BAND.snow}
         ink="#EDF3FA"
+      />
+    </Frame>
+  );
+};
+
+
+/* ── 16. 바람 ─────────────────────────────────────────
+   속초 클로즈업 하나. 200px에서 읽혀야 하는 것은 시속 숫자와
+   '동해안 어딘가'라는 위치뿐이라 다른 지점은 넣지 않는다. */
+export const ThumbWind: React.FC = () => {
+  const s = WD_SOKCHO;
+  const w = 74;
+  // svg는 1080×1920을 통째로 채운다. 뷰박스 비율도 그래야 한다.
+  // 색면이 1090부터라 지점은 그 위 절반(y 545)에 와야 안 잘린다.
+  const h = (w * 1920) / 1080;
+  return (
+    <Frame>
+      <AbsoluteFill>
+        <svg
+          viewBox={`${s.x - w / 2} ${s.y - (h * 545) / 1920} ${w} ${h}`}
+          preserveAspectRatio="xMidYMid slice"
+          style={{ width: "100%", height: "100%", display: "block" }}
+        >
+          {WD_MAP.map((p, i) => (
+            <path key={i} d={p.d} fill={M.land} stroke={M.coast} strokeWidth={w / 260} />
+          ))}
+          {/* 바람이 지나간 자리 */}
+          {[1, 2, 3].map((k) => (
+            <circle key={k} cx={s.x} cy={s.y} r={(w / 260) * 9 * k * 1.5}
+                    fill="none" stroke="#E8912A" strokeWidth={w / 300} opacity={0.75 - k * 0.16} />
+          ))}
+          <circle cx={s.x} cy={s.y} r={(w / 260) * 9} fill="#E8912A" />
+          <text x={s.x - (w / 260) * 18} y={s.y + (w / 260) * 10}
+                fontSize={(w / 260) * 30} fontWeight={900} fill="#F6E8D2"
+                textAnchor="end"
+                style={{ paintOrder: "stroke", stroke: "#17140F", strokeWidth: (w / 260) * 9 }}>
+            속초
+          </text>
+        </svg>
+      </AbsoluteFill>
+
+      <Face
+        topic="관측 이래 가장 센 바람"
+        big={s.kmh.toFixed(0)}
+        unit="km/h"
+        label={`${s.d.slice(0, 4)}년 ${Number(s.d.slice(5, 7))}월 ${Number(s.d.slice(8))}일 · 초속 ${s.v}m`}
+        band={BAND.wind}
+        ink="#F6E8D2"
       />
     </Frame>
   );
