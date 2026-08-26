@@ -19,6 +19,11 @@
 
   data/kma-rain.json      1시간 최다강수량 (16편 '그날' 판 만들 때 받아둔 것)
   data/kma-rain-day.json  일강수량
+  data/kma-rain-case.json 위 둘에 없는 날짜만 따로 받아둔 일강수량
+
+지점당 상위 10건뿐이라 화면에 세우는 날이 그 지점 10위 밖일 수 있다.
+서귀포 2018-09-01이 그랬다. 그때는 schGubun=3('일')로 날짜를 직접
+지정해 받는다 — day_exact()에 그 규칙을 적어뒀다.
 
 ## 닫힌 집합인지 따로 확인한다
 
@@ -34,14 +39,18 @@
 그대로 쓴다 — **1시간 최대 · 당일 누적 강수량**.
 
                        당일 누적   1시간 최대
-  1998-08-06  강화     481.0mm     123.5mm   26%
-  2026-08-17  거제     654.3mm     124.5mm   19%
-  2024-07-10  군산     209.5mm     131.7mm   63%
-  2025-09-07  군산     258.6mm     152.2mm   59%
+  5위 2018-09-01 서귀포  191.0mm     120.7mm   63%
+  4위 1998-08-06 강화    481.0mm     123.5mm   26%
+  3위 2026-08-17 거제    654.3mm     124.5mm   19%
+  2위 2024-07-10 군산    209.5mm     131.7mm   63%
+  1위 2025-09-07 군산    258.6mm     152.2mm   59%
 
 **당일 누적이 많은 날과 1시간에 몰린 날은 다르다.** 거제는 강화보다
 당일 누적이 173mm 많은데 1시간 최대는 1mm 차이고, 군산은 당일
 누적이 거제의 1/3인데 1시간 최대는 더 많다. 이 어긋남이 편이다.
+
+같은 5위 안에서도 1시간 최대가 차지하는 몫이 19%에서 63%까지
+벌어진다. 순위표 하나로는 안 보이는 것이다.
 
 일강수량과 1시간 최다강수량은 둘 다 00~24시 기준이라 나눠 쓸 수
 있다. 다른 정의를 섞은 것이 아니다.
@@ -60,7 +69,8 @@ kma.go.kr/kma/biz/forecast03.jsp 기상특보 발표기준에서 받았다.
   · 96곳 전부 두 자료가 다 있다
   · 각 지점 10위 값의 최대 < 105mm (닫힌 집합)
   · 전국 1위 군산 152.2 (2025-09-07), 2위 군산 131.7 (2024-07-10)
-  · 네 날 전부 1시간 값과 일강수량이 같은 날짜에 잡힌다
+  · 다섯 날의 순위가 5·4·3·2·1위다
+  · 다섯 날 전부 당일 누적 >= 1시간 최대다
   · 경신 자취가 오름차순이고 날짜순이다
 
 사용:  python3 scripts/prep-rain.py
@@ -68,11 +78,15 @@ kma.go.kr/kma/biz/forecast03.jsp 기상특보 발표기준에서 받았다.
 import json
 import math
 import os
+import time
+import urllib.request
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 HOUR_CACHE = os.path.join(ROOT, "data", "kma-rain.json")
 DAY_CACHE = os.path.join(ROOT, "data", "kma-rain-day.json")
+CASE_CACHE = os.path.join(ROOT, "data", "kma-rain-case.json")
 OUT = os.path.join(ROOT, "src", "data", "rain.json")
+AJAX = "https://data.kma.go.kr/climate/extremum/selectExtremumAjaxList.do"
 
 TOP_N = 10
 # 호우특보 기준(3시간 누적, mm). 기상청 기상특보 발표기준에서 받은 값이다.
@@ -82,12 +96,13 @@ HEAVY_WARN3 = 90.0
 # 투영 — places.ts와 같은 식
 LON0, LAT0, KX, KY, OFFX = 124.21, 33.20, 80.20, 101.94, 230.9
 
-# 화면이 세우는 네 날. 순서가 곧 편의 순서다.
+# 화면이 세우는 다섯 날 — 1시간 최다강수량 전국 5위부터 1위까지.
 #
-# 당일 누적이 많은 날(강화·거제)을 먼저 세우고, 1시간에 몰린 날
-# (군산 둘)로 넘어간다. 막대 하나가 당일 누적 강수량이고 아래쪽
-# 색칠한 만큼이 1시간 최대라, 넷을 나란히 두면 색 비율이 뒤집힌다.
+# 순위가 곧 순서다. 막대 하나가 당일 누적 강수량이고 아래쪽 색칠한
+# 만큼이 1시간 최대라, 다섯을 나란히 두면 같은 순위 안에서도 몫이
+# 19%에서 63%까지 벌어지는 것이 보인다.
 CASES = [
+    ("서귀포", "2018-09-01"),
     ("강화", "1998-08-06"),
     ("거제", "2026-08-17"),
     ("군산", "2024-07-10"),
@@ -95,6 +110,54 @@ CASES = [
 ]
 # 마지막 날 국지성을 말할 때 같이 적는 이웃 지점
 NEAR_OF = ("군산", "2025-09-07", ["부안", "고창"])
+
+
+def day_exact(name, d):
+    """그 지점 그 날짜의 일강수량. 없으면 받아서 캐시에 넣는다.
+
+    kma-rain-day.json은 지점당 상위 10건뿐이라 어떤 날은 안 들어 있다.
+    서귀포 2018-09-01이 그랬다 — 그 지점 일강수량 10위 밖이다.
+
+    극값 조회를 schGubun=3('일')로 부르면 날짜를 직접 지정할 수 있다.
+    이때 precInputVal의 뜻이 달라진다는 것을 확인했다.
+
+        schGubun=3  precInputVal=1  → 일강수량
+        schGubun=3  precInputVal=2 또는 3  → 1시간 최다강수량
+
+    schGubun=1일 때와 반대라, 군산 2025-09-07로 두 값(258.6 / 152.2)을
+    다 아는 상태에서 맞춰보고 확정했다.
+    """
+    cache = json.load(open(CASE_CACHE, encoding="utf-8")) if os.path.exists(CASE_CACHE) else {}
+    key = f"{name} {d}"
+    if key in cache:
+        return cache[key]
+    stn = {v["name"]: k for k, v in
+           json.load(open(os.path.join(ROOT, "data", "kma-stations.json"),
+                          encoding="utf-8")).items()}[name]
+    body = ("stnFileNm=climateExtremum.json&schGubun=3&schElem=3&precInputVal=1"
+            f"&tempInputVal=1&startDt={d.replace('-', '')}&endDt={d.replace('-', '')}"
+            f"&startYear=1904&endYear=2026&schStnId={stn}")
+    for i in range(5):
+        try:
+            r = urllib.request.Request(
+                AJAX, data=body.encode(),
+                headers={"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+                         "X-Requested-With": "XMLHttpRequest", "User-Agent": "Mozilla/5.0"})
+            got = json.loads(urllib.request.urlopen(r, timeout=60).read().decode("utf-8", "replace"))
+            break
+        except Exception:
+            if i == 4:
+                raise
+            time.sleep(1.5 * 2 ** i)
+    data = got.get("data") or {}
+    k = list(data)
+    rows = data.get(k[0]) if k else []
+    assert rows, (name, d)
+    v = float(rows[0]["val"])
+    assert rows[0]["tma"] == d, (rows[0], d)
+    cache[key] = v
+    json.dump(cache, open(CASE_CACHE, "w", encoding="utf-8"), ensure_ascii=False)
+    return v
 
 
 def project(lon, lat):
@@ -162,12 +225,12 @@ def main():
     assert all(prog[i]["v"] < prog[i + 1]["v"] for i in range(len(prog) - 1)), prog
     assert all(prog[i]["d"] < prog[i + 1]["d"] for i in range(len(prog) - 1)), prog
 
-    # ── 네 날 ────────────────────────────────────────
+    # ── 다섯 날 ──────────────────────────────────────
     cases = []
     for name, d in CASES:
         h = val(by_name, name, d)
-        dv = val(day_by_name, name, d)
-        assert h and dv, (name, d, h, dv)
+        dv = val(day_by_name, name, d) or day_exact(name, d)
+        assert h and dv and dv >= h, (name, d, h, dv)
         s = by_name[name]
         x, y = project(s["lon"], s["lat"])
         near = []
@@ -187,9 +250,10 @@ def main():
                              if r["d"] == d), 0),
             "near": near,
         })
-    assert cases[-1]["rank"] == 1 and cases[-2]["rank"] == 2, cases
+    # 5위부터 1위까지 내림차순이어야 한다
+    assert [c["rank"] for c in cases] == [5, 4, 3, 2, 1], [c["rank"] for c in cases]
 
-    # 화면에 쓸 막대 눈금. 제일 긴 하루(거제 654.3mm)가 들어가는 선.
+    # 화면에 쓸 막대 눈금. 제일 긴 당일 누적(거제 654.3mm)이 들어가는 선.
     scale = 10 * math.ceil(max(c["day"] for c in cases) / 10) + 6
 
     out = {
@@ -213,7 +277,7 @@ def main():
     print("전국 1위가 갈아치워진 자취")
     for p in prog:
         print(f"  {p['d']}  {p['name']:<5s} {p['v']:6.1f}mm  {p.get('held', '')}")
-    print("네 날")
+    print("다섯 날")
     for c in cases:
         print(f"  {c['d']}  {c['name']:<4s} 당일 누적 {c['day']:6.1f}  1시간 최대 {c['hour']:6.1f}"
               f"  {c['pct']}%  전국 {c['rank'] or '-'}위")

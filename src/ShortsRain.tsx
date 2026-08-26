@@ -39,10 +39,10 @@ const DIM = "#7E8898";
 /**
  * 한 날에 머무는 시간(초).
  *
- * 앞의 둘은 '하루로 많이 온 날'을 세우는 자리라 짧고, 뒤의 둘에서
- * 색 비율이 뒤집힌다. 1위가 제일 길다.
+ * 전국 5위에서 1위로 올라간다. 위로 갈수록 길고 1위가 제일 길다 —
+ * 16편에서 배운 것이다.
  */
-const HOLD = [5.4, 6.4, 6.0, 8.4];
+const HOLD = [4.8, 5.0, 5.6, 5.6, 8.0];
 
 const SLOTS: Array<{ t0: number; t1: number }> = [];
 {
@@ -66,19 +66,20 @@ function caseAt(frame: number): number {
 
 /* ── 막대 ──────────────────────────────────────────
    막대 하나가 당일 누적 강수량(일강수량)이고, 아래쪽 색칠한 만큼이
-   1시간 최대(1시간 최다강수량)다. 눈금이 넷에 공통이라 당일 누적도
-   같이 견줘진다 — 거제가 제일 길고 군산이 제일 짧다.
+   1시간 최대(1시간 최다강수량)다. 눈금이 다섯에 공통이라 당일 누적도
+   같이 견줘진다 — 거제가 제일 길고 서귀포가 제일 짧다.
 
    16편에서 눈금이 12%밖에 안 벌어져 실패한 적이 있다. 여기서는
-   1시간 최대끼리는 23%밖에 안 벌어지지만 화면이 말하는 것은 그게
-   아니라 **한 막대 안에서 색이 차지하는 비율**이라 상관이 없다. */
+   1시간 최대끼리는 26%밖에 안 벌어지지만 화면이 말하는 것은 그게
+   아니라 **한 막대 안에서 색이 차지하는 비율**이라 상관이 없다.
+   전국 5위 안에서도 그 몫이 19%에서 63%까지 벌어진다. */
 const BASE = 1440;
 const TOP_Y = 900;
 const K = (BASE - TOP_Y) / SCALE;
 const COL_L = TEXT_X;
 const COL_R = 1080 - SAFE_RIGHT;
 const SLOT_W = (COL_R - COL_L) / CASES.length;
-const BAR_W = 116;
+const BAR_W = 104;
 const slotX = (i: number) => COL_L + SLOT_W * i + (SLOT_W - BAR_W) / 2;
 
 const ease = (t: number) => 1 - Math.pow(1 - t, 3);
@@ -131,7 +132,7 @@ export const ShortsRain: React.FC = () => {
       >
         {/*
           지도 — 오른쪽 위 작은 판.
-          네 곳이 처음부터 다 찍혀 있고 그날의 지점만 켜진다.
+          다섯 곳이 처음부터 다 찍혀 있고 그날의 지점만 켜진다.
           「땅과 때」라 어디인지는 늘 보여야 한다.
         */}
         <g transform={`translate(${MAP_X} ${MAP_Y}) scale(${MAP_S}) translate(${-MAP_L} ${-MAP_T})`}>
@@ -204,7 +205,7 @@ export const ShortsRain: React.FC = () => {
             <g key={cc.d + cc.name}>
               {/*
                 빈 자리 — 0프레임이 완성된 그림이어야 한다. 값이 아직
-                없어도 넷이 설 자리는 이미 서 있다.
+                없어도 다섯이 설 자리는 이미 서 있다.
               */}
               <line x1={x + BAR_W / 2} y1={TOP_Y} x2={x + BAR_W / 2} y2={BASE}
                     stroke="#283446" strokeWidth={2} strokeDasharray="6 12" />
@@ -232,7 +233,7 @@ export const ShortsRain: React.FC = () => {
               )}
               {/*
                 지점과 해 — 0프레임부터 서 있다. 값이 아직 안 찼어도
-                네 날이 어디에 설지는 보여야 화면이 완성된 그림이 된다.
+                다섯 날이 어디에 설지는 보여야 화면이 완성된 그림이 된다.
               */}
               <text x={x + BAR_W / 2} y={BASE + 46} fontSize={36} fontWeight={900}
                     fill={cur ? INK : on ? "#8E9AAB" : "#525E70"} textAnchor="middle">
