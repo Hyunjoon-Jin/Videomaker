@@ -21,6 +21,7 @@ import { ShortsWind, WIND_DURATION } from "./ShortsWind";
 import { ShortsCanopus, CANOPUS_DURATION } from "./ShortsCanopus";
 import { ShortsRain, RAIN_DURATION } from "./ShortsRain";
 import { ShortsTiger, TIGER_DURATION } from "./ShortsTiger";
+import { ShortsExclave, EXCLAVE_DURATION } from "./ShortsExclave";
 import { ChannelBanner, ChannelIcon, ChannelWatermark } from "./Channel";
 import { ThumbBongsu, ThumbGanchuk, ThumbKoreanWar, ThumbPower, ThumbRail, ThumbQuake, ThumbSillok, ThumbTimezone, ThumbTongsinsa, ThumbTyphoon, ThumbWar, ThumbDatum, ThumbExtremes, ThumbCanopus, ThumbSnow, ThumbWind } from "./Thumbs";
 import { FPS, SHORT_H, SHORT_W } from "./theme";
@@ -190,6 +191,15 @@ export const RemotionRoot: React.FC = () => (
       id="ShortsSnow"
       component={ShortsSnow}
       durationInFrames={SNOW_DURATION}
+      fps={FPS}
+      width={SHORT_W}
+      height={SHORT_H}
+    />
+    {/* 기획 20 — 자기 시·군과 땅이 안 이어진 곳 */}
+    <Composition
+      id="ShortsExclave"
+      component={ShortsExclave}
+      durationInFrames={EXCLAVE_DURATION}
       fps={FPS}
       width={SHORT_W}
       height={SHORT_H}
