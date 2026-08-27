@@ -337,18 +337,26 @@ export const ShortsTiger: React.FC = () => {
             큰 글씨는 번역이다. 원문을 크게 띄웠더니 무슨 말인지
             하나도 안 읽혔다. 원문은 그 아래 작게 한 줄.
           */}
-          <div
-            style={{
-              color: INK,
-              fontSize: b.say.length > 22 ? 56 : 64,
-              fontWeight: 900,
-              lineHeight: 1.24,
-              wordBreak: "keep-all",
-              textShadow: `0 0 40px ${BG}, 0 0 18px ${BG}`,
-            }}
-          >
-            {b.say}
-          </div>
+          {/*
+            줄바꿈을 브라우저에 맡기지 않는다. keep-all이라도 어절
+            단위로는 아무 데서나 끊어서 '포도장에게 / 수색해'처럼
+            뜻이 갈린다. 자료에 줄 단위로 넣어뒀다.
+          */}
+          {b.say.map((ln, k) => (
+            <div
+              key={k}
+              style={{
+                color: INK,
+                fontSize: 56,
+                fontWeight: 900,
+                lineHeight: 1.26,
+                whiteSpace: "nowrap",
+                textShadow: `0 0 40px ${BG}, 0 0 18px ${BG}`,
+              }}
+            >
+              {ln}
+            </div>
+          ))}
           <div
             style={{
               color: c,
@@ -380,7 +388,7 @@ export const ShortsTiger: React.FC = () => {
             조선왕조실록 · 한양 도성과 궁궐
           </div>
           {[
-            ...BEATS.map((x) => ({ ce: String(x.ce), where: x.label, say: x.say })),
+            ...BEATS.map((x) => ({ ce: String(x.ce), where: x.label })),
             ...TAIL,
           ]
             .sort((a, b2) => Number(a.ce) - Number(b2.ce))
