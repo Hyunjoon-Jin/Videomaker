@@ -39,10 +39,10 @@ const DIM = "#8A8172";
 /**
  * 한 기록에 머무는 시간(초).
  *
- * 1751년(경복궁)이 제일 길다. 그 앞 둘은 조여드는 자리라 짧고,
- * 뒤의 둘은 '한 번이 아니었다'를 말하는 자리라 다시 늘린다.
+ * 1603년(창덕궁에서 사람을 문 날)과 1751년(경복궁)이 길다. 글씨가
+ * 번역문이라 원문 네 글자보다 읽는 데 시간이 걸린다.
  */
-const HOLD = [3.4, 4.2, 3.4, 3.6, 3.4, 6.0, 4.0, 5.2];
+const HOLD = [3.8, 4.4, 4.6, 4.2, 5.4, 4.2, 5.0, 3.8, 4.6, 4.4];
 
 const SLOTS: Array<{ t0: number; t1: number }> = [];
 {
@@ -333,30 +333,35 @@ export const ShortsTiger: React.FC = () => {
             opacity: on,
           }}
         >
-          <div
-            style={{
-              color: c,
-              fontSize: b.key.length > 5 ? 108 : 136,
-              fontWeight: 900,
-              lineHeight: 1,
-              letterSpacing: 6,
-              textShadow: `0 0 40px ${BG}, 0 0 18px ${BG}`,
-            }}
-          >
-            {b.key}
-          </div>
+          {/*
+            큰 글씨는 번역이다. 원문을 크게 띄웠더니 무슨 말인지
+            하나도 안 읽혔다. 원문은 그 아래 작게 한 줄.
+          */}
           <div
             style={{
               color: INK,
-              fontSize: 42,
+              fontSize: b.say.length > 22 ? 56 : 64,
               fontWeight: 900,
-              lineHeight: 1.22,
+              lineHeight: 1.24,
+              wordBreak: "keep-all",
+              textShadow: `0 0 40px ${BG}, 0 0 18px ${BG}`,
+            }}
+          >
+            {b.say}
+          </div>
+          <div
+            style={{
+              color: c,
+              fontSize: 30,
+              fontWeight: 800,
+              lineHeight: 1.3,
               marginTop: 14,
+              opacity: 0.85,
               wordBreak: "keep-all",
               textShadow: `0 0 24px ${BG}`,
             }}
           >
-            {b.line}
+            {b.han}
           </div>
         </div>
       )}
@@ -372,10 +377,14 @@ export const ShortsTiger: React.FC = () => {
           }}
         >
           <div style={{ color: DIM, fontSize: 30, fontWeight: 700, letterSpacing: 2, marginBottom: 16 }}>
-            원문 虎入 · 실록에 {COUNTS["虎入"]}건
+            조선왕조실록 · 한양 도성과 궁궐
           </div>
-          {[...BEATS.map((x) => ({ ce: String(x.ce), when: when(x), han: x.key, where: x.label })), ...TAIL].map(
-            (t, i) => {
+          {[
+            ...BEATS.map((x) => ({ ce: String(x.ce), where: x.label, say: x.say })),
+            ...TAIL,
+          ]
+            .sort((a, b2) => Number(a.ce) - Number(b2.ce))
+            .map((t, i) => {
               const at = BODY_END + Math.round((0.3 + i * 0.22) * FPS);
               const o = interpolate(frame, [at, at + 10], [0, 1], {
                 extrapolateLeft: "clamp",
@@ -384,12 +393,12 @@ export const ShortsTiger: React.FC = () => {
               const hot = t.where.includes("궁");
               return (
                 <div
-                  key={t.ce + t.when}
+                  key={t.ce + t.where}
                   style={{
                     display: "flex",
                     alignItems: "baseline",
                     gap: 16,
-                    marginTop: 7,
+                    marginTop: 9,
                     opacity: o,
                     transform: `translateY(${(1 - o) * 8}px)`,
                   }}
@@ -397,26 +406,27 @@ export const ShortsTiger: React.FC = () => {
                   <span
                     style={{
                       color: hot ? HOT : "#8A8172",
-                      fontSize: 36,
+                      fontSize: 38,
                       fontWeight: 900,
-                      width: 104,
+                      width: 124,
                       fontVariantNumeric: "tabular-nums",
                     }}
                   >
                     {t.ce}
                   </span>
+                  {/*
+                    마무리 표는 연도와 자리만 세운다. 무슨 일이
+                    있었는지는 본체에서 이미 읽었고, 열넷에 설명까지
+                    붙이면 줄마다 두 줄로 접혀 표가 안 읽힌다.
+                  */}
                   <span
                     style={{
                       color: hot ? HOT : INK,
-                      fontSize: 31,
+                      fontSize: 38,
                       fontWeight: 900,
-                      width: 292,
                       whiteSpace: "nowrap",
                     }}
                   >
-                    {t.han}
-                  </span>
-                  <span style={{ color: "#8A8172", fontSize: 28, fontWeight: 800, whiteSpace: "nowrap" }}>
                     {t.where}
                   </span>
                 </div>
@@ -468,14 +478,14 @@ export const ShortsTiger: React.FC = () => {
             <div
               style={{
                 color: HOT,
-                fontSize: 136,
+                fontSize: 130,
                 fontWeight: 900,
                 lineHeight: 1,
                 letterSpacing: 6,
                 textShadow: `0 0 40px ${BG}, 0 0 18px ${BG}`,
               }}
             >
-              {HERO.key}
+              虎入闕中
             </div>
             <div
               style={{
@@ -488,7 +498,7 @@ export const ShortsTiger: React.FC = () => {
                 textShadow: `0 0 24px ${BG}`,
               }}
             >
-              경복궁에 들어온 호랑이
+              궁궐 안에서 물린 사람
             </div>
           </div>
         </>

@@ -4,9 +4,11 @@
  * 야마: 조선 왕이 사는 궁궐 안에 호랑이가 들어왔다. 1751년 6월 9일
  * 경복궁. 실록 원문이 네 글자다 — 虎入舊闕.
  *
- * 화면에 큰 글씨로 쓰는 것은 번역문이 아니라 **원문 구절**이다.
- * 네 글자가 문장 하나보다 짧고, 실록을 보고 있다는 것이 한 번에
- * 전해진다.
+ * 화면 큰 글씨는 **번역**이다. 한자 원문을 크게 띄웠더니 무슨 말인지
+ * 하나도 안 읽혔다. 원문은 그 아래 작게 한 줄로만 남긴다.
+ *
+ * 그리고 어디에 나타나 무엇을 했는지가 적힌 기사를 앞에 세운다.
+ * 짧고 센 '虎入城內' 네 글자짜리는 그날 무슨 일이 있었는지가 없다.
  *
  * 자리를 아는 기록만 점을 찍는다. '성 안'·'도성 안'은 어디인지
  * 안 적혀 있어서 점 대신 성곽 전체가 켜진다 — 아는 것과 모르는
@@ -27,13 +29,15 @@ export interface Beat {
   dy: number;
   /** 화면에 쓸 곳 이름 */
   label: string;
-  /** 화면에 없는 것 한 줄 */
-  line: string;
+  /** 화면 큰 글씨. 번역이다. */
+  say: string;
+  /** 그 아래 작게 붙는 원문 */
+  han: string;
   /** 국역 전문 */
   ko: string;
   /** 원문 전문 */
-  han: string;
-  /** 원문에서 뽑은 '虎入…' 구절. 화면 큰 글씨다. */
+  full: string;
+  /** 원문에서 뽑은 '虎入…' 구절. 마무리 표에서 쓴다. */
   key: string;
   /** 투영 좌표. null이면 자리를 모르는 기록이다. */
   x: number | null;
@@ -54,7 +58,7 @@ export const WIDE: { cx: number; cy: number; w: number } = raw.wide;
 /** 궁궐·산·문 자리 */
 export const MARKS: Record<string, number[]> = raw.marks;
 /** 마무리 판에 글자로만 적는 날들 */
-export const TAIL: Array<{ ce: string; when: string; han: string; where: string }> =
+export const TAIL: Array<{ ce: string; when: string; where: string; say: string }> =
   raw.tail;
 /** 검색어별 기사 수 */
 export const COUNTS: Record<string, number> = raw.counts;
