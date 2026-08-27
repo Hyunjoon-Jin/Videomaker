@@ -3320,8 +3320,8 @@ AWS 값입니다. 그래서 '우리나라 최고'는 이 96개 지점 안에서�
 
 자료: 통계청 2018년 시군구 경계 (southkorea-maps)
 
-음악: BGM_TITLE — BGM_CREDIT, 공유마당
-BGM_URL
+음악: Walking — 최재규, 공유마당 CC BY
+https://gongu.copyright.or.kr/gongu/wrt/wrt/view.do?wrtSn=13333445
 
 #달성군 #대구 #월경지
 #안산 #대부도 #완주군 #전주 #인천중구 #영종도 #행정구역 #지도 #땅과때 #shorts

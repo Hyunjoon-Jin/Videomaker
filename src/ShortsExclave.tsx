@@ -154,7 +154,7 @@ export const ShortsExclave: React.FC = () => {
 
   return (
     <AbsoluteFill style={{ backgroundColor: BG, fontFamily: "Pretendard" }}>
-      <Audio src={staticFile("bgm-ex.wav")} volume={0.85} />
+      <Audio src={staticFile("bgm-xc.wav")} volume={0.85} />
 
       {/* ── 지도 — 0프레임부터 전국이 떠 있다 ── */}
       <svg
