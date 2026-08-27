@@ -20,6 +20,7 @@ import { ShortsSnow, SNOW_DURATION } from "./ShortsSnow";
 import { ShortsWind, WIND_DURATION } from "./ShortsWind";
 import { ShortsCanopus, CANOPUS_DURATION } from "./ShortsCanopus";
 import { ShortsRain, RAIN_DURATION } from "./ShortsRain";
+import { ShortsTiger, TIGER_DURATION } from "./ShortsTiger";
 import { ChannelBanner, ChannelIcon, ChannelWatermark } from "./Channel";
 import { ThumbBongsu, ThumbGanchuk, ThumbKoreanWar, ThumbPower, ThumbRail, ThumbQuake, ThumbSillok, ThumbTimezone, ThumbTongsinsa, ThumbTyphoon, ThumbWar, ThumbDatum, ThumbExtremes, ThumbCanopus, ThumbSnow, ThumbWind } from "./Thumbs";
 import { FPS, SHORT_H, SHORT_W } from "./theme";
@@ -189,6 +190,15 @@ export const RemotionRoot: React.FC = () => (
       id="ShortsSnow"
       component={ShortsSnow}
       durationInFrames={SNOW_DURATION}
+      fps={FPS}
+      width={SHORT_W}
+      height={SHORT_H}
+    />
+    {/* 기획 19 — 虎入, 도성과 궁궐에 들어온 호랑이 */}
+    <Composition
+      id="ShortsTiger"
+      component={ShortsTiger}
+      durationInFrames={TIGER_DURATION}
       fps={FPS}
       width={SHORT_W}
       height={SHORT_H}

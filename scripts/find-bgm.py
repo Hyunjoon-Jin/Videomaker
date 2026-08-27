@@ -89,13 +89,22 @@ MIN_SEC = 20.0
 NEED = 58.0
 
 
-def get(url: str, referer: str = BASE) -> bytes:
-    req = urllib.request.Request(url, headers={
-        "User-Agent": UA, "Referer": referer,
-        "Accept-Language": "ko-KR,ko;q=0.9",
-    })
-    with urllib.request.urlopen(req, timeout=60) as r:
-        return r.read()
+def get(url: str, referer: str = BASE, tries: int = 5) -> bytes:
+    """공유마당은 503을 자주 뱉는다. 한 번 실패로 훑기를 통째로 버리지 않는다."""
+    import time
+    for i in range(tries):
+        try:
+            req = urllib.request.Request(url, headers={
+                "User-Agent": UA, "Referer": referer,
+                "Accept-Language": "ko-KR,ko;q=0.9",
+            })
+            with urllib.request.urlopen(req, timeout=60) as r:
+                return r.read()
+        except Exception:
+            if i == tries - 1:
+                raise
+            time.sleep(2 * 2 ** i)
+    return b""
 
 
 def text_of(html_bytes: bytes) -> str:
