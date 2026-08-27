@@ -10,3 +10,7 @@ out/
 
 # BGM은 scripts/make-bgm.py로 재생성 가능한 7MB 산출물
 public/bgm*.wav
+
+# 파이썬 바이트코드
+__pycache__/
+*.pyc
