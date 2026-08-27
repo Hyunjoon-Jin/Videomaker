@@ -84,6 +84,8 @@ import urllib.request
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 WALL = os.path.join(ROOT, "data", "osm-hanyang-wall.json")
+PALACE = os.path.join(ROOT, "data", "osm-palaces.json")
+GYEONGBOK = os.path.join(ROOT, "data", "osm-gyeongbokgung.json")
 CACHE = os.path.join(ROOT, "data", "sillok-article.json")
 OUT = os.path.join(ROOT, "src", "data", "tiger.json")
 CTX = ssl.create_default_context(cafile="/root/.ccr/ca-bundle.crt")
@@ -120,21 +122,21 @@ PLACES = {
 # 자리가 None이면 '성 안'이다 — 점을 안 찍고 성곽 안쪽을 물들인다.
 BEATS = [
     ("waa_10112120_001", None, "성 안",
-     "조선이 선 그해 · 흥국리 사람이 쏘아 죽이다"),
+     "조선이 선 그해 · 흥국리 사람의 화살"),
     ("wga_11109014_001", "창덕궁후원", "창덕궁 후원",
-     "세조가 소식을 듣고 북악산으로 올라가다"),
+     "임금이 듣고 곧장 북악산으로"),
     ("wja_10308006_003", None, "도성 안",
-     "잡으라 명하다 · 원문 여섯 글자"),
+     "잡으라는 명 · 원문 6글자"),
     ("wua_11911027_002", None, "경성 안",
-     "영조 19년 · 이때부터 26년 사이에 몰린다"),
+     "영조 19년 · 여기서 궁궐까지 8년"),
     ("wua_12601007_001", None, "도성 안",
-     "1년 반 뒤 궁궐로 들어온다"),
+     "1년 반 뒤 궁궐 안"),
     ("wua_12706009_001", "경복궁", "경복궁",
-     "구궐은 경복궁이다 · 임진왜란 뒤 158년째 빈 궁"),
+     "구궐은 경복궁 · 임진왜란에 불탄 지 159년"),
     ("wua_12801002_001", "경복궁", "경복궁 후원",
-     "7개월 만에 같은 궁궐로 다시"),
+     "7개월 만에 같은 궁궐 후원"),
     ("wua_13005010_001", "경덕궁", "경덕궁",
-     "영조가 말하다 — 사관이 쓴다면 虎入闕中이라 하리라"),
+     "영조의 말 — 사관이 쓴다면 虎入闕中"),
 ]
 
 # 마무리 판에 글자로만 적는 날들. 자리를 몰라 점은 안 찍는다.
@@ -147,6 +149,16 @@ TAIL = [
 
 def project(lon, lat):
     return ((lon - LON0) * KX + OFFX, 1000.0 - (lat - LAT0) * KY)
+
+
+def area(ring):
+    """고리 넓이(px²). 도성 전체를 궁궐로 착각하지 않게 거르는 데 쓴다."""
+    s2 = 0.0
+    for i in range(len(ring)):
+        ax, ay = ring[i]
+        bx, by = ring[(i + 1) % len(ring)]
+        s2 += ax * by - bx * ay
+    return abs(s2) / 2
 
 
 def fetch(aid):
@@ -202,23 +214,93 @@ def fetch(aid):
 
 
 def wall_paths():
-    """성곽을 화면 좌표 path로. 조각이 75개라 이어 붙이지 않고 그대로 둔다."""
+    """성곽을 화면 좌표 path로. 조각이 75개라 이어 붙이지 않고 그대로 둔다.
+
+    조각 중에는 궁궐 담장(궁장)도 섞여 있다. OSM이 도성 성벽과 같은
+    barrier=city_wall로 달아둔 것인데, 이쪽은 대개 닫힌 고리다.
+    닫힌 것만 따로 표시해 두면 클로즈업에서 그 안을 칠할 수 있다 —
+    '이 담장 안으로 들어왔다'가 그림이 된다.
+    """
     raw = json.load(open(WALL, encoding="utf-8"))
-    out = []
+    out, rings = [], []
     for e in raw.get("elements", []):
         g = e.get("geometry") or []
         if len(g) < 2:
             continue
         pts = [project(p["lon"], p["lat"]) for p in g]
         d = "M" + " L".join(f"{x:.1f} {y:.1f}" for x, y in pts)
+        closed = (abs(pts[0][0] - pts[-1][0]) < 0.5
+                  and abs(pts[0][1] - pts[-1][1]) < 0.5 and len(pts) > 3)
         out.append(d)
-    return out
+        rings.append(pts if closed else None)
+    return out, rings
+
+
+def inside(pt, ring):
+    """점이 고리 안인가. 짝수-홀수 규칙."""
+    x, y = pt
+    hit = False
+    n = len(ring)
+    for i in range(n):
+        ax, ay = ring[i]
+        bx, by = ring[(i + 1) % n]
+        if (ay > y) != (by > y) and x < (bx - ax) * (y - ay) / (by - ay + 1e-12) + ax:
+            hit = not hit
+    return hit
+
+
+def chain(ways):
+    """끝점끼리 이어 붙여 고리 하나로. OSM 관계의 멤버가 여러 조각일 때 쓴다.
+
+    경복궁이 그렇다. 관계(relation)가 여덟 개 way로 쪼개져 있는데
+    그게 곧 관계가 정의한 경계다 — 없는 선을 지어내는 것이 아니라
+    이미 이어져 있는 것을 이어 붙이는 것뿐이다.
+    """
+    rest = [list(w) for w in ways if len(w) > 1]
+    ring = rest.pop(0)
+    while rest:
+        end = ring[-1]
+        best, rev, dist = None, False, 1e9
+        for i, w in enumerate(rest):
+            for r in (False, True):
+                a = w[-1] if r else w[0]
+                d = (a[0] - end[0]) ** 2 + (a[1] - end[1]) ** 2
+                if d < dist:
+                    best, rev, dist = i, r, d
+        w = rest.pop(best)
+        ring += (w[::-1] if rev else w)[1:]
+    return ring
+
+
+def palace_polys():
+    """궁궐 담장 폴리곤. 클로즈업에서 안을 칠할 면이다."""
+    out = {}
+    raw = json.load(open(PALACE, encoding="utf-8"))
+    for e in raw.get("elements", []):
+        t = e.get("tags") or {}
+        g = e.get("geometry") or []
+        n = t.get("name")
+        # 같은 이름이 여럿이면 점이 제일 많은 것 — 담장이 제일 촘촘하다
+        if n and len(g) > 4 and len(g) > len(out.get(n, [])):
+            out[n] = g
+    gb = json.load(open(GYEONGBOK, encoding="utf-8"))
+    ways = [e["geometry"] for e in gb.get("elements", [])
+            if e["type"] == "way" and len(e.get("geometry") or []) > 1]
+    if ways:
+        out["경복궁"] = chain([[(p["lon"], p["lat"]) for p in w] for w in ways])
+    polys = {}
+    for n, g in out.items():
+        pts = [project(*p) if isinstance(p, tuple) else project(p["lon"], p["lat"])
+               for p in g]
+        polys[n] = "M" + " L".join(f"{x:.1f} {y:.1f}" for x, y in pts) + " Z"
+    return polys
 
 
 def main():
-    walls = wall_paths()
+    walls, rings = wall_paths()
     npts = sum(w.count("L") + 1 for w in walls)
     assert npts > 1000, npts
+    print(f"닫힌 고리 {sum(1 for r in rings if r)}개")
 
     beats = []
     for aid, place, label, line in BEATS:
@@ -236,6 +318,9 @@ def main():
         ko = re.sub(r"(?<=[一-鿿])\s+(?=[一-鿿])", "", a["ko"])
         xy = project(*reversed(PLACES[place])) if place else None
         beats.append({
+            # 클로즈업에서 칠할 궁궐 담장. 경덕궁은 OSM 이름이 경희궁이다.
+            "poly": {"경복궁": "경복궁", "창덕궁후원": "창덕궁",
+                     "경덕궁": "경희궁"}.get(place or ""),
             "id": aid, "ce": a["ce"], "king": a["king"], "yr": a["yr"],
             "mo": a["mo"], "dy": a["dy"], "label": label, "line": line,
             "ko": ko, "han": han, "key": key,
@@ -250,8 +335,37 @@ def main():
     ys = [p[1] for p in marks.values()]
     print("표시할 곳 x %.0f~%.0f  y %.0f~%.0f" % (min(xs), max(xs), min(ys), max(ys)))
 
+    polys = palace_polys()
+
+    def bbox(d):
+        pts = [(float(a), float(b))
+               for a, b in re.findall(r"(-?\d+\.?\d*) (-?\d+\.?\d*)", d)]
+        xs = [p[0] for p in pts]
+        ys = [p[1] for p in pts]
+        return min(xs), min(ys), max(xs), max(ys)
+
+    # 카메라. 자리를 아는 걸음은 그 궁궐 담장이 화면의 절반쯤 되게
+    # 붙고, 모르는 걸음은 도성 전체로 물러선다. 16편에서 배운 것이다.
+    WIDE = {"cx": 391.5, "cy": 637.5, "w": 573.0}
+    for b in beats:
+        if not b["poly"]:
+            b["cam"] = WIDE
+            continue
+        x0, y0, x1, y1 = bbox(polys[b["poly"]])
+        # 경희궁지는 지금 남은 자리가 작아 그대로 붙이면 담장만 보인다.
+        # 어느 궁궐인지 알려면 성곽이 화면 귀퉁이에 걸쳐야 한다.
+        w = max(max(x1 - x0, (y1 - y0) * 573 / 585) * 2.9, 230.0)
+        b["cam"] = {"cx": round((x0 + x1) / 2, 1),
+                    "cy": round((y0 + y1) / 2, 1), "w": round(w, 1)}
+
+    print("궁궐 폴리곤 " + " · ".join(f"{k}({v.count('L') + 1}점)" for k, v in polys.items()))
+    for b in beats:
+        assert b["poly"] is None or b["poly"] in polys, b["poly"]
+
     json.dump({
         "walls": walls,
+        "polys": polys,
+        "wide": {"cx": 391.5, "cy": 637.5, "w": 573.0},
         "marks": marks,
         "beats": beats,
         "tail": [{"ce": t[0], "when": t[1], "han": t[2], "where": t[3]} for t in TAIL],
@@ -262,7 +376,8 @@ def main():
     print(f"성곽 {len(walls)}조각 · {npts}점")
     for b in beats:
         print(f"  {b['ce']}  {b['king']} {b['yr']}년 {b['mo']}월 {b['dy']}일  "
-              f"{b['label']:<10s} {b['key']:<10s} {b['ko'][:34]}")
+              f"{b['label']:<10s} {b['key']:<10s} {b['poly'] or '전체'} "
+              f"cam w={b['cam']['w']:.0f}")
 
 
 if __name__ == "__main__":

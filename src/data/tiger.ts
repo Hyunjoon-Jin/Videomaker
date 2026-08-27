@@ -38,11 +38,19 @@ export interface Beat {
   /** 투영 좌표. null이면 자리를 모르는 기록이다. */
   x: number | null;
   y: number | null;
+  /** 클로즈업에서 칠할 궁궐 담장 이름. null이면 도성 전체다. */
+  poly: string | null;
+  /** 이 걸음의 카메라 */
+  cam: { cx: number; cy: number; w: number };
 }
 
 export const BEATS: Beat[] = raw.beats as Beat[];
 /** 한양도성 성곽 path. OSM에서 받은 75조각이다. */
 export const WALLS: string[] = raw.walls;
+/** 궁궐 담장 폴리곤. OSM 관계·way가 정의한 경계다. */
+export const POLYS: Record<string, string> = raw.polys;
+/** 도성이 다 들어오는 카메라 */
+export const WIDE: { cx: number; cy: number; w: number } = raw.wide;
 /** 궁궐·산·문 자리 */
 export const MARKS: Record<string, number[]> = raw.marks;
 /** 마무리 판에 글자로만 적는 날들 */
@@ -61,6 +69,8 @@ export const HERO: Beat = BEATS.find((b) => b.ce === 1751)!;
  * 가깝게 잡는다 — 도성은 남북으로 조금 길다.
  */
 export const VIEW = "105 345 573 585";
+/** 카메라 폭에서 높이 — 지도 자리의 종횡비 */
+export const ASPECT = 585 / 573;
 
 /**
  * 화면에 이름을 적을 곳.
@@ -72,7 +82,7 @@ export const NAMED: Array<{ k: string; dx?: number; dy?: number; anchor?: string
   { k: "경복궁", dx: -18, dy: -4, anchor: "end" },
   { k: "창덕궁", dx: -16, dy: -16, anchor: "end" },
   { k: "경덕궁", dx: -12, dy: 28, anchor: "end" },
-  { k: "인왕산", dx: 12, dy: -6 },
+  { k: "인왕산", dx: 14, dy: 24 },
   { k: "북악산", dx: 0, dy: -22, anchor: "middle" },
   { k: "남산", dx: 0, dy: -14, anchor: "middle" },
   { k: "낙산", dx: 16, dy: 6 },
