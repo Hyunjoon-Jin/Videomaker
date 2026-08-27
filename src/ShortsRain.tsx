@@ -12,7 +12,6 @@ import {
   HEAVY_WARN3,
   HERO,
   LINES,
-  N_SITES,
   PROG,
   SCALE,
   fmt,
@@ -419,7 +418,7 @@ export const ShortsRain: React.FC = () => {
               ),
             }}
           >
-            56년을 버틴 기록이 최근 2년에 2번 · 전국 {N_SITES}개 관측소
+            56년을 버틴 기록이 최근 2년에 2번
           </div>
         </AbsoluteFill>
       )}

@@ -385,7 +385,7 @@ export const ShortsTiger: React.FC = () => {
           }}
         >
           <div style={{ color: DIM, fontSize: 30, fontWeight: 700, letterSpacing: 2, marginBottom: 16 }}>
-            조선왕조실록 · 한양 도성과 궁궐
+            실록에 적힌 날들
           </div>
           {[
             ...BEATS.map((x) => ({ ce: String(x.ce), where: x.label })),
@@ -457,7 +457,7 @@ export const ShortsTiger: React.FC = () => {
               ),
             }}
           >
-            1392년부터 1843년까지 · 성곽은 지금 남은 선
+            붉은 줄이 궁궐 안 · 451년
           </div>
         </AbsoluteFill>
       )}
