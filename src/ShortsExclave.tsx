@@ -50,13 +50,17 @@ const DIM = "#8E8474";
 /**
  * 기준을 세우는 화면.
  *
- * 훅 다음, 첫 걸음 앞에 5.2초. 섬 1,049곳이 켜졌다 꺼지고 9곳만
- * 남는다. 이게 없으면 '그럼 흑산도는 왜 안 세느냐'에 답이 없다.
+ * 훅 다음, 첫 걸음 앞에 3.6초. 섬이 켜졌다 꺼지고 9곳만 남는다.
+ *
+ * 처음엔 '뺀 것 · 1,049곳 · 섬'으로 시작했다. 무엇을 세는지도
+ * 모르는 채 뺀 것부터 듣는 셈이라 무슨 말인지 알 수가 없었다.
+ * 기준은 긍정으로 세운다 — '육지에 붙어 있는 땅 가운데 9곳'.
+ * 섬이 빠졌다는 것은 점이 꺼지는 그림이 말한다.
  */
-const GATE = Math.round(5.2 * FPS);
+const GATE = Math.round(3.6 * FPS);
 const GATE_END = HOOK + GATE;
-/** 섬이 꺼지고 9곳으로 넘어가는 자리 */
-const GATE_TURN = HOOK + Math.round(2.6 * FPS);
+/** 섬이 꺼지기 시작하는 자리 */
+const GATE_TURN = GATE_END - Math.round(1.5 * FPS);
 
 const SLOTS: Array<{ t0: number; t1: number }> = [];
 {
@@ -118,12 +122,13 @@ export const ShortsExclave: React.FC = () => {
   const isle = inGate
     ? interpolate(
         frame,
-        [HOOK + 4, HOOK + 22, GATE_TURN, GATE_TURN + 16],
+        [HOOK + 4, HOOK + 18, GATE_TURN, GATE_TURN + 26],
         [0, 1, 1, 0],
         { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
       )
     : 0;
-  const gateOn = interpolate(frame, [GATE_TURN, GATE_TURN + 14], [0, 1], {
+  /** 섬이 꺼지면서 9곳이 밝아진다 */
+  const gateOn = interpolate(frame, [GATE_TURN, GATE_TURN + 26], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -345,63 +350,34 @@ export const ShortsExclave: React.FC = () => {
       {/*
         ── 기준 ──
 
-        훅 다음, 첫 걸음 앞. 섬 1,049곳이 켜졌다 꺼지고 9곳만 남는다.
-        '그럼 흑산도나 백령도는 왜 안 세느냐'에 답이 없으면 이 편의
-        숫자는 아무 말도 아니다.
+        훅 다음, 첫 걸음 앞. 섬이 켜졌다 꺼지고 9곳만 남는다.
+        '무엇을 뺐나'가 아니라 '무엇을 세나'로 적는다.
       */}
-      {inGate &&
-        (
-          [
-            {
-              o: 1 - gateOn,
-              tag: "뺀 것",
-              big: ISLAND_COUNT.toLocaleString("en-US"),
-              c: "#8FA6B5",
-              a: "섬",
-            },
-            {
-              o: gateOn,
-              tag: "센 것",
-              big: String(COUNT),
-              c: PIECE,
-              a: "자기 시·군과 안 이어진 땅",
-            },
-          ] as const
-        ).map((g) => (
-          <React.Fragment key={g.tag}>
-            <div
-              style={{
-                position: "absolute",
-                left: TEXT_X,
-                right: SAFE_RIGHT,
-                top: SAFE_TOP,
-                opacity: g.o,
-              }}
-            >
-              <div style={{ color: DIM, fontSize: 30, fontWeight: 700, letterSpacing: 2 }}>
-                {g.tag}
-              </div>
-              <div
-                style={{
-                  color: g.c,
-                  fontSize: 118,
-                  fontWeight: 900,
-                  lineHeight: 1.02,
-                  marginTop: 2,
-                  fontVariantNumeric: "tabular-nums",
-                }}
-              >
-                {g.big}
-                <span style={{ fontSize: 58, fontWeight: 800, marginLeft: 8 }}>
-                  곳
-                </span>
-              </div>
-              <div style={{ color: INK, fontSize: 44, fontWeight: 900, marginTop: 10 }}>
-                {g.a}
-              </div>
-            </div>
-          </React.Fragment>
-        ))}
+      {inGate && (
+        <div
+          style={{ position: "absolute", left: TEXT_X, right: SAFE_RIGHT, top: SAFE_TOP }}
+        >
+          <div style={{ color: DIM, fontSize: 32, fontWeight: 700, letterSpacing: 1 }}>
+            육지에 붙어 있는 땅 가운데
+          </div>
+          <div
+            style={{
+              color: PIECE,
+              fontSize: 118,
+              fontWeight: 900,
+              lineHeight: 1.02,
+              marginTop: 2,
+              fontVariantNumeric: "tabular-nums",
+            }}
+          >
+            {COUNT}
+            <span style={{ fontSize: 58, fontWeight: 800, marginLeft: 8 }}>곳</span>
+          </div>
+          <div style={{ color: INK, fontSize: 44, fontWeight: 900, marginTop: 10 }}>
+            자기 시·군과 안 이어진 곳
+          </div>
+        </div>
+      )}
 
       {/* ── 계기판 ── */}
       {started && !inOutro && (
@@ -585,7 +561,8 @@ export const ShortsExclave: React.FC = () => {
               wordBreak: "keep-all",
             }}
           >
-            섬 {ISLAND_COUNT.toLocaleString("en-US")}곳 제외 · 경계 자료로 잰 계산값
+            육지에 붙은 땅만 · 섬 {ISLAND_COUNT.toLocaleString("en-US")}곳 제외 ·
+            경계 자료 계산값
           </div>
           <div
             style={{
