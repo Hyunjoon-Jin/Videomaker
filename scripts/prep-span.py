@@ -15,7 +15,7 @@
 ## 자가 자료 안에 있다
 
 남한에서 제일 넓은 시·군은 강원 홍천군(1,808km²)이고 지름이
-95.7km다. 한 덩어리다.
+95.6km다. 한 덩어리다.
 
 인천 옹진군은 넓이가 182.7km² — 홍천군의 1/10이다. 그런데 지름이
 189.2km로 **홍천군의 2배**다. 76조각으로 흩어져 있어서다.
@@ -92,9 +92,18 @@ def lon_km(lat):
 
 
 def dist_km(a, b):
-    la = (a[1] + b[1]) / 2
-    return math.hypot((a[0] - b[0]) * lon_km(la),
-                      (a[1] - b[1]) * DEG_LAT_KM)
+    """대권거리(하버사인).
+
+    위도 보정한 평면 거리로 재봤더니 여수시에서 484m, 신안군에서
+    458m가 틀렸다. 0.1km까지 적는 값이라 그 차이가 드러난다.
+    남북·동서로 함께 벌어진 대각선일수록 평면 근사가 짧게 잡힌다.
+    """
+    r = 6371.0088
+    p1, p2 = math.radians(a[1]), math.radians(b[1])
+    h = (math.sin((p2 - p1) / 2) ** 2
+         + math.cos(p1) * math.cos(p2)
+         * math.sin(math.radians(b[0] - a[0]) / 2) ** 2)
+    return 2 * r * math.asin(math.sqrt(h))
 
 
 def ring_area_km2(ring):
