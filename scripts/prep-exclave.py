@@ -24,9 +24,19 @@
 ①에서 점 수로 고르면 틀린다. 해안선이 복잡한 덩어리는 넓이가
 작아도 점이 훨씬 많다. 부안군이 그렇게 479km² 덩어리를 뱉었다.
 
-③이 필요한 이유는 이 자료에 섬이 전부 별개 폴리곤으로 들어 있어서다.
-울릉도부터 무인도까지 다 걸린다. 다른 시·군과 맞닿는지를 보면
-'경계로 이웃과 이어진 조각'만 남는다.
+③이 이 편의 기준 그 자체다. 이 자료에 섬이 전부 별개 폴리곤으로
+들어 있어서, 그냥 세면 **1,049곳**이 나온다. 흑산도·백령도·안면도·
+돌산도가 다 여기 든다.
+
+섬이 자기 시·군과 안 붙어 있는 것은 놀랍지 않다. 사방이 바다니까
+그렇다. 이 편이 묻는 것은 **땅으로는 남의 시·군과 이어져 있는데
+자기 시·군과는 안 이어진 곳**이다. 그게 9곳이다.
+
+(울릉도는 아예 안 걸린다. 울릉군의 나머지 땅이 아니라 울릉군
+그 자체이기 때문이다.)
+
+그래서 안 센 1,049곳도 세어서 화면에 같이 낸다. 기준을 숨기면
+'그럼 흑산도는 왜 안 세느냐'는 물음에 답이 없다.
 
 붙었다고 보는 거리는 150m 하나로 쓴다. 자기 조각끼리든 남의 시·군
 이든 같은 자다. 자를 둘로 나누면 '내 땅과는 110m라 떨어진 것, 남의
@@ -240,6 +250,7 @@ def find_exclaves(units):
     r_near = NEAR_M / 1000 / DEG_LAT_KM
 
     found = []
+    islands = []
     for ui, u in enumerate(units):
         comps = components(u["polys"])
         if len(comps) == 1:
@@ -263,7 +274,12 @@ def find_exclaves(units):
                             dist_km((lon, lat), (olon, olat)) * 1000 <= NEAR_M:
                         nb.add(oui)
             if not nb:
-                continue  # ③ 섬
+                # ③ 섬. 세지는 않지만 몇 곳인지는 화면에 낸다.
+                pts_ = [p for i in c for p in u["polys"][i]]
+                xs = sum(q[0] for q in pts_) / len(pts_)
+                ys = sum(q[1] for q in pts_) / len(pts_)
+                islands.append((xs, ys, area))
+                continue
             best = (1e9, None, None)
             for lon, lat in pts:
                 r = 0.05
@@ -287,7 +303,7 @@ def find_exclaves(units):
                 "main": [u["polys"][i] for i in main_c],
             })
     found.sort(key=lambda r: -r["area"])
-    return found
+    return found, islands
 
 
 def between(r, boxes, label):
@@ -415,7 +431,7 @@ def label_spots(targets, cam, unproject):
 
 def main():
     units = load()
-    found = find_exclaves(units)
+    found, islands = find_exclaves(units)
 
     project, unproject = projector(units)
     sido_of = [SIDO.get(u["code"][:2], "") for u in units]
@@ -437,6 +453,7 @@ def main():
 
     # 차례는 떨어진 거리가 짧은 것에서 긴 것으로
     found.sort(key=lambda r: r["dist"])
+    print(f'섬(아무 시·군과도 땅이 안 닿는 덩어리) {len(islands)}곳')
     print(f'\n{"":10}{"떨어진 거리":>11}{"넓이":>11}{"그 시·군 땅의":>13}  사이')
     for r in found:
         print(f'{label(r["ui"]):10s}{r["dist"]:9.2f}km{r["area"]:9.2f}km²'
@@ -520,6 +537,9 @@ def main():
         "table": table,
         "shapes": shapes,
         "count": len(found),
+        # 안 센 섬. 화면에서 점으로 한 번 켰다 끈다.
+        "islands": [[*project(x, y), round(a, 2)] for x, y, a in islands],
+        "islandCount": len(islands),
     }, open(OUT, "w", encoding="utf-8"), ensure_ascii=False)
     print("→", OUT)
     return found

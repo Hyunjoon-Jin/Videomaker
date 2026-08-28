@@ -10,6 +10,8 @@ import {
   CASES,
   COUNT,
   HOLD,
+  ISLANDS,
+  ISLAND_COUNT,
   LINES,
   RANK,
   SHAPES,
@@ -45,9 +47,20 @@ const PIECE = "#D4694F";
 const INK = "#EDE5D4";
 const DIM = "#8E8474";
 
+/**
+ * 기준을 세우는 화면.
+ *
+ * 훅 다음, 첫 걸음 앞에 5.2초. 섬 1,049곳이 켜졌다 꺼지고 9곳만
+ * 남는다. 이게 없으면 '그럼 흑산도는 왜 안 세느냐'에 답이 없다.
+ */
+const GATE = Math.round(5.2 * FPS);
+const GATE_END = HOOK + GATE;
+/** 섬이 꺼지고 9곳으로 넘어가는 자리 */
+const GATE_TURN = HOOK + Math.round(2.6 * FPS);
+
 const SLOTS: Array<{ t0: number; t1: number }> = [];
 {
-  let f = HOOK;
+  let f = GATE_END;
   HOLD.forEach((h) => {
     const len = Math.round(h * FPS);
     SLOTS.push({ t0: f, t1: f + len });
@@ -99,7 +112,21 @@ export const ShortsExclave: React.FC = () => {
   const bi = beatAt(frame);
   const cs = CASES[bi];
   const p = cs.pieces[0];
-  const started = frame >= HOOK;
+  const inGate = frame >= HOOK && frame < GATE_END;
+  const started = frame >= GATE_END;
+  /** 기준 화면에서 섬이 켜졌다 꺼지는 정도 */
+  const isle = inGate
+    ? interpolate(
+        frame,
+        [HOOK + 4, HOOK + 22, GATE_TURN, GATE_TURN + 16],
+        [0, 1, 1, 0],
+        { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+      )
+    : 0;
+  const gateOn = interpolate(frame, [GATE_TURN, GATE_TURN + 14], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
   const inOutro = frame >= BODY_END;
   const outroIn = interpolate(frame, [BODY_END, BODY_END + 20], [0, 1], {
     extrapolateLeft: "clamp",
@@ -196,6 +223,19 @@ export const ShortsExclave: React.FC = () => {
           />
         )}
 
+        {/* 안 센 섬 1,049곳 */}
+        {isle > 0 &&
+          ISLANDS.map(([x, y, a], i) => (
+            <circle
+              key={i}
+              cx={x}
+              cy={y}
+              r={Math.min(9, Math.max(2.2, Math.sqrt(a) * 1.6)) * px}
+              fill="#8FA6B5"
+              fillOpacity={isle * 0.75}
+            />
+          ))}
+
         {/*
           9곳의 자리.
 
@@ -210,9 +250,9 @@ export const ShortsExclave: React.FC = () => {
               key={"d" + c.pieces[0].name + c.pieces[0].area}
               cx={c.pieces[0].line[0][0]}
               cy={c.pieces[0].line[0][1]}
-              r={sw * (seen ? 9 : 7)}
+              r={sw * (seen ? 9 : 7 + gateOn * 3)}
               fill={PIECE}
-              fillOpacity={seen ? 0.95 : 0.5}
+              fillOpacity={seen ? 0.95 : 0.45 + gateOn * 0.5}
             />
           );
         })}
@@ -301,6 +341,115 @@ export const ShortsExclave: React.FC = () => {
             ` ${BG}00 66%, ${BG}CC 84%, ${BG}F2 100%)`,
         }}
       />
+
+      {/*
+        ── 기준 ──
+
+        훅 다음, 첫 걸음 앞. 섬 1,049곳이 켜졌다 꺼지고 9곳만 남는다.
+        '그럼 흑산도나 백령도는 왜 안 세느냐'에 답이 없으면 이 편의
+        숫자는 아무 말도 아니다.
+      */}
+      {inGate &&
+        (
+          [
+            {
+              o: 1 - gateOn,
+              tag: "이 편이 안 센 것",
+              big: ISLAND_COUNT.toLocaleString("en-US"),
+              unit: "곳",
+              c: "#8FA6B5",
+              a: "사방이 바다인 땅",
+              b: "흑산도 · 돌산도 · 교동도 · 연평도 · 그 밖의 섬",
+              /*
+                백령도와 울릉도를 물어오는 자리다. 그 둘은 안 센 게
+                아니라 애초에 안 걸린다 — 옹진군·울릉군에서 제일
+                넓은 덩어리, 곧 그 군의 나머지 땅 자체다.
+              */
+              c2: "백령도와 울릉도는 옹진군·울릉군 그 자체",
+              say: ["섬이 떨어져 있는 건", "사방이 바다라서 그런 것"],
+            },
+            {
+              o: gateOn,
+              tag: "이 편이 센 것",
+              big: String(COUNT),
+              unit: "곳",
+              c: PIECE,
+              a: "땅으로는 남의 시·군과 이어졌는데",
+              b: "자기 시·군과는 안 이어진 땅",
+              c2: "",
+              say: ["걸어서 남의 동네로는 나가는데", "자기 시·군으로는 못 가는 땅"],
+            },
+          ] as const
+        ).map((g) => (
+          <React.Fragment key={g.tag}>
+            <div
+              style={{
+                position: "absolute",
+                left: TEXT_X,
+                right: SAFE_RIGHT,
+                top: SAFE_TOP,
+                opacity: g.o,
+              }}
+            >
+              <div style={{ color: DIM, fontSize: 30, fontWeight: 700, letterSpacing: 2 }}>
+                {g.tag}
+              </div>
+              <div
+                style={{
+                  color: g.c,
+                  fontSize: 118,
+                  fontWeight: 900,
+                  lineHeight: 1.02,
+                  marginTop: 2,
+                  fontVariantNumeric: "tabular-nums",
+                }}
+              >
+                {g.big}
+                <span style={{ fontSize: 58, fontWeight: 800, marginLeft: 8 }}>
+                  {g.unit}
+                </span>
+              </div>
+              <div style={{ color: INK, fontSize: 38, fontWeight: 900, marginTop: 10 }}>
+                {g.a}
+              </div>
+              <div style={{ color: DIM, fontSize: 29, fontWeight: 700, marginTop: 6 }}>
+                {g.b}
+              </div>
+              {g.c2 ? (
+                <div
+                  style={{ color: DIM, fontSize: 29, fontWeight: 700, marginTop: 6 }}
+                >
+                  {g.c2}
+                </div>
+              ) : null}
+            </div>
+            <div
+              style={{
+                position: "absolute",
+                left: TEXT_X,
+                right: SAFE_RIGHT,
+                bottom: BOTTOM_INSET + 96,
+                opacity: g.o,
+              }}
+            >
+              {g.say.map((ln, k) => (
+                <div
+                  key={k}
+                  style={{
+                    color: INK,
+                    fontSize: 50,
+                    fontWeight: 900,
+                    lineHeight: 1.28,
+                    whiteSpace: "nowrap",
+                    textShadow: `0 0 40px ${BG}, 0 0 18px ${BG}`,
+                  }}
+                >
+                  {ln}
+                </div>
+              ))}
+            </div>
+          </React.Fragment>
+        ))}
 
       {/* ── 계기판 ── */}
       {started && !inOutro && (
@@ -527,6 +676,8 @@ export const ShortsExclave: React.FC = () => {
               wordBreak: "keep-all",
             }}
           >
+            사방이 바다인 땅 {ISLAND_COUNT.toLocaleString("en-US")}곳은 세지 않음
+            <br />
             거리는 가장 가까운 두 점 사이 직선 · 넓이와 함께 경계 자료로 잰 계산값
           </div>
           <div
