@@ -13,9 +13,8 @@ import {
   EMPTY_COUNT,
   ISLAND_COUNT,
   LINES,
-  RANK,
+  SEA_COUNT,
   SHAPES,
-  TABLE,
   WIDE,
 } from "./data/exclave";
 import { REGIONS } from "./data/regions";
@@ -78,7 +77,7 @@ const SLOTS: Array<{ t0: number; t1: number }> = [];
   });
 }
 const BODY_END = SLOTS[SLOTS.length - 1].t1;
-const OUTRO = Math.round(8.0 * FPS);
+const OUTRO = Math.round(5.6 * FPS);
 export const EXCLAVE_DURATION = BODY_END + OUTRO;
 
 function beatAt(frame: number): number {
@@ -97,18 +96,6 @@ function textEm(t: string): number {
   for (const ch of t) w += /[\uac00-\ud7a3\u4e00-\u9fff]/.test(ch) ? 1 : 0.5;
   return w;
 }
-
-/* ── 눈금 ──────────────────────────────────────────
-   9곳을 떨어진 거리 순으로 세운 막대. 지도만 있으면 아홉 걸음이
-   다 같은 그림으로 보인다 — 얼마나 떨어진 자리인지는 이 눈금이
-   말한다. */
-const RK_Y = 772;
-const RK_H = 96;
-const RK_W = 110;
-const RK_GAP = 28;
-const RK_L = TEXT_X;
-const RK_R = RK_L + RANK.length * RK_W + (RANK.length - 1) * RK_GAP;
-const MAXD = Math.max(...RANK.map((r) => r.dist));
 
 export const ShortsExclave: React.FC = () => {
   useFonts();
@@ -371,8 +358,8 @@ export const ShortsExclave: React.FC = () => {
               textShadow: `0 0 24px ${BG}`,
             }}
           >
-            <div>이웃 동네와는 붙어 있는데</div>
-            <div>자기 시·군과는 안 붙은 마을</div>
+            <div>걸어서 갈 수 있는데</div>
+            <div>가는 길이 전부 남의 동네</div>
           </div>
         </div>
       )}
@@ -417,43 +404,6 @@ export const ShortsExclave: React.FC = () => {
         </div>
       )}
 
-      {/* ── 눈금 — 9곳을 도로 거리 순으로 ── */}
-      {started && !inOutro && (
-        <svg
-          viewBox="0 0 1080 1920"
-          style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
-        >
-          {/* 지도 위에 그대로 얹으면 막대가 안 읽힌다 */}
-          <rect
-            x={RK_L - 22}
-            y={RK_Y - RK_H - 18}
-            width={RK_R - RK_L + 132}
-            height={RK_H + 44}
-            rx={10}
-            fill={BG}
-            opacity={0.72}
-          />
-          <line x1={RK_L} y1={RK_Y} x2={RK_R} y2={RK_Y} stroke="#3A342B" strokeWidth={3} />
-          {RANK.map((r, i) => {
-            const h = Math.max(4, (r.dist / MAXD) * RK_H);
-            const x = RK_L + i * (RK_W + RK_GAP);
-            return (
-              <rect
-                key={r.name + r.area}
-                x={x}
-                y={RK_Y - h}
-                width={RK_W}
-                height={h}
-                fill={i === bi ? PIECE : i < bi ? "#7A6E58" : "#332E27"}
-              />
-            );
-          })}
-          <text x={RK_R + 18} y={RK_Y + 2} fontSize={30} fontWeight={800} fill="#6E6555">
-            {COUNT}곳
-          </text>
-        </svg>
-      )}
-
       {/* ── 자막 ── */}
       {started && !inOutro && (
         <div
@@ -480,108 +430,47 @@ export const ShortsExclave: React.FC = () => {
         </div>
       )}
 
-      {/* ── 마무리 ── */}
+      {/*
+        ── 마무리 ──
+
+        표를 뒀다가 뺐다. 두 줄짜리 표는 방금 본 두 걸음과 같은 말이다.
+        전국 지도에 점 둘만 남기고 한 줄로 못박는다.
+      */}
       {inOutro && (
         <AbsoluteFill
           style={{
-            /* 표 뒤로 전국 지도와 9개 점이 비쳐야 '9곳'이 남는다 */
             background:
-              "linear-gradient(180deg, rgba(16,21,25,0.55) 0%," +
-              " rgba(16,21,25,0.90) 42%, rgba(16,21,25,0.97) 58%)",
+              "linear-gradient(180deg, rgba(16,21,25,0.35) 0%," +
+              " rgba(16,21,25,0.80) 55%, rgba(16,21,25,0.96) 72%)",
             opacity: outroIn,
             justifyContent: "flex-end",
             padding: `0 ${SAFE_RIGHT}px ${OUTRO_PAD}px ${TEXT_X}px`,
           }}
         >
-          {[...TABLE]
-            .sort((a, b) => b.dist - a.dist)
-            .map((t, i) => {
-              const at = BODY_END + Math.round((0.3 + i * 0.24) * FPS);
-              const o = interpolate(frame, [at, at + 10], [0, 1], {
-                extrapolateLeft: "clamp",
-                extrapolateRight: "clamp",
-              });
-              const hot = i === 0;
-              return (
-                <div
-                  key={t.name + t.area}
-                  style={{
-                    display: "flex",
-                    alignItems: "baseline",
-                    gap: 14,
-                    marginTop: 9,
-                    opacity: o,
-                    transform: `translateY(${(1 - o) * 8}px)`,
-                  }}
-                >
-                  <span
-                    style={{
-                      color: hot ? PIECE : INK,
-                      fontSize: 37,
-                      fontWeight: 900,
-                      width: 258,
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {`${t.sido} ${t.name}`.replace(/^(\S+) \1/, "$1")}
-                  </span>
-                  <span
-                    style={{
-                      color: hot ? PIECE : INK,
-                      fontSize: 37,
-                      fontWeight: 900,
-                      width: 168,
-                      textAlign: "right",
-                      fontVariantNumeric: "tabular-nums",
-                    }}
-                  >
-                    {t.dist.toFixed(2)}km
-                  </span>
-                  <span
-                    style={{
-                      color: DIM,
-                      fontSize: 33,
-                      fontWeight: 800,
-                      fontVariantNumeric: "tabular-nums",
-                    }}
-                  >
-                    {t.area.toFixed(2)}km²
-                  </span>
-                </div>
-              );
-            })}
-          <div
-            style={{
-              color: DIM,
-              fontSize: 27,
-              fontWeight: 700,
-              marginTop: 14,
-              wordBreak: "keep-all",
-            }}
-          >
-            사람이 사는 땅만 셈 · 이웃과 안 닿는{" "}
-            {ISLAND_COUNT.toLocaleString("en-US")}곳과 방조제·항만 매립지{" "}
-            {EMPTY_COUNT}곳은 뺌
-            <br />
-            거리는 가장 가까운 두 점 사이 직선 · 넓이와 함께 경계 자료 계산값
-          </div>
           <div
             style={{
               color: INK,
-              fontSize: 44,
+              fontSize: 62,
               fontWeight: 900,
-              lineHeight: 1.3,
-              marginTop: 20,
-              wordBreak: "keep-all",
-              opacity: interpolate(
-                frame,
-                [BODY_END + Math.round(3.8 * FPS), BODY_END + Math.round(4.5 * FPS)],
-                [0, 1],
-                { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
-              ),
+              lineHeight: 1.2,
+              marginBottom: 18,
             }}
           >
-            코앞인데 남의 동네를 지나야 하는 마을 {COUNT}곳
+            전국에 딱 {COUNT}곳
+          </div>
+          <div
+            style={{
+              color: DIM,
+              fontSize: 25,
+              fontWeight: 700,
+              lineHeight: 1.5,
+              whiteSpace: "nowrap",
+            }}
+          >
+            바다로 갈라진 {SEA_COUNT}곳 · 사람이 안 사는 매립지 {EMPTY_COUNT}곳 ·
+            이웃과 안 닿는 {ISLAND_COUNT.toLocaleString("en-US")}곳은 뺌
+            <br />
+            거리는 가장 가까운 두 점 사이 직선 · 넓이와 함께 경계 자료 계산값
           </div>
         </AbsoluteFill>
       )}
@@ -624,7 +513,7 @@ export const ShortsExclave: React.FC = () => {
                 textShadow: `0 0 40px ${BG}, 0 0 18px ${BG}`,
               }}
             >
-              7.75km
+              74.7km²
             </div>
             <div
               style={{
@@ -636,7 +525,7 @@ export const ShortsExclave: React.FC = () => {
                 textShadow: `0 0 24px ${BG}`,
               }}
             >
-              같은 시 땅인데 이만큼 떨어진 곳
+              같은 군 땅인데 안 붙어 있는 곳
             </div>
           </div>
         </>

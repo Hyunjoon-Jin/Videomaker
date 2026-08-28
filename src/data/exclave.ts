@@ -1,5 +1,5 @@
 /**
- * 이웃 동네와는 붙어 있는데 자기 시·군과는 안 붙은 마을 4곳
+ * 걸어서 갈 수 있는데 가는 길이 전부 남의 동네인 땅 2곳
  * (scripts/prep-exclave.py 산출물).
  *
  * 좌표는 korea-paths.json과 같은 0..1000 투영이라 전국 지도 위에
@@ -79,6 +79,8 @@ export const COUNT: number = raw.count;
 export const ISLAND_COUNT: number = raw.islandCount;
 /** 이웃과는 닿지만 사람이 안 사는 것 — 방조제와 항만 매립지 */
 export const EMPTY_COUNT: number = raw.emptyCount;
+/** 사람은 살지만 사이가 바다인 것 — 대부도와 내륙 중구 */
+export const SEA_COUNT: number = raw.seaCount;
 
 /**
  * 자막.
@@ -92,23 +94,12 @@ export const EMPTY_COUNT: number = raw.emptyCount;
  * 할 말이 없으면 비운다. 채우려고 쓰지 않는다.
  */
 export const LINES: string[] = [
-  "넓은 쪽이 영종도",      // 시·군 이름표만으로는 안 읽힌다
   "다사읍 · 하빈면",
   "이서면",   // OSM 마을 이름이 금계리·남계리·이성리·이문리 — 이서면이다
-  "대부도",
 ];
 
 /** 한 자리에 머무는 시간(초) */
-export const HOLD = [6.2, 7.4, 6.6, 8.0];
-
-/**
- * 아래 눈금 — 9곳을 떨어진 거리 순으로 세운 막대.
- *
- * 넓이로 세울 때는 제곱근을 썼다. 0.59와 74.74가 한 줄에 있어서다.
- * 거리는 0.36에서 7.75까지라 그대로 비례시켜도 제일 짧은 것이 안
- * 사라진다. 누르지 않아도 되면 누르지 않는다.
- */
-export const RANK = CASES.map((c) => c.pieces[0]);
+export const HOLD = [9.4, 8.6];
 
 /** 전국 구도 */
 export const WIDE = { cx: 435, cy: 500, z: 1.72 };
