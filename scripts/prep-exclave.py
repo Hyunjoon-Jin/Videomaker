@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""자기 시·군과 땅이 안 이어진 조각을 시군구 경계에서 찾는다.
+"""같은 시·군 땅인데 그 시·군과 안 붙어 있는 땅을 찾는다.
 
 자료는 `data/skorea-municipalities.json` 하나다. 통계청 2018년 기준
 시군구 경계 250개. 받을 것이 없어 접힐 위험이 없는 편이다.
@@ -12,17 +12,17 @@
 합친다. 이름이 '○○시△△구' 꼴이면 '○○시'로 묶는다.
 
 합치면 답이 뒤집히는 자리가 있다. 안산시 단원구만 보면 본토 쪽이
-따로 떨어진 조각으로 잡히지만, 상록구와 합치면 본토가 본체가 되고
-대부도가 조각이 된다. 시청이 본토에 있으니 이쪽이 실제와 맞는다.
+떨어진 땅으로 잡히지만, 상록구와 합치면 본토가 나머지 땅이 되고
+대부도가 떨어진 땅이 된다. 시청이 본토에 있으니 이쪽이 실제와 맞는다.
 
 ## 판정은 셋이다
 
-  ① 본체    = 그 시·군 조각 중 면적이 가장 큰 것
-  ② 조각    = 본체와 안 붙은 것
-  ③ 섬 제외 = 다른 시·군과 150m 안으로 맞닿아야 남긴다
+  ① 나머지 땅 = 그 시·군 덩어리 중 넓이가 가장 큰 것
+  ② 떨어진 땅 = 그것과 안 붙은 것
+  ③ 섬 제외   = 다른 시·군과 150m 안으로 맞닿아야 남긴다
 
-①에서 점 수로 본체를 고르면 틀린다. 해안선이 복잡한 조각은 면적이
-작아도 점이 훨씬 많다. 부안군이 그렇게 479km² 조각을 뱉었다.
+①에서 점 수로 고르면 틀린다. 해안선이 복잡한 덩어리는 넓이가
+작아도 점이 훨씬 많다. 부안군이 그렇게 479km² 덩어리를 뱉었다.
 
 ③이 필요한 이유는 이 자료에 섬이 전부 별개 폴리곤으로 들어 있어서다.
 울릉도부터 무인도까지 다 걸린다. 다른 시·군과 맞닿는지를 보면
@@ -33,20 +33,19 @@
 땅과는 150m라 붙은 것' 같은 말이 나온다. 부산 강서구(가덕도)가 그
 자리에 있었고, 자를 하나로 맞추니 사라졌다.
 
-## 두 거리를 같이 잰다
+## 거리는 직선이다
 
-**직선** — 떨어진 땅의 어느 점과 나머지 땅의 어느 점이 가장 가까운지.
+떨어진 땅의 어느 점과 나머지 땅의 어느 점이 가장 가까운지를 잰다.
+이게 편의 큰 숫자고, 차례도 이 값이 정한다.
 
-**도로** — 그 두 점 사이를 차로 실제 몇 km 가는지. OSRM 공개 서버
-(router.project-osrm.org)에 물어 받는다. 이게 편의 큰 숫자다.
-직선만 재면 대부분 1km 아래라 시시해 보이는데, 도로로는 당진시
-조각이 25.9km다. 직선 2.7km 자리를 9.6배 돌아간다.
+한 번 OSRM으로 실제 도로를 재서 그걸 큰 숫자로 세워봤다. 당진시
+조각이 25.9km로 나와 세기는 셌는데 접었다. 매립지 도로망에 경로가
+붙으면서 길이 크게 우회해 그려졌고, 화면에 점선과 실선이 같이
+있으니 무엇을 보는 그림인지가 흐려졌다. 하나만 잰다.
 
-받은 길의 좌표를 시군구 경계에 대고 훑어 **남의 동네를 지나는 거리**도
-잰다. 이게 '다른 데를 거쳐야만 갈 수 있다'는 말의 실제 크기다.
-
-받아온 것은 `data/osrm-exclave.json`에 남긴다. 다시 돌릴 때마다
-공개 서버를 두들기지 않는다.
+그 직선이 무엇 위를 지나는지는 같이 잰다. 200등분해서 각 점이 어느
+시·군 안에 드는지 본다. 어디에도 안 들면 바다나 호수다. 달성군은
+2.9km 중 2.4km가 고령군, 0.5km가 달서구 땅 위를 지난다.
 
 면적은 계산값이다. 경계 폴리곤을 위도 보정해 잰 값이라 공식 통계와
 소수점이 다를 수 있다.
@@ -58,17 +57,12 @@ import json
 import math
 import os
 import sys
-import time
-import urllib.request
 
 sys.setrecursionlimit(200000)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(HERE, "..", "data", "skorea-municipalities.json")
 OUT = os.path.join(HERE, "..", "src", "data", "exclave.json")
-ROADS = os.path.join(HERE, "..", "data", "osrm-exclave.json")
-
-OSRM = "https://router.project-osrm.org/route/v1/driving"
 
 # 붙었다고 볼 거리
 NEAR_M = 150.0
@@ -296,63 +290,31 @@ def find_exclaves(units):
     return found
 
 
-def road(a, b, cache):
-    """두 점 사이 실제 도로. OSRM 공개 서버.
-
-    받은 것은 파일에 남긴다. 판정을 고칠 때마다 남의 서버를
-    두들길 이유가 없다.
-    """
-    key = f"{a[0]:.5f},{a[1]:.5f};{b[0]:.5f},{b[1]:.5f}"
-    if key in cache:
-        return cache[key]
-    url = (f"{OSRM}/{a[0]},{a[1]};{b[0]},{b[1]}"
-           "?overview=full&geometries=geojson")
-    for i in range(4):
-        try:
-            j = json.loads(urllib.request.urlopen(url, timeout=60).read())
-            if j.get("code") == "Ok":
-                rt = j["routes"][0]
-                cache[key] = {"km": rt["distance"] / 1000,
-                              "min": rt["duration"] / 60,
-                              "path": rt["geometry"]["coordinates"]}
-                return cache[key]
-        except Exception:
-            pass
-        time.sleep(2 * 2 ** i)
-    raise SystemExit(f"OSRM 응답을 못 받았다: {key}")
-
-
-def through(rt, ui, boxes, label):
-    """받은 길이 누구 땅 위를 지나는지 잰다."""
-    g = rt["path"]
-    own = other = sea = 0.0
-    names = {}
-    for i in range(len(g) - 1):
-        a, b = tuple(g[i]), tuple(g[i + 1])
-        L = dist_km(a, b)
-        x, y = (a[0] + b[0]) / 2, (a[1] + b[1]) / 2
+def between(r, boxes, label):
+    """최단선이 누구 땅 위를 지나는지 200등분해 잰다."""
+    a, b = r["from"], r["to"]
+    n = 200
+    cnt = {}
+    for k in range(1, n):
+        t = k / n
+        x, y = a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t
         who = None
-        for k, ps in enumerate(boxes):
+        for ui, ps in enumerate(boxes):
             for (x0, y0, x1, y1), poly in ps:
                 if x0 <= x <= x1 and y0 <= y <= y1 and point_in(poly, x, y):
-                    who = k
+                    who = ui
                     break
             if who is not None:
                 break
-        if who is None:
-            sea += L
-        elif who == ui:
-            own += L
-        else:
-            other += L
-            names[who] = names.get(who, 0) + L
-    return {
-        "other": round(other, 2),
-        "sea": round(sea, 2),
-        "names": [{"name": label(k), "km": round(v, 2)}
-                  for k, v in sorted(names.items(), key=lambda kv: -kv[1])
-                  if v >= 0.15],
-    }
+        cnt[who] = cnt.get(who, 0) + 1
+    out = []
+    for k, v in sorted(cnt.items(), key=lambda kv: -kv[1]):
+        km = v / (n - 1) * r["dist"]
+        if km < 0.15:
+            continue
+        out.append({"name": label(k) if k is not None else "바다",
+                    "km": round(km, 2)})
+    return out
 
 
 def projector(units):
@@ -417,28 +379,16 @@ def main():
     boxes = [[(bbox(p), p) for p in u["polys"]] for u in units]
     print(len(found), "곳")
 
-    # ── 도로 ─────────────────────────────────────────
-    cache = {}
-    if os.path.exists(ROADS):
-        cache = json.load(open(ROADS, encoding="utf-8"))
     for r in found:
-        rt = road(r["from"], r["to"], cache)
-        r["road"] = rt["km"]
-        r["min"] = rt["min"]
-        r["ratio"] = rt["km"] / r["dist"]
-        r["path"] = rt["path"]
-        r["through"] = through(rt, r["ui"], boxes, label)
-    json.dump(cache, open(ROADS, "w", encoding="utf-8"), ensure_ascii=False)
+        r["between"] = between(r, boxes, label)
 
-    # 차례는 도로 거리가 짧은 것에서 긴 것으로
-    found.sort(key=lambda r: r["road"])
-    print(f'\n{"":10}{"직선":>7}{"도로":>8}{"시간":>6}{"남의 동네":>10}{"배수":>7}'
-          f'{"면적":>10}')
+    # 차례는 떨어진 거리가 짧은 것에서 긴 것으로
+    found.sort(key=lambda r: r["dist"])
+    print(f'\n{"":10}{"떨어진 거리":>11}{"넓이":>11}{"그 시·군 땅의":>13}  사이')
     for r in found:
-        print(f'{label(r["ui"]):10s}{r["dist"]:6.2f}km{r["road"]:7.2f}km'
-              f'{round(r["min"]):5d}분{r["through"]["other"]:9.2f}km'
-              f'{r["ratio"]:6.1f}배{r["area"]:9.2f}km²  '
-              f'{" ".join(x["name"] + " " + str(x["km"]) for x in r["through"]["names"])}')
+        print(f'{label(r["ui"]):10s}{r["dist"]:9.2f}km{r["area"]:9.2f}km²'
+              f'{r["pct"]:11.1f}%  '
+              f'{" · ".join(x["name"] + " " + str(x["km"]) + "km" for x in r["between"])}')
 
     cases = []
     for r in found:
@@ -449,38 +399,34 @@ def main():
             "total": round(r["total"], 1),
             "pct": round(r["pct"], 1),
             "dist": round(r["dist"], 2),
-            "road": round(r["road"], 2),
-            "min": round(r["min"]),
-            "ratio": round(r["ratio"], 1),
-            "other": r["through"]["other"],
-            "sea": r["through"]["sea"],
-            "names": r["through"]["names"],
             "piece": to_path(r["piece"], project, keep_all=True),
             "main": to_path(r["main"], project),
             "line": [list(project(*r["from"])), list(project(*r["to"]))],
-            # 실제로 달리는 길. 화면에서 이게 굵은 실선이다.
-            "path": [list(project(x, y)) for x, y in dp(
-                [tuple(p) for p in r["path"]], TOL / 3)],
+            "between": r["between"],
             "nb": [label(i) for i in r["nb"]],
         }
-        # 화면에는 조각·나머지 땅·길이 다 들어와야 한다. 길이 제일
-        # 넓게 퍼지므로 길의 상자를 바탕으로 잡는다.
+        # 떨어진 땅만 담으면 나머지 땅이 화면 밖에 남아 그 색이 안
+        # 보인다. 최단선 끝점 둘레로 떨어진 땅 크기의 0.6배를 더 담는다.
         allpts = ([p for poly in r["piece"] for p in poly]
-                  + [tuple(p) for p in r["path"]] + [r["from"], r["to"]])
+                  + [r["from"], r["to"]])
         x0, y0, x1, y1 = bbox(allpts)
+        m = max(x1 - x0, y1 - y0) * 0.6
+        far = [(r["to"][0] + dx, r["to"][1] + dy)
+               for dx in (-m, m) for dy in (-m, m)]
+        x0, y0, x1, y1 = bbox(allpts + far)
         px0, py1 = project(x0, y0)
         px1, py0 = project(x1, y1)
         w, h = max(px1 - px0, 1.0), max(py1 - py0, 1.0)
-        pad = 1.35
+        pad = 1.6
         cases.append({
             "pieces": [piece],
             "cam": {
                 "cx": round((px0 + px1) / 2, 1),
                 "cy": round((py0 + py1) / 2, 1),
-                "z": round(min(48.0, BOX / (max(w, h) * pad)), 2),
+                "z": round(min(55.0, BOX / (max(w, h) * pad)), 2),
             },
-            # 길이 실제로 지나는 남의 동네만 칠한다
-            "nbNames": [x["name"] for x in r["through"]["names"]],
+            # 최단선이 실제로 지나는 남의 시·군만 칠한다
+            "nbNames": [x["name"] for x in r["between"] if x["name"] != "바다"],
         })
 
     table = [{
@@ -489,13 +435,10 @@ def main():
         "area": round(r["area"], 2),
         "pct": round(r["pct"], 1),
         "dist": round(r["dist"], 2),
-        "road": round(r["road"], 2),
-        "min": round(r["min"]),
-        "ratio": round(r["ratio"], 1),
-        "other": r["through"]["other"],
+        "nb": len(r["nb"]),
     } for r in found]
 
-    # 길이 지나는 남의 동네 겉모양. 이름이 겹치는 '서구·동구'가
+    # 최단선이 지나는 남의 동네 겉모양. 이름이 겹치는 '서구·동구'가
     # 있어 라벨로 건다.
     need = sorted({n for c in cases for n in c["nbNames"]})
     shapes = {}

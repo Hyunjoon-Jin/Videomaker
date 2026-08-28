@@ -15,7 +15,6 @@ import {
   SHAPES,
   TABLE,
   WIDE,
-  partial,
 } from "./data/exclave";
 import { REGIONS } from "./data/regions";
 import { FPS } from "./theme";
@@ -35,14 +34,12 @@ const HOOK = Math.round(2.2 * FPS);
 const BG = "#101519";
 /** 나머지 전국 */
 const LAND = "#2F2820";
-/** 가는 길이 지나는 남의 동네 */
+/** 최단선이 지나는 남의 동네 */
 const NEIGH = "#7A6448";
 /** 그 시·군의 나머지 땅 */
 const MAIN = "#4C7A9B";
 /** 떨어진 땅 — 이 편의 색 */
 const PIECE = "#D4694F";
-/** 실제로 달리는 길 */
-const ROAD = "#F2C85B";
 const INK = "#EDE5D4";
 const DIM = "#8E8474";
 
@@ -70,8 +67,8 @@ const ease = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) /
 const ASPECT = 1920 / 1080;
 
 /* ── 눈금 ──────────────────────────────────────────
-   9곳을 도로 거리 순으로 세운 막대. 지도만 있으면 아홉 걸음이
-   다 같은 그림으로 보인다 — 얼마나 돌아가는 자리인지는 이 눈금이
+   9곳을 떨어진 거리 순으로 세운 막대. 지도만 있으면 아홉 걸음이
+   다 같은 그림으로 보인다 — 얼마나 떨어진 자리인지는 이 눈금이
    말한다. */
 const RK_Y = 772;
 const RK_H = 96;
@@ -79,7 +76,7 @@ const RK_W = 60;
 const RK_GAP = 22;
 const RK_L = TEXT_X;
 const RK_R = RK_L + RANK.length * RK_W + (RANK.length - 1) * RK_GAP;
-const MAXR = Math.max(...RANK.map((r) => r.road));
+const MAXD = Math.max(...RANK.map((r) => r.dist));
 
 export const ShortsExclave: React.FC = () => {
   useFonts();
@@ -105,8 +102,8 @@ export const ShortsExclave: React.FC = () => {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  /** 길이 뻗어 나가는 진행도 */
-  const run = interpolate(age, [14, SLOTS[bi].t1 - SLOTS[bi].t0 - 18], [0, 1], {
+  /** 직선이 그어지는 진행도 */
+  const run = interpolate(age, [12, 34], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -115,7 +112,8 @@ export const ShortsExclave: React.FC = () => {
    * 카메라.
    *
    * 훅에서는 전국이고, 걸음마다 그 땅으로 붙는다. 떨어진 땅과
-   * 나머지 땅과 가는 길이 한 화면에 들어와야 '돌아간다'가 보인다.
+   * 나머지 땅과 사이에 낀 남의 동네가 한 화면에 들어와야
+   * '끼어 있다'가 그림으로 읽힌다.
    */
   const cam = (() => {
     if (!started || inOutro) return WIDE;
@@ -155,7 +153,7 @@ export const ShortsExclave: React.FC = () => {
           <path key={r.code} d={r.d} fill={LAND} stroke={BG} strokeWidth={sw * 0.8} />
         ))}
 
-        {/* 가는 길이 지나는 남의 동네 */}
+        {/* 최단선이 지나는 남의 동네 */}
         {litNb.map((n) =>
           SHAPES[n] ? (
             <path
@@ -222,28 +220,18 @@ export const ShortsExclave: React.FC = () => {
           )
         )}
 
-        {/* 직선 — 얼마나 떨어져 있는지 */}
+        {/* 직선 — 얼마나 떨어져 있는지. 이 편에는 이 선 하나뿐이다 */}
         {started && !inOutro && (
           <g>
             <line
               x1={p.line[0][0]}
               y1={p.line[0][1]}
-              x2={p.line[1][0]}
-              y2={p.line[1][1]}
+              x2={p.line[0][0] + (p.line[1][0] - p.line[0][0]) * run}
+              y2={p.line[0][1] + (p.line[1][1] - p.line[0][1]) * run}
               stroke={INK}
-              strokeWidth={sw * 1.4}
+              strokeWidth={sw * 1.8}
               strokeDasharray={`${sw * 5} ${sw * 5}`}
-              opacity={0.6 * on}
-            />
-            {/* 실제로 달리는 길 — 뻗어 나간다 */}
-            <path
-              d={partial(p.path, run)}
-              fill="none"
-              stroke={ROAD}
-              strokeWidth={sw * 3.4}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              opacity={0.95}
+              opacity={0.9}
             />
             <circle cx={p.line[0][0]} cy={p.line[0][1]} r={sw * 2.6} fill={PIECE} />
             <circle
@@ -276,7 +264,7 @@ export const ShortsExclave: React.FC = () => {
           </div>
           <div
             style={{
-              color: ROAD,
+              color: PIECE,
               fontSize: 118,
               fontWeight: 900,
               lineHeight: 1.02,
@@ -284,23 +272,17 @@ export const ShortsExclave: React.FC = () => {
               fontVariantNumeric: "tabular-nums",
             }}
           >
-            {p.road.toFixed(1)}
+            {p.dist.toFixed(2)}
             <span style={{ fontSize: 58, fontWeight: 800, marginLeft: 8 }}>km</span>
           </div>
           <div style={{ display: "flex", gap: 26, marginTop: 10, alignItems: "baseline" }}>
             <span style={{ color: INK, fontSize: 40, fontWeight: 900 }}>
-              직선 {p.dist.toFixed(1)}km
+              {p.name} 땅의 {p.pct}%
             </span>
             <span style={{ color: "#B7AC98", fontSize: 36, fontWeight: 800 }}>
-              차로 {p.min}분
+              {p.area}km²
             </span>
           </div>
-          {/*
-            지나는 남의 동네는 이름을 다 적지 않는다. 인천 중구는
-            둘이라 '남의 동네 인천 서구 8.14km · 인천 동구 3.74km'가
-            되면서 줄이 접히고 눈금을 밟았다. 합만 적고, 어디인지는
-            지도의 색과 자막이 말한다.
-          */}
           <div
             style={{
               color: DIM,
@@ -310,8 +292,7 @@ export const ShortsExclave: React.FC = () => {
               whiteSpace: "nowrap",
             }}
           >
-            {p.other >= 0.15 ? `남의 동네 ${p.other.toFixed(1)}km · ` : ""}
-            이 땅 {p.area.toFixed(1)}km²
+            사이 — {p.between.map((b) => `${b.name} ${b.km}km`).join(" · ")}
           </div>
         </div>
       )}
@@ -334,7 +315,7 @@ export const ShortsExclave: React.FC = () => {
           />
           <line x1={RK_L} y1={RK_Y} x2={RK_R} y2={RK_Y} stroke="#3A342B" strokeWidth={3} />
           {RANK.map((r, i) => {
-            const h = Math.max(4, (r.road / MAXR) * RK_H);
+            const h = Math.max(4, (r.dist / MAXD) * RK_H);
             const x = RK_L + i * (RK_W + RK_GAP);
             return (
               <rect
@@ -343,7 +324,7 @@ export const ShortsExclave: React.FC = () => {
                 y={RK_Y - h}
                 width={RK_W}
                 height={h}
-                fill={i === bi ? ROAD : i < bi ? "#7A6E58" : "#332E27"}
+                fill={i === bi ? PIECE : i < bi ? "#7A6E58" : "#332E27"}
               />
             );
           })}
@@ -397,7 +378,7 @@ export const ShortsExclave: React.FC = () => {
             [
               [PIECE, "떨어진 땅"],
               [MAIN, "그 시·군의 나머지 땅"],
-              [ROAD, "가는 길"],
+              [NEIGH, "사이에 낀 남의 동네"],
             ] as [string, string][]
           ).map(([c, t]) => (
             <div key={t} style={{ display: "flex", alignItems: "center", gap: 9 }}>
@@ -430,10 +411,10 @@ export const ShortsExclave: React.FC = () => {
               marginBottom: 16,
             }}
           >
-            자기 시·군 땅에 가는 길
+            그 시·군과 안 붙어 있는 땅
           </div>
           {[...TABLE]
-            .sort((a, b) => b.road - a.road)
+            .sort((a, b) => b.dist - a.dist)
             .map((t, i) => {
               const at = BODY_END + Math.round((0.3 + i * 0.24) * FPS);
               const o = interpolate(frame, [at, at + 10], [0, 1], {
@@ -455,7 +436,7 @@ export const ShortsExclave: React.FC = () => {
                 >
                   <span
                     style={{
-                      color: hot ? ROAD : INK,
+                      color: hot ? PIECE : INK,
                       fontSize: 37,
                       fontWeight: 900,
                       width: 258,
@@ -466,7 +447,7 @@ export const ShortsExclave: React.FC = () => {
                   </span>
                   <span
                     style={{
-                      color: hot ? ROAD : INK,
+                      color: hot ? PIECE : INK,
                       fontSize: 37,
                       fontWeight: 900,
                       width: 168,
@@ -474,7 +455,7 @@ export const ShortsExclave: React.FC = () => {
                       fontVariantNumeric: "tabular-nums",
                     }}
                   >
-                    {t.road.toFixed(1)}km
+                    {t.dist.toFixed(2)}km
                   </span>
                   <span
                     style={{
@@ -484,7 +465,7 @@ export const ShortsExclave: React.FC = () => {
                       fontVariantNumeric: "tabular-nums",
                     }}
                   >
-                    직선 {t.dist.toFixed(1)}km
+                    {t.area.toFixed(2)}km²
                   </span>
                 </div>
               );
@@ -498,7 +479,7 @@ export const ShortsExclave: React.FC = () => {
               wordBreak: "keep-all",
             }}
           >
-            도로는 차로 가는 최단 경로 · 직선과 넓이는 경계 자료로 잰 계산값
+            거리는 가장 가까운 두 점 사이 직선 · 넓이와 함께 경계 자료로 잰 계산값
           </div>
           <div
             style={{
@@ -516,7 +497,7 @@ export const ShortsExclave: React.FC = () => {
               ),
             }}
           >
-            코앞인데 돌아가야 하는 땅 9곳
+            코앞인데 남의 동네를 지나야 하는 땅 9곳
           </div>
         </AbsoluteFill>
       )}
@@ -550,7 +531,7 @@ export const ShortsExclave: React.FC = () => {
             </div>
             <div
               style={{
-                color: ROAD,
+                color: PIECE,
                 fontSize: 148,
                 fontWeight: 900,
                 lineHeight: 1,
@@ -559,7 +540,7 @@ export const ShortsExclave: React.FC = () => {
                 textShadow: `0 0 40px ${BG}, 0 0 18px ${BG}`,
               }}
             >
-              25.9km
+              7.75km
             </div>
             <div
               style={{
@@ -571,8 +552,8 @@ export const ShortsExclave: React.FC = () => {
                 textShadow: `0 0 24px ${BG}`,
               }}
             >
-              <div>2.7km 떨어진</div>
-              <div>같은 시 땅에 가는 길</div>
+              <div>같은 시 땅인데</div>
+              <div>이만큼 떨어진 곳</div>
             </div>
           </div>
         </>
