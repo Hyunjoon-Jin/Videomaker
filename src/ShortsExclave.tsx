@@ -10,6 +10,7 @@ import {
   CASES,
   COUNT,
   HOLD,
+  EMPTY_COUNT,
   ISLAND_COUNT,
   LINES,
   RANK,
@@ -103,8 +104,8 @@ function textEm(t: string): number {
    말한다. */
 const RK_Y = 772;
 const RK_H = 96;
-const RK_W = 60;
-const RK_GAP = 22;
+const RK_W = 110;
+const RK_GAP = 28;
 const RK_L = TEXT_X;
 const RK_R = RK_L + RANK.length * RK_W + (RANK.length - 1) * RK_GAP;
 const MAXD = Math.max(...RANK.map((r) => r.dist));
@@ -330,45 +331,48 @@ export const ShortsExclave: React.FC = () => {
         }}
       />
 
-      {/* ── 기준 ── */}
+      {/*
+        ── 기준 ──
+
+        훅과 같은 자리(아래)에 앉힌다. 위에 두면 인천·안산 점이
+        글자 뒤로 들어간다. 훅의 큰 숫자에서 여기 큰 숫자로
+        갈아 끼워지는 것으로 이어진다.
+      */}
       {inGate && (
         <div
-          style={{ position: "absolute", left: TEXT_X, right: SAFE_RIGHT, top: SAFE_TOP }}
+          style={{
+            position: "absolute",
+            left: TEXT_X,
+            right: SAFE_RIGHT,
+            bottom: BOTTOM_INSET + 96,
+          }}
         >
           <div
             style={{
-              color: INK,
-              fontSize: 40,
-              fontWeight: 900,
-              lineHeight: 1.3,
-              whiteSpace: "nowrap",
-            }}
-          >
-            이웃 시·군과는 붙어 있는데
-          </div>
-          <div
-            style={{
-              color: INK,
-              fontSize: 40,
-              fontWeight: 900,
-              lineHeight: 1.3,
-              whiteSpace: "nowrap",
-            }}
-          >
-            자기 시·군과는 안 붙은 땅
-          </div>
-          <div
-            style={{
               color: PIECE,
-              fontSize: 118,
+              fontSize: 132,
               fontWeight: 900,
-              lineHeight: 1.02,
-              marginTop: 10,
+              lineHeight: 1,
               fontVariantNumeric: "tabular-nums",
+              textShadow: `0 0 40px ${BG}, 0 0 18px ${BG}`,
             }}
           >
             {COUNT}
-            <span style={{ fontSize: 58, fontWeight: 800, marginLeft: 8 }}>곳</span>
+            <span style={{ fontSize: 62, fontWeight: 800, marginLeft: 8 }}>곳</span>
+          </div>
+          <div
+            style={{
+              color: INK,
+              fontSize: 46,
+              fontWeight: 900,
+              lineHeight: 1.24,
+              marginTop: 14,
+              whiteSpace: "nowrap",
+              textShadow: `0 0 24px ${BG}`,
+            }}
+          >
+            <div>이웃 동네와는 붙어 있는데</div>
+            <div>자기 시·군과는 안 붙은 마을</div>
           </div>
         </div>
       )}
@@ -555,8 +559,9 @@ export const ShortsExclave: React.FC = () => {
               wordBreak: "keep-all",
             }}
           >
-            이웃 시·군과 경계가 맞닿은 땅만 셈 · 안 닿는{" "}
-            {ISLAND_COUNT.toLocaleString("en-US")}곳은 뺌
+            사람이 사는 땅만 셈 · 이웃과 안 닿는{" "}
+            {ISLAND_COUNT.toLocaleString("en-US")}곳과 방조제·항만 매립지{" "}
+            {EMPTY_COUNT}곳은 뺌
             <br />
             거리는 가장 가까운 두 점 사이 직선 · 넓이와 함께 경계 자료 계산값
           </div>
@@ -576,7 +581,7 @@ export const ShortsExclave: React.FC = () => {
               ),
             }}
           >
-            코앞인데 남의 동네를 지나야 하는 땅 9곳
+            코앞인데 남의 동네를 지나야 하는 마을 {COUNT}곳
           </div>
         </AbsoluteFill>
       )}

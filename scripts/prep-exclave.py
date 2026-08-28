@@ -15,28 +15,56 @@
 떨어진 땅으로 잡히지만, 상록구와 합치면 본토가 나머지 땅이 되고
 대부도가 떨어진 땅이 된다. 시청이 본토에 있으니 이쪽이 실제와 맞는다.
 
-## 판정은 셋이다
+## 판정은 넷이다
 
   ① 나머지 땅 = 그 시·군 덩어리 중 넓이가 가장 큰 것
   ② 떨어진 땅 = 그것과 안 붙은 것
-  ③ 섬 제외   = 다른 시·군과 150m 안으로 맞닿아야 남긴다
+  ③ 이웃과 맞닿을 것 = 다른 시·군과 150m 안으로 맞닿아야 남긴다
+  ④ 사람이 살 것     = 그 안에 마을·주거지·아파트가 있어야 남긴다
 
 ①에서 점 수로 고르면 틀린다. 해안선이 복잡한 덩어리는 넓이가
 작아도 점이 훨씬 많다. 부안군이 그렇게 479km² 덩어리를 뱉었다.
 
-③이 이 편의 기준 그 자체다. 이 자료에 섬이 전부 별개 폴리곤으로
-들어 있어서, 그냥 세면 **1,049곳**이 나온다. 흑산도·백령도·안면도·
-돌산도가 다 여기 든다.
+## ③ 이웃과 맞닿은 것만 남긴다
 
-섬이 자기 시·군과 안 붙어 있는 것은 놀랍지 않다. 사방이 바다니까
-그렇다. 이 편이 묻는 것은 **땅으로는 남의 시·군과 이어져 있는데
-자기 시·군과는 안 이어진 곳**이다. 그게 9곳이다.
+이 자료에 섬이 전부 별개 폴리곤으로 들어 있어서, ③이 없으면
+**1,049곳**이 나온다. 흑산도·돌산도·교동도·연평도가 다 여기 든다.
 
-(울릉도는 아예 안 걸린다. 울릉군의 나머지 땅이 아니라 울릉군
-그 자체이기 때문이다.)
+**'섬을 뺐다'고는 못 쓴다.** 대부도는 섬인데 시화방조제로 시흥시와
+경계가 닿아 이 편에 들어온다. 가른 것은 섬이냐 아니냐가 아니라
+**이웃 시·군과 경계가 맞닿았느냐**다.
 
-그래서 안 센 1,049곳도 세어서 화면에 같이 낸다. 기준을 숨기면
-'그럼 흑산도는 왜 안 세느냐'는 물음에 답이 없다.
+(백령도와 울릉도는 아예 안 걸린다. 옹진군·울릉군에서 제일 넓은
+덩어리, 곧 그 군의 나머지 땅 자체다.)
+
+## ④ 사람이 사는 땅만 남긴다
+
+③만으로는 방조제와 항만 매립지가 잔뜩 걸린다. 새만금 방조제
+(군산 2.11km²), 평택·당진항 매립지(0.59·0.97km²), 광양만 매립지
+(2.59km²), 해남 쪽 완도군 매립지(1.19km²)가 그렇다. 넓이는 방조제
+폭이 넓어서 나온 값이고, 지도에서는 바다 위 띠로 보인다.
+
+**저건 땅이 아니라 구조물이다.** 행정구역이 갈라져서 주민이 겪는
+일을 말하는 편에 방조제 조각이 끼면 기준이 무너진다.
+
+OSM에 물어 조각 안에 사람이 사는 흔적이 있는지 본다.
+
+```
+                넓이   마을  주거지  아파트
+달성군       74.74km²    22     40    304
+안산시       57.78km²    13     20     21
+완주군       33.61km²    19    214     58
+인천 중구    14.77km²    44     16    135
+─────────────────────────────────────────
+광양시        2.59km²     0      0      0
+군산시        2.11km²     0      0      0
+완도군        1.19km²     0      0      0
+당진시        0.97km²     0      0      0
+평택시        0.59km²     0      0      0
+```
+
+깨끗하게 갈린다. 넓이 컷오프 같은 임의의 선을 안 그어도 된다.
+받아온 것은 `data/osm-exclave-place.json`에 남긴다.
 
 붙었다고 보는 거리는 150m 하나로 쓴다. 자기 조각끼리든 남의 시·군
 이든 같은 자다. 자를 둘로 나누면 '내 땅과는 110m라 떨어진 것, 남의
@@ -67,12 +95,19 @@ import json
 import math
 import os
 import sys
+import time
+import urllib.parse
+import urllib.request
 
 sys.setrecursionlimit(200000)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(HERE, "..", "data", "skorea-municipalities.json")
 OUT = os.path.join(HERE, "..", "src", "data", "exclave.json")
+PLACES = os.path.join(HERE, "..", "data", "osm-exclave-place.json")
+
+# overpass-api.de와 kumi.systems는 이 환경에서 막혀 있다.
+OVERPASS = "https://maps.mail.ru/osm/tools/overpass/api/interpreter"
 
 # 붙었다고 볼 거리
 NEAR_M = 150.0
@@ -228,6 +263,63 @@ def components(polys):
     return list(out.values())
 
 
+def people(r, cache):
+    """조각 안에 사람이 사는 흔적이 있는지 OSM에 묻는다.
+
+    마을(place), 주거지(landuse=residential), 아파트(building) 셋을
+    센다. 하나라도 있으면 사람이 사는 땅으로 본다. 방조제와 항만
+    매립지는 셋 다 0이 나온다.
+    """
+    key = r["name"] + f'{r["area"]:.2f}'
+    if key in cache:
+        return cache[key]
+    pts = [p for poly in r["piece"] for p in poly]
+    x0, y0, x1, y1 = bbox(pts)
+    q = (f"[out:json][timeout:120];("
+         f'node({y0},{x0},{y1},{x1})["place"~"^(city|town|village|hamlet|'
+         f'suburb|neighbourhood|quarter)$"];'
+         f'way({y0},{x0},{y1},{x1})["landuse"="residential"];'
+         f'way({y0},{x0},{y1},{x1})["building"="apartments"];);out center tags;')
+    data = urllib.parse.urlencode({"data": q}).encode()
+    js = None
+    for i in range(4):
+        try:
+            req = urllib.request.Request(OVERPASS, data,
+                                         {"User-Agent": "Mozilla/5.0"})
+            js = json.loads(urllib.request.urlopen(req, timeout=180).read())
+            break
+        except Exception:
+            time.sleep(3 * 2 ** i)
+    if js is None:
+        raise SystemExit(f"OSM 응답을 못 받았다: {key}")
+    out = {"place": 0, "residential": 0, "apartments": 0, "names": []}
+    for e in js["elements"]:
+        lon = e.get("lon") or e.get("center", {}).get("lon")
+        lat = e.get("lat") or e.get("center", {}).get("lat")
+        if lon is None:
+            continue
+        hit = False
+        for poly in r["piece"]:
+            a, b, c, d = bbox(poly)
+            if a <= lon <= c and b <= lat <= d and point_in(poly, lon, lat):
+                hit = True
+                break
+        if not hit:
+            continue
+        t = e["tags"]
+        if t.get("place"):
+            out["place"] += 1
+            if t.get("name"):
+                out["names"].append(t["name"])
+        elif t.get("landuse") == "residential":
+            out["residential"] += 1
+        elif t.get("building") == "apartments":
+            out["apartments"] += 1
+    cache[key] = out
+    time.sleep(2)
+    return out
+
+
 def point_in(ring, x, y):
     c = False
     n = len(ring)
@@ -374,15 +466,13 @@ def to_path(polys, project, keep_all=False):
     return "".join(parts)
 
 
-# 화면에 세우는 차례. 작은 것에서 큰 것으로.
-# 평택과 당진은 서로 맞닿은 매립지라 한 화면에 묶는다.
 # 화면에 세우는 차례는 떨어진 거리 순이다. 코드에 적어두지 않고
 # 받은 값으로 정렬한다 — 자료가 바뀌면 차례도 따라 바뀌어야 한다.
 
 # 이름표를 앉힐 자리를 고를 때 쓰는 격자 크기
 LBL_N = 90
 # 화면에서 글자가 안 가려지는 세로 구간(0..1 비율).
-# 위는 계기판과 눈금, 아래는 자막과 범례가 덮는다.
+# 위는 계기판과 눈금, 아래는 자막이 덮는다.
 LBL_BAND = (0.44, 0.73)
 
 
@@ -445,8 +535,25 @@ def main():
         n = units[ui]["name"]
         return f"{sido_of[ui]} {n}" if dup[n] > 1 else n
 
+    # ④ 사람이 사는 땅만 남긴다
+    cache = {}
+    if os.path.exists(PLACES):
+        cache = json.load(open(PLACES, encoding="utf-8"))
+    empty = []
+    keep = []
+    for r in found:
+        r["people"] = people(r, cache)
+        (keep if sum(r["people"][k] for k in
+                     ("place", "residential", "apartments")) > 0
+         else empty).append(r)
+    json.dump(cache, open(PLACES, "w", encoding="utf-8"), ensure_ascii=False)
+    found = keep
+    print(f'이웃과 맞닿은 {len(keep) + len(empty)}곳 중 사람이 사는 곳 {len(keep)}곳')
+    for r in empty:
+        print(f'   뺌 — {label(r["ui"]):10s}{r["area"]:7.2f}km²  '
+              f'마을·주거지·아파트 0 (방조제·항만 매립지)')
+
     boxes = [[(bbox(p), p) for p in u["polys"]] for u in units]
-    print(len(found), "곳")
 
     for r in found:
         r["between"] = between(r, boxes, label)
@@ -537,9 +644,10 @@ def main():
         "table": table,
         "shapes": shapes,
         "count": len(found),
-        # 안 센 섬. 화면에서 점으로 한 번 켰다 끈다.
-        "islands": [[*project(x, y), round(a, 2)] for x, y, a in islands],
+        # 이웃과 아예 안 닿는 덩어리(흑산도 같은 것)
         "islandCount": len(islands),
+        # 이웃과는 닿지만 사람이 안 사는 것(방조제·항만 매립지)
+        "emptyCount": len(empty),
     }, open(OUT, "w", encoding="utf-8"), ensure_ascii=False)
     print("→", OUT)
     return found

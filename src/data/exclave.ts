@@ -1,5 +1,5 @@
 /**
- * 같은 시·군 땅인데 가려면 남의 동네를 지나야 하는 곳 9군데
+ * 이웃 동네와는 붙어 있는데 자기 시·군과는 안 붙은 마을 4곳
  * (scripts/prep-exclave.py 산출물).
  *
  * 좌표는 korea-paths.json과 같은 0..1000 투영이라 전국 지도 위에
@@ -75,19 +75,10 @@ export const TABLE = raw.table as unknown as Row[];
 export const SHAPES = raw.shapes as Record<string, string>;
 export const COUNT: number = raw.count;
 
-/**
- * 안 센 섬 — [x, y, 넓이km²].
- *
- * '그럼 흑산도나 백령도는 왜 안 세느냐'에 답이 있어야 한다.
- * 그냥 세면 1,049곳이다. 섬이 자기 시·군과 안 붙어 있는 것은
- * 사방이 바다라 그런 것이고, 이 편이 묻는 것은 땅으로는 남의
- * 시·군과 이어졌는데 자기 시·군과는 안 이어진 곳이다.
- *
- * 울릉도는 아예 안 걸린다. 울릉군의 나머지 땅이 아니라 울릉군
- * 그 자체이기 때문이다.
- */
-export const ISLANDS = raw.islands as [number, number, number][];
+/** 이웃과 아예 안 닿는 덩어리 — 흑산도·돌산도·교동도·연평도 같은 것 */
 export const ISLAND_COUNT: number = raw.islandCount;
+/** 이웃과는 닿지만 사람이 안 사는 것 — 방조제와 항만 매립지 */
+export const EMPTY_COUNT: number = raw.emptyCount;
 
 /**
  * 자막.
@@ -101,19 +92,14 @@ export const ISLAND_COUNT: number = raw.islandCount;
  * 할 말이 없으면 비운다. 채우려고 쓰지 않는다.
  */
 export const LINES: string[] = [
-  "",                    // 군산 — 이름표가 다 말한다
-  "",                    // 완도
-  "",                    // 광양
-  "평택항 매립지",
   "넓은 쪽이 영종도",      // 시·군 이름표만으로는 안 읽힌다
-  "당진항 매립지",
   "다사읍 · 하빈면",
-  "",                    // 완주
+  "이서면",   // OSM 마을 이름이 금계리·남계리·이성리·이문리 — 이서면이다
   "대부도",
 ];
 
 /** 한 자리에 머무는 시간(초) */
-export const HOLD = [3.4, 3.4, 3.4, 3.6, 4.6, 4.4, 5.4, 4.6, 6.0];
+export const HOLD = [6.2, 7.4, 6.6, 8.0];
 
 /**
  * 아래 눈금 — 9곳을 떨어진 거리 순으로 세운 막대.
