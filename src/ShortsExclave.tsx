@@ -354,30 +354,17 @@ export const ShortsExclave: React.FC = () => {
           [
             {
               o: 1 - gateOn,
-              tag: "이 편이 안 센 것",
+              tag: "뺀 것",
               big: ISLAND_COUNT.toLocaleString("en-US"),
-              unit: "곳",
               c: "#8FA6B5",
-              a: "사방이 바다인 땅",
-              b: "흑산도 · 돌산도 · 교동도 · 연평도 · 그 밖의 섬",
-              /*
-                백령도와 울릉도를 물어오는 자리다. 그 둘은 안 센 게
-                아니라 애초에 안 걸린다 — 옹진군·울릉군에서 제일
-                넓은 덩어리, 곧 그 군의 나머지 땅 자체다.
-              */
-              c2: "백령도와 울릉도는 옹진군·울릉군 그 자체",
-              say: ["섬이 떨어져 있는 건", "사방이 바다라서 그런 것"],
+              a: "섬",
             },
             {
               o: gateOn,
-              tag: "이 편이 센 것",
+              tag: "센 것",
               big: String(COUNT),
-              unit: "곳",
               c: PIECE,
-              a: "땅으로는 남의 시·군과 이어졌는데",
-              b: "자기 시·군과는 안 이어진 땅",
-              c2: "",
-              say: ["걸어서 남의 동네로는 나가는데", "자기 시·군으로는 못 가는 땅"],
+              a: "자기 시·군과 안 이어진 땅",
             },
           ] as const
         ).map((g) => (
@@ -406,47 +393,12 @@ export const ShortsExclave: React.FC = () => {
               >
                 {g.big}
                 <span style={{ fontSize: 58, fontWeight: 800, marginLeft: 8 }}>
-                  {g.unit}
+                  곳
                 </span>
               </div>
-              <div style={{ color: INK, fontSize: 38, fontWeight: 900, marginTop: 10 }}>
+              <div style={{ color: INK, fontSize: 44, fontWeight: 900, marginTop: 10 }}>
                 {g.a}
               </div>
-              <div style={{ color: DIM, fontSize: 29, fontWeight: 700, marginTop: 6 }}>
-                {g.b}
-              </div>
-              {g.c2 ? (
-                <div
-                  style={{ color: DIM, fontSize: 29, fontWeight: 700, marginTop: 6 }}
-                >
-                  {g.c2}
-                </div>
-              ) : null}
-            </div>
-            <div
-              style={{
-                position: "absolute",
-                left: TEXT_X,
-                right: SAFE_RIGHT,
-                bottom: BOTTOM_INSET + 96,
-                opacity: g.o,
-              }}
-            >
-              {g.say.map((ln, k) => (
-                <div
-                  key={k}
-                  style={{
-                    color: INK,
-                    fontSize: 50,
-                    fontWeight: 900,
-                    lineHeight: 1.28,
-                    whiteSpace: "nowrap",
-                    textShadow: `0 0 40px ${BG}, 0 0 18px ${BG}`,
-                  }}
-                >
-                  {ln}
-                </div>
-              ))}
             </div>
           </React.Fragment>
         ))}
@@ -471,25 +423,22 @@ export const ShortsExclave: React.FC = () => {
           >
             {p.dist.toFixed(2)}
             <span style={{ fontSize: 58, fontWeight: 800, marginLeft: 8 }}>km</span>
+            {/* 이 숫자가 무엇인지는 첫 걸음에서 한 번만 밝힌다 */}
+            {bi === 0 ? (
+              <span
+                style={{
+                  color: DIM,
+                  fontSize: 32,
+                  fontWeight: 700,
+                  marginLeft: 18,
+                }}
+              >
+                떨어진 거리
+              </span>
+            ) : null}
           </div>
-          <div style={{ display: "flex", gap: 26, marginTop: 10, alignItems: "baseline" }}>
-            <span style={{ color: INK, fontSize: 40, fontWeight: 900 }}>
-              {p.name} 땅의 {p.pct}%
-            </span>
-            <span style={{ color: "#B7AC98", fontSize: 36, fontWeight: 800 }}>
-              {p.area}km²
-            </span>
-          </div>
-          <div
-            style={{
-              color: DIM,
-              fontSize: 30,
-              fontWeight: 700,
-              marginTop: 8,
-              whiteSpace: "nowrap",
-            }}
-          >
-            사이 — {p.between.map((b) => `${b.name} ${b.km}km`).join(" · ")}
+          <div style={{ color: INK, fontSize: 36, fontWeight: 800, marginTop: 8 }}>
+            {p.area}km² · {p.name}의 {p.pct}%
           </div>
         </div>
       )}
@@ -542,47 +491,18 @@ export const ShortsExclave: React.FC = () => {
             opacity: on,
           }}
         >
-          {LINES[bi].map((ln, k) => (
-            <div
-              key={k}
-              style={{
-                color: INK,
-                fontSize: 50,
-                fontWeight: 900,
-                lineHeight: 1.28,
-                whiteSpace: "nowrap",
-                textShadow: `0 0 40px ${BG}, 0 0 18px ${BG}`,
-              }}
-            >
-              {ln}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* ── 범례 ── */}
-      {started && !inOutro && (
-        <div
-          style={{
-            position: "absolute",
-            left: TEXT_X,
-            bottom: BOTTOM_INSET + 18,
-            display: "flex",
-            gap: 24,
-          }}
-        >
-          {(
-            [
-              [PIECE, "떨어진 땅"],
-              [MAIN, "그 시·군의 나머지 땅"],
-              [NEIGH, "사이에 낀 남의 동네"],
-            ] as [string, string][]
-          ).map(([c, t]) => (
-            <div key={t} style={{ display: "flex", alignItems: "center", gap: 9 }}>
-              <div style={{ width: 22, height: 22, background: c, borderRadius: 4 }} />
-              <span style={{ color: DIM, fontSize: 27, fontWeight: 700 }}>{t}</span>
-            </div>
-          ))}
+          <div
+            style={{
+              color: INK,
+              fontSize: 50,
+              fontWeight: 900,
+              lineHeight: 1.28,
+              whiteSpace: "nowrap",
+              textShadow: `0 0 40px ${BG}, 0 0 18px ${BG}`,
+            }}
+          >
+            {LINES[bi]}
+          </div>
         </div>
       )}
 
@@ -599,17 +519,6 @@ export const ShortsExclave: React.FC = () => {
             padding: `0 ${SAFE_RIGHT}px ${OUTRO_PAD}px ${TEXT_X}px`,
           }}
         >
-          <div
-            style={{
-              color: DIM,
-              fontSize: 30,
-              fontWeight: 700,
-              letterSpacing: 2,
-              marginBottom: 16,
-            }}
-          >
-            그 시·군과 안 붙어 있는 땅
-          </div>
           {[...TABLE]
             .sort((a, b) => b.dist - a.dist)
             .map((t, i) => {
@@ -676,9 +585,7 @@ export const ShortsExclave: React.FC = () => {
               wordBreak: "keep-all",
             }}
           >
-            사방이 바다인 땅 {ISLAND_COUNT.toLocaleString("en-US")}곳은 세지 않음
-            <br />
-            거리는 가장 가까운 두 점 사이 직선 · 넓이와 함께 경계 자료로 잰 계산값
+            섬 {ISLAND_COUNT.toLocaleString("en-US")}곳 제외 · 경계 자료로 잰 계산값
           </div>
           <div
             style={{
@@ -751,8 +658,7 @@ export const ShortsExclave: React.FC = () => {
                 textShadow: `0 0 24px ${BG}`,
               }}
             >
-              <div>같은 시 땅인데</div>
-              <div>이만큼 떨어진 곳</div>
+              같은 시 땅인데 이만큼 떨어진 곳
             </div>
           </div>
         </>
