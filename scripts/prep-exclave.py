@@ -334,7 +334,11 @@ def projector(units):
     def project(x, y):
         return (round((x - lon0) * kx * scale + offx, 1),
                 round(BOX - ((y - lat0) * scale + offy), 1))
-    return project
+
+    def unproject(px, py):
+        return ((px - offx) / (kx * scale) + lon0,
+                (BOX - py - offy) / scale + lat0)
+    return project, unproject
 
 
 def to_path(polys, project, keep_all=False):
@@ -356,15 +360,64 @@ def to_path(polys, project, keep_all=False):
 
 # 화면에 세우는 차례. 작은 것에서 큰 것으로.
 # 평택과 당진은 서로 맞닿은 매립지라 한 화면에 묶는다.
-# 화면에 세우는 차례는 도로 거리 순이다. 코드에 적어두지 않고
+# 화면에 세우는 차례는 떨어진 거리 순이다. 코드에 적어두지 않고
 # 받은 값으로 정렬한다 — 자료가 바뀌면 차례도 따라 바뀌어야 한다.
+
+# 이름표를 앉힐 자리를 고를 때 쓰는 격자 크기
+LBL_N = 90
+# 화면에서 글자가 안 가려지는 세로 구간(0..1 비율).
+# 위는 계기판과 눈금, 아래는 자막과 범례가 덮는다.
+LBL_BAND = (0.44, 0.73)
+
+
+def label_spots(targets, cam, unproject):
+    """카메라 안에서 각 땅의 이름표 자리를 고른다.
+
+    폴리곤의 무게중심을 쓰면 화면 밖으로 나가거나 바다 위에 앉는다.
+    보이는 상자를 격자로 훑어 그 땅 안에 드는 점만 모으고, 그 점들의
+    가운데에 가장 가까운 점을 고른다. 글자가 반드시 그 땅 위에 앉는다.
+
+    계기판과 자막이 덮는 위아래는 피한다. 피할 자리가 없으면 그냥
+    가운데를 쓴다 — 없는 것보다 낫다.
+    """
+    w = BOX / cam["z"]
+    h = w * 1920 / 1080
+    x0, x1 = cam["cx"] - w / 2, cam["cx"] + w / 2
+    y0, y1 = cam["cy"] - h / 2, cam["cy"] + h / 2
+    pts = []
+    for i in range(LBL_N):
+        for j in range(LBL_N):
+            px = x0 + (i + 0.5) / LBL_N * w
+            py = y0 + (j + 0.5) / LBL_N * h
+            pts.append((px, py, (j + 0.5) / LBL_N, unproject(px, py)))
+
+    out = []
+    for name, polys, kind in targets:
+        boxes = [(bbox(r), r) for r in polys]
+        inside = []
+        for px, py, fy, (lon, lat) in pts:
+            for (a, b, c, d), ring in boxes:
+                if a <= lon <= c and b <= lat <= d and point_in(ring, lon, lat):
+                    inside.append((px, py, fy))
+                    break
+        if not inside:
+            continue
+        band = [q for q in inside if LBL_BAND[0] <= q[2] <= LBL_BAND[1]]
+        pick = band or inside
+        mx = sum(q[0] for q in pick) / len(pick)
+        my = sum(q[1] for q in pick) / len(pick)
+        best = min(pick, key=lambda q: (q[0] - mx) ** 2 + (q[1] - my) ** 2)
+        out.append({"text": name, "kind": kind,
+                    "x": round(best[0], 1), "y": round(best[1], 1)})
+    return out
+
 
 
 def main():
     units = load()
     found = find_exclaves(units)
 
-    project = projector(units)
+    project, unproject = projector(units)
     sido_of = [SIDO.get(u["code"][:2], "") for u in units]
 
     # 이름이 겹치는 것만 시도를 붙인다. '동구'는 여섯 곳에 있다.
@@ -418,15 +471,30 @@ def main():
         px1, py0 = project(x1, y1)
         w, h = max(px1 - px0, 1.0), max(py1 - py0, 1.0)
         pad = 1.6
+        cam = {
+            "cx": round((px0 + px1) / 2, 1),
+            "cy": round((py0 + py1) / 2, 1),
+            "z": round(min(55.0, BOX / (max(w, h) * pad)), 2),
+        }
+        nm = label(r["ui"])
+        # 나머지 땅은 이름만 적는다. '완주군 나머지 땅'까지 적으면
+        # 글자가 화면 밖으로 밀린다. 떨어진 땅 쪽에 '떨어진'이
+        # 붙어 있으니 나머지가 무엇인지는 그것으로 갈린다.
+        targets = [(f"{nm} 떨어진 땅", r["piece"], "piece"),
+                   (nm, r["main"], "main")]
+        land = [b["name"] for b in r["between"] if b["name"] != "바다"]
+        # 사이가 전부 바다면 칠할 남의 동네가 없다. 그러면 지도에
+        # 이름이 자기 시·군 둘뿐이라 어디쯤인지 감이 안 온다.
+        # 맞닿은 이웃 이름을 대신 얹는다.
+        for n in (land or [label(i) for i in r["nb"]][:3]):
+            k = next(i for i, u in enumerate(units) if label(i) == n)
+            targets.append((n, units[k]["polys"], "neigh"))
         cases.append({
             "pieces": [piece],
-            "cam": {
-                "cx": round((px0 + px1) / 2, 1),
-                "cy": round((py0 + py1) / 2, 1),
-                "z": round(min(55.0, BOX / (max(w, h) * pad)), 2),
-            },
+            "cam": cam,
             # 최단선이 실제로 지나는 남의 시·군만 칠한다
             "nbNames": [x["name"] for x in r["between"] if x["name"] != "바다"],
+            "labels": label_spots(targets, cam, unproject),
         })
 
     table = [{

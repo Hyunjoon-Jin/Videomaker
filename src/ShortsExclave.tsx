@@ -36,6 +36,8 @@ const BG = "#101519";
 const LAND = "#2F2820";
 /** 최단선이 지나는 남의 동네 */
 const NEIGH = "#7A6448";
+/** 지도 위 이름표 — 칠한 색보다 밝아야 글자가 읽힌다 */
+const LBL = { piece: "#FFC9B4", main: "#A8CDE4", neigh: "#E0C99A" } as const;
 /** 그 시·군의 나머지 땅 */
 const MAIN = "#4C7A9B";
 /** 떨어진 땅 — 이 편의 색 */
@@ -65,6 +67,13 @@ function beatAt(frame: number): number {
 const FLY = Math.round(1.1 * FPS);
 const ease = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
 const ASPECT = 1920 / 1080;
+
+/** 한글은 한 글자가 거의 한 em이고 숫자·기호·빈칸은 그 절반이다 */
+function textEm(t: string): number {
+  let w = 0;
+  for (const ch of t) w += /[\uac00-\ud7a3\u4e00-\u9fff]/.test(ch) ? 1 : 0.5;
+  return w;
+}
 
 /* ── 눈금 ──────────────────────────────────────────
    9곳을 떨어진 거리 순으로 세운 막대. 지도만 있으면 아홉 걸음이
@@ -137,6 +146,8 @@ export const ShortsExclave: React.FC = () => {
   const viewBox = `${cam.cx - camW / 2} ${cam.cy - camH / 2} ${camW} ${camH}`;
   /** 붙을수록 선을 얇게 — 안 그러면 경계가 크레용이 된다 */
   const sw = camW / 900;
+  /** 화면 1px이 지도 좌표로 몇인지. 글자 크기를 여기에 건다 */
+  const px = camW / 1080;
 
   const litNb = started && !inOutro ? cs.nbNames : [];
 
@@ -243,6 +254,43 @@ export const ShortsExclave: React.FC = () => {
             />
           </g>
         )}
+        {/*
+          이름표.
+
+          색만 칠해두면 어느 게 어디 땅인지 알 수가 없다. 글자 크기는
+          화면 기준으로 고정한다 — 지도 좌표로 두면 붙을 때마다
+          간판만 해진다.
+        */}
+        {started &&
+          !inOutro &&
+          cs.labels.map((l) => {
+            const fs = (l.kind === "neigh" ? 31 : 37) * px;
+            // 가장자리에 앉은 이름표가 화면 밖으로 잘린다.
+            // 글자 폭만큼 안으로 물린다.
+            const half = (textEm(l.text) * fs) / 2 + 24 * px;
+            const x = Math.min(
+              Math.max(l.x, cam.cx - camW / 2 + half),
+              cam.cx + camW / 2 - half
+            );
+            return (
+            <text
+              key={l.kind + l.text}
+              x={x}
+              y={l.y}
+              fontSize={fs}
+              fontWeight={900}
+              fill={LBL[l.kind]}
+              stroke={BG}
+              strokeWidth={6 * px}
+              paintOrder="stroke"
+              strokeLinejoin="round"
+              textAnchor="middle"
+              opacity={on}
+            >
+              {l.text}
+            </text>
+            );
+          })}
       </svg>
 
       {/* 위아래 글자 자리를 눌러 지도가 글씨를 안 갉아먹게 한다 */}

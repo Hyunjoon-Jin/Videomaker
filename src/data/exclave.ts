@@ -37,11 +37,26 @@ export interface Piece {
   nb: string[];
 }
 
+export interface Label {
+  text: string;
+  /** piece = 떨어진 땅, main = 나머지 땅, neigh = 사이에 낀 남의 동네 */
+  kind: "piece" | "main" | "neigh";
+  x: number;
+  y: number;
+}
+
 export interface Case {
   pieces: Piece[];
   cam: { cx: number; cy: number; z: number };
   /** 이 화면에서 따로 칠할, 최단선이 지나는 남의 동네 */
   nbNames: string[];
+  /**
+   * 지도에 앉히는 이름표.
+   *
+   * 색만 칠해두면 어느 게 어디 땅인지 알 수가 없다. 자리는
+   * prep-exclave.py가 카메라 안을 격자로 훑어 그 땅 위에서 고른다.
+   */
+  labels: Label[];
 }
 
 export interface Row {
