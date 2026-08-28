@@ -57,6 +57,11 @@ BOX = 1000.0
 TOL = 0.00035
 MIN_RING = 6e-6
 
+# 화면과, 그 안에서 지도가 쓸 수 있는 띠
+SCR_W, SCR_H = 1080.0, 1920.0
+BAND_W, BAND_H = 960.0, 840.0
+BAND_CY = 1200.0
+
 SIDO = {
     "11": "서울", "21": "부산", "22": "대구", "23": "인천", "24": "광주",
     "25": "대전", "26": "울산", "29": "세종", "31": "경기", "32": "강원",
@@ -71,10 +76,12 @@ ORDER = ["강원 홍천군", "경북 울릉군", "전남 여수시",
          "전남 신안군", "인천 옹진군"]
 
 # 끝점 이름. 경계 자료에 없어서 OSM으로 확인한 것을 적어둔다.
+# 지도에 그대로 붙는 이름표라 '서쪽 끝'처럼 그림이 이미 말하는 것은
+# 비워 둔다.
 ENDS = {
-    "강원 홍천군": ("서쪽 끝", "동쪽 끝"),
+    "강원 홍천군": ("", ""),
     "경북 울릉군": ("독도", "울릉도"),
-    "전남 여수시": ("거문도", "여수 본토"),
+    "전남 여수시": ("거문도", ""),  # 반대쪽은 한눈에 보이는 본토라 비운다
     "전남 신안군": ("가거도", "어의도"),
     "인천 옹진군": ("백령도", "선재도"),
 }
@@ -212,6 +219,12 @@ def projector(units):
     return project
 
 
+def bbox(pts):
+    xs = [p[0] for p in pts]
+    ys = [p[1] for p in pts]
+    return min(xs), min(ys), max(xs), max(ys)
+
+
 def to_path(polys, project):
     parts = []
     for ring in polys:
@@ -258,6 +271,22 @@ def main():
     for nm in ORDER:
         r = by[nm]
         ends = ENDS[nm]
+        # 카메라. 그 시·군 땅이 다 들어오는 틀.
+        #
+        # 화면 전체가 아니라 **비어 있는 띠** 안에 앉힌다. 위는 계기판,
+        # 648에 막대, 아래는 자막이 있어서 거기로 땅이 올라가면 글자에
+        # 깔린다. 그래서 세로는 780~1620, 가로는 60~1020만 쓴다.
+        pts = [p for poly in units[r["ui"]]["polys"] for p in poly]
+        x0, y0, x1, y1 = bbox(pts)
+        px0, py1 = project(x0, y0)
+        px1, py0 = project(x1, y1)
+        w, h = max(px1 - px0, 1.0), max(py1 - py0, 1.0)
+        z = min(BAND_W / w * (BOX / SCR_W), BAND_H / h * (BOX / SCR_W))
+        z = min(6.0, z)
+        cam_w = BOX / z
+        # 띠의 한가운데가 화면 한가운데보다 아래라 카메라를 그만큼 북으로
+        ux, uy = (px0 + px1) / 2, (py0 + py1) / 2
+        cy = uy - (BAND_CY / SCR_W - (SCR_H / SCR_W) / 2) * cam_w
         cases.append({
             "name": nm,
             "span": round(r["span"], 1),
@@ -266,6 +295,7 @@ def main():
             "d": to_path(units[r["ui"]]["polys"], project),
             "line": [list(project(*r["a"])), list(project(*r["b"]))],
             "ends": list(ends),
+            "cam": {"cx": round(ux, 1), "cy": round(cy, 1), "z": round(z, 3)},
         })
 
     json.dump({

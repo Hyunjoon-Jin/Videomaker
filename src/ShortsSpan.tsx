@@ -6,7 +6,9 @@ import {
   staticFile,
   useCurrentFrame,
 } from "remotion";
-import { CASES, HOLD, LINES, MAXS, RULER, TABLE, WIDE } from "./data/span";
+import {
+  CASES, FLY_SEC, HOLD, LINES, MAXS, RULER, TABLE, WIDE, WIDE_OUT,
+} from "./data/span";
 import { REGIONS } from "./data/regions";
 import { FPS } from "./theme";
 import { Grain } from "./Grain";
@@ -46,6 +48,35 @@ function beatAt(frame: number): number {
 
 const ASPECT = 1920 / 1080;
 
+/* ── 카메라 ────────────────────────────────────────
+   훅은 전국, 본문은 시·군마다 붙고, 마무리에 다시 전국으로 빠진다.
+   z는 로그로 보간한다 — 선형이면 앞이 훅 커지고 뒤가 기어간다. */
+const FLY = Math.round(FLY_SEC * FPS);
+
+type Cam = { cx: number; cy: number; z: number };
+
+const ease = (t: number) =>
+  t <= 0 ? 0 : t >= 1 ? 1 : t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+function blend(from: Cam, to: Cam, t: number): Cam {
+  const e = ease(t);
+  return {
+    cx: from.cx + (to.cx - from.cx) * e,
+    cy: from.cy + (to.cy - from.cy) * e,
+    z: Math.exp(Math.log(from.z) + (Math.log(to.z) - Math.log(from.z)) * e),
+  };
+}
+
+function camAt(frame: number): Cam {
+  if (frame >= BODY_END) {
+    return blend(CASES[CASES.length - 1].cam, WIDE_OUT, (frame - BODY_END) / FLY);
+  }
+  if (frame < HOOK) return WIDE;
+  const i = beatAt(frame);
+  const from = i === 0 ? WIDE : CASES[i - 1].cam;
+  return blend(from, CASES[i].cam, (frame - SLOTS[i].t0) / FLY);
+}
+
 /* ── 막대 ──────────────────────────────────────────
    지도 위 선은 방향이 제각각이라 길이를 눈으로 못 견준다.
    가로 막대 하나가 그 일을 한다. 자(홍천군)는 세로 눈금으로
@@ -79,49 +110,54 @@ export const ShortsSpan: React.FC = () => {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  /** 선과 막대가 뻗어 나가는 진행도 */
-  const run = interpolate(age, [10, 40], [0, 1], {
+  /** 선과 막대가 뻗어 나가는 진행도. 카메라가 앉은 뒤에 시작한다 */
+  const run = interpolate(age, [FLY - 4, FLY + 26], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
-  const camW = 1000 / WIDE.z;
+  const cam = camAt(frame);
+  const camW = 1000 / cam.z;
   const camH = camW * ASPECT;
-  const viewBox = `${WIDE.cx - camW / 2} ${WIDE.cy - camH / 2} ${camW} ${camH}`;
-  const sw = camW / 900;
+  const viewBox = `${cam.cx - camW / 2} ${cam.cy - camH / 2} ${camW} ${camH}`;
+  /** 화면 1px에 해당하는 지도 단위 — 선 굵기와 글자를 화면 기준으로 잡는다 */
+  const px = camW / 1080;
 
   return (
     <AbsoluteFill style={{ backgroundColor: BG, fontFamily: "Pretendard" }}>
       <Audio src={staticFile("bgm-sp.wav")} volume={0.85} />
 
-      {/* ── 지도 — 0프레임부터 전국이 떠 있다. 카메라는 안 움직인다 ── */}
+      {/* ── 지도 — 0프레임부터 전국이 떠 있다. 카메라만 옮겨 앉는다 ── */}
       <svg
         viewBox={viewBox}
         style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
       >
         {REGIONS.map((r) => (
-          <path key={r.code} d={r.d} fill={LAND} stroke={BG} strokeWidth={sw * 0.8} />
+          <path key={r.code} d={r.d} fill={LAND} stroke={BG} strokeWidth={px} />
         ))}
 
         {/* 지나온 시·군은 옅게 남는다 */}
-        {CASES.map((x, i) =>
-          !started || frame < SLOTS[i].t0 ? null : (
+        {CASES.map((x, i) => {
+          if (!started || frame < SLOTS[i].t0) return null;
+          // 마무리에서는 1위가 켜진 채로 남는다
+          const lit = inOutro ? i === CASES.length - 1 : i === bi;
+          return (
             <path
               key={x.name}
               d={x.d}
-              fill={i === bi && !inOutro ? HOT : "#6B4A3E"}
-              fillOpacity={i === bi && !inOutro ? 0.55 + on * 0.45 : 0.55}
-              stroke={i === bi && !inOutro ? HOT : "#6B4A3E"}
-              strokeWidth={sw * 1.4}
+              fill={lit ? HOT : "#6B4A3E"}
+              fillOpacity={lit && !inOutro ? 0.55 + on * 0.45 : 0.75}
+              stroke={lit ? HOT : "#6B4A3E"}
+              strokeWidth={px * 1.6}
             />
-          )
-        )}
+          );
+        })}
 
         {/* 지나온 선도 남는다 — 길이가 쌓이는 게 이 편의 그림이다 */}
         {CASES.map((x, i) => {
           if (!started || frame < SLOTS[i].t0) return null;
-          const cur = i === bi && !inOutro;
-          const g = cur ? run : 1;
+          const cur = inOutro ? i === CASES.length - 1 : i === bi;
+          const g = cur && !inOutro ? run : 1;
           const [a, b] = x.line;
           return (
             <g key={"l" + x.name}>
@@ -131,20 +167,54 @@ export const ShortsSpan: React.FC = () => {
                 x2={a[0] + (b[0] - a[0]) * g}
                 y2={a[1] + (b[1] - a[1]) * g}
                 stroke={cur ? INK : "#5E5648"}
-                strokeWidth={sw * (cur ? 2.6 : 1.6)}
+                strokeWidth={px * (cur ? 5 : 3)}
                 opacity={cur ? 0.95 : 0.7}
               />
-              <circle cx={a[0]} cy={a[1]} r={sw * (cur ? 4 : 2.6)} fill={cur ? INK : "#5E5648"} />
+              <circle cx={a[0]} cy={a[1]} r={px * (cur ? 9 : 5)} fill={cur ? INK : "#5E5648"} />
               <circle
                 cx={b[0]}
                 cy={b[1]}
-                r={sw * (cur ? 4 : 2.6)}
+                r={px * (cur ? 9 : 5)}
                 fill={cur ? INK : "#5E5648"}
                 opacity={cur ? g : 1}
               />
             </g>
           );
         })}
+
+        {/* 두 끝 이름표. 카메라가 붙어 있으니 점 옆에 바로 적는다 */}
+        {started &&
+          !inOutro &&
+          c.line.map((p, k) => {
+            const nm = c.ends[k];
+            if (!nm) return null;
+            const t = (p[0] - (cam.cx - camW / 2)) / camW;
+            const anchor = t < 0.24 ? "start" : t > 0.76 ? "end" : "middle";
+            const dx = (anchor === "start" ? 16 : anchor === "end" ? -16 : 0) * px;
+            // 선을 등지는 쪽에 붙인다. 그 자리가 막대나 화면 밖이면 반대로
+            const q = c.line[1 - k];
+            const sy = ((p[1] - (cam.cy - camH / 2)) / camH) * 1920;
+            let down = p[1] >= q[1];
+            const at = (d: boolean) => sy + (d ? 52 : -30);
+            if (at(down) > 1660 || at(down) < 760) down = !down;
+            return (
+              <text
+                key={"n" + nm}
+                x={p[0] + dx}
+                y={p[1] + (down ? 52 : -30) * px}
+                fontSize={40 * px}
+                fontWeight={900}
+                fill={INK}
+                textAnchor={anchor}
+                stroke={BG}
+                strokeWidth={7 * px}
+                paintOrder="stroke"
+                opacity={k === 0 ? on : run}
+              >
+                {nm}
+              </text>
+            );
+          })}
       </svg>
 
       {/* 위아래 글자 자리를 눌러 지도가 글씨를 안 갉아먹게 한다 */}
@@ -249,7 +319,7 @@ export const ShortsSpan: React.FC = () => {
       )}
 
       {/* ── 자막 ── */}
-      {started && !inOutro && (
+      {started && !inOutro && LINES[bi] !== "" && (
         <div
           style={{
             position: "absolute",
@@ -278,9 +348,12 @@ export const ShortsSpan: React.FC = () => {
       {inOutro && (
         <AbsoluteFill
           style={{
+            // 위쪽은 열어 둔다 — 카메라가 전국으로 빠지면서 다섯 선이
+            // 한 화면에 놓이는 것이 이 편의 마지막 그림이다
             background:
-              "linear-gradient(180deg, rgba(16,21,25,0.45) 0%," +
-              " rgba(16,21,25,0.88) 40%, rgba(16,21,25,0.97) 56%)",
+              "linear-gradient(180deg, rgba(16,21,25,0.10) 0%," +
+              " rgba(16,21,25,0.30) 34%, rgba(16,21,25,0.80) 50%," +
+              " rgba(16,21,25,0.96) 60%)",
             opacity: outroIn,
             justifyContent: "flex-end",
             padding: `0 ${SAFE_RIGHT}px ${OUTRO_PAD}px ${TEXT_X}px`,
