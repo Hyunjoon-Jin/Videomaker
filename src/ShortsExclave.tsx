@@ -10,7 +10,6 @@ import {
   CASES,
   COUNT,
   HOLD,
-  ISLANDS,
   ISLAND_COUNT,
   LINES,
   RANK,
@@ -48,19 +47,25 @@ const INK = "#EDE5D4";
 const DIM = "#8E8474";
 
 /**
- * 기준을 세우는 화면.
+ * 기준을 세우는 화면. 훅 다음, 첫 걸음 앞에 2.6초.
  *
- * 훅 다음, 첫 걸음 앞에 3.6초. 섬이 켜졌다 꺼지고 9곳만 남는다.
+ * 두 번 고쳤다.
  *
- * 처음엔 '뺀 것 · 1,049곳 · 섬'으로 시작했다. 무엇을 세는지도
- * 모르는 채 뺀 것부터 듣는 셈이라 무슨 말인지 알 수가 없었다.
- * 기준은 긍정으로 세운다 — '육지에 붙어 있는 땅 가운데 9곳'.
- * 섬이 빠졌다는 것은 점이 꺼지는 그림이 말한다.
+ * 처음엔 '뺀 것 · 1,049곳 · 섬'으로 열었다. 무엇을 세는지도 모르는
+ * 채 뺀 것부터 듣는 셈이라 무슨 말인지 알 수가 없었다.
+ *
+ * 다음엔 '육지에 붙어 있는 땅 가운데'로 뒤집고 섬 1,049곳을 점으로
+ * 켰다 껐다. 그런데 **대부도는 섬인데 이 편에 들어 있다.** '섬을
+ * 뺐다'는 말과 화면이 어긋난다. 새만금 방조제·평택당진항 매립지도
+ * 지도에서는 바다 위 띠로 보인다.
+ *
+ * 실제로 한 일은 섬이냐 아니냐를 가른 것이 아니다. **이웃 시·군과
+ * 경계가 맞닿았는지**를 봤다. 흑산도는 아무와도 안 닿아서 빠지고,
+ * 대부도는 시흥시와 닿아서 들어온다. 그대로 적는다. '섬'이라는
+ * 말은 화면에서 안 쓴다.
  */
-const GATE = Math.round(3.6 * FPS);
+const GATE = Math.round(2.6 * FPS);
 const GATE_END = HOOK + GATE;
-/** 섬이 꺼지기 시작하는 자리 */
-const GATE_TURN = GATE_END - Math.round(1.5 * FPS);
 
 const SLOTS: Array<{ t0: number; t1: number }> = [];
 {
@@ -118,17 +123,8 @@ export const ShortsExclave: React.FC = () => {
   const p = cs.pieces[0];
   const inGate = frame >= HOOK && frame < GATE_END;
   const started = frame >= GATE_END;
-  /** 기준 화면에서 섬이 켜졌다 꺼지는 정도 */
-  const isle = inGate
-    ? interpolate(
-        frame,
-        [HOOK + 4, HOOK + 18, GATE_TURN, GATE_TURN + 26],
-        [0, 1, 1, 0],
-        { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
-      )
-    : 0;
-  /** 섬이 꺼지면서 9곳이 밝아진다 */
-  const gateOn = interpolate(frame, [GATE_TURN, GATE_TURN + 26], [0, 1], {
+  /** 기준 화면에서 9곳이 밝아지는 정도 */
+  const gateOn = interpolate(frame, [HOOK + 4, HOOK + 22], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -227,19 +223,6 @@ export const ShortsExclave: React.FC = () => {
             strokeOpacity={0.9}
           />
         )}
-
-        {/* 안 센 섬 1,049곳 */}
-        {isle > 0 &&
-          ISLANDS.map(([x, y, a], i) => (
-            <circle
-              key={i}
-              cx={x}
-              cy={y}
-              r={Math.min(9, Math.max(2.2, Math.sqrt(a) * 1.6)) * px}
-              fill="#8FA6B5"
-              fillOpacity={isle * 0.75}
-            />
-          ))}
 
         {/*
           9곳의 자리.
@@ -347,18 +330,32 @@ export const ShortsExclave: React.FC = () => {
         }}
       />
 
-      {/*
-        ── 기준 ──
-
-        훅 다음, 첫 걸음 앞. 섬이 켜졌다 꺼지고 9곳만 남는다.
-        '무엇을 뺐나'가 아니라 '무엇을 세나'로 적는다.
-      */}
+      {/* ── 기준 ── */}
       {inGate && (
         <div
           style={{ position: "absolute", left: TEXT_X, right: SAFE_RIGHT, top: SAFE_TOP }}
         >
-          <div style={{ color: DIM, fontSize: 32, fontWeight: 700, letterSpacing: 1 }}>
-            육지에 붙어 있는 땅 가운데
+          <div
+            style={{
+              color: INK,
+              fontSize: 40,
+              fontWeight: 900,
+              lineHeight: 1.3,
+              whiteSpace: "nowrap",
+            }}
+          >
+            이웃 시·군과는 붙어 있는데
+          </div>
+          <div
+            style={{
+              color: INK,
+              fontSize: 40,
+              fontWeight: 900,
+              lineHeight: 1.3,
+              whiteSpace: "nowrap",
+            }}
+          >
+            자기 시·군과는 안 붙은 땅
           </div>
           <div
             style={{
@@ -366,15 +363,12 @@ export const ShortsExclave: React.FC = () => {
               fontSize: 118,
               fontWeight: 900,
               lineHeight: 1.02,
-              marginTop: 2,
+              marginTop: 10,
               fontVariantNumeric: "tabular-nums",
             }}
           >
             {COUNT}
             <span style={{ fontSize: 58, fontWeight: 800, marginLeft: 8 }}>곳</span>
-          </div>
-          <div style={{ color: INK, fontSize: 44, fontWeight: 900, marginTop: 10 }}>
-            자기 시·군과 안 이어진 곳
           </div>
         </div>
       )}
@@ -561,8 +555,10 @@ export const ShortsExclave: React.FC = () => {
               wordBreak: "keep-all",
             }}
           >
-            육지에 붙은 땅만 · 섬 {ISLAND_COUNT.toLocaleString("en-US")}곳 제외 ·
-            경계 자료 계산값
+            이웃 시·군과 경계가 맞닿은 땅만 셈 · 안 닿는{" "}
+            {ISLAND_COUNT.toLocaleString("en-US")}곳은 뺌
+            <br />
+            거리는 가장 가까운 두 점 사이 직선 · 넓이와 함께 경계 자료 계산값
           </div>
           <div
             style={{
