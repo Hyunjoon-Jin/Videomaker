@@ -3,7 +3,7 @@
 
 ## 야마
 
-경북 상주시 공성면. 동해까지 119.70km, 서해까지 119.71km. 10m 차이다.
+경북 상주시 공성면. 서해까지 119.73km, 동해까지 119.74km. 10m 차이다.
 그 지점이 최원점인 까닭이 곧 두 값이 같다는 것이다 — **자가 자료 안에
 있다.** 바깥에서 빌려 올 것이 없다.
 
@@ -18,6 +18,17 @@
 
 **북한 해안선도 넣는다.** 강원 북부에서는 북한 쪽 동해가 더 가깝다.
 바다는 나라를 가리지 않는다.
+
+## 담수호는 바다가 아니다
+
+원본 해안선에는 `source=PGS` 시절 선이 남아 시화호·낙동강 하굿둑
+안쪽 물가까지 그려져 있다. `scripts/prep-sea.py`가 열린 바다에 닿는
+점만 골라 `data/coast-open.json`에 남긴다. 이 파일이 있으면 그것을
+쓴다.
+
+금강 하구와 아산만은 걱정했던 것과 달리 멀쩡했다. 해안선이 금강어도
+(126.756,36.013)와 아산만방조제(126.907,36.913)에서 딱 멈춘다.
+통계청 육지 마스크로 물을 채워 봐도 같은 자리에서 멈췄다.
 
 ## 빠짐
 
@@ -43,6 +54,8 @@ from collections import defaultdict
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 COAST = os.path.join(HERE, "..", "data", "osm-coastline.json")
+# scripts/prep-sea.py가 걸러낸 것. 열린 바다에 닿는 점만 들어 있다.
+OPEN = os.path.join(HERE, "..", "data", "coast-open.json")
 MUNI = os.path.join(HERE, "..", "data", "skorea-municipalities.json")
 SUB = os.path.join(HERE, "..", "data", "skorea-submunicipalities.json")
 
@@ -76,9 +89,19 @@ def hav(a, b):
 
 
 def load_coast():
-    gj = json.load(open(COAST, encoding="utf-8"))
+    """열린 바다에 닿는 해안선을 쓴다.
+
+    거르지 않은 원본에는 금강호·시화호·낙동강 하굿둑 안쪽 같은
+    담수호 물가가 섞여 있다. 담수호는 바다가 아니다.
+    """
     grid = defaultdict(list)
     n = 0
+    if os.path.exists(OPEN):
+        for x, y in json.load(open(OPEN, encoding="utf-8")):
+            grid[(int(x / CELL), int(y / CELL))].append((x, y))
+            n += 1
+        return grid, n
+    gj = json.load(open(COAST, encoding="utf-8"))
     for w in gj["elements"]:
         for g in w.get("geometry", []):
             p = (g["lon"], g["lat"])
