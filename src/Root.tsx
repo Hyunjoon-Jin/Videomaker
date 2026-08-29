@@ -23,6 +23,7 @@ import { ShortsRain, RAIN_DURATION } from "./ShortsRain";
 import { ShortsTiger, TIGER_DURATION } from "./ShortsTiger";
 import { ShortsSpan, SPAN_DURATION } from "./ShortsSpan";
 import { ShortsInland, INLAND_DURATION } from "./ShortsInland";
+import { ShortsOdyssey, ODYSSEY_DURATION } from "./ShortsOdyssey";
 import { ChannelBanner, ChannelIcon, ChannelWatermark } from "./Channel";
 import { ThumbBongsu, ThumbGanchuk, ThumbKoreanWar, ThumbPower, ThumbRail, ThumbQuake, ThumbSillok, ThumbTimezone, ThumbTongsinsa, ThumbTyphoon, ThumbWar, ThumbDatum, ThumbExtremes, ThumbCanopus, ThumbSnow, ThumbWind } from "./Thumbs";
 import { FPS, SHORT_H, SHORT_W } from "./theme";
@@ -192,6 +193,15 @@ export const RemotionRoot: React.FC = () => (
       id="ShortsSnow"
       component={ShortsSnow}
       durationInFrames={SNOW_DURATION}
+      fps={FPS}
+      width={SHORT_W}
+      height={SHORT_H}
+    />
+    {/* 기획 23 — 오디세우스가 10년을 어떻게 보냈나 */}
+    <Composition
+      id="ShortsOdyssey"
+      component={ShortsOdyssey}
+      durationInFrames={ODYSSEY_DURATION}
       fps={FPS}
       width={SHORT_W}
       height={SHORT_H}

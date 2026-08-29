@@ -30,15 +30,27 @@
 원문(`tlg0012.tlg002.perseus-grc2`)에서 행 번호를 확인했다. 열세
 군데가 다 맞았다.
 
+## 지도
+
+지명 좌표는 OSM에서 하나씩 확인했다. 실재 지명 다섯(트로이·이스마로스·
+말레아곶·키테라·이타카)과, 널리 쓰이는 비정 여덟을 갈라 둔다.
+화면에서 채운 점과 빈 점으로 가른다.
+
 사용:  python3 scripts/prep-odyssey.py
-자료:  data/odyssey-grc.xml  (없으면 scripts/fetch-odyssey.py)
+자료:  data/odyssey-grc.xml   (없으면 scripts/fetch-odyssey.py)
+       data/ne-countries.geojson
+출력:  src/data/odyssey.json
 """
+import json
+import math
 import os
 import re
 import unicodedata
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 GRC = os.path.join(HERE, "..", "data", "odyssey-grc.xml")
+WORLD = os.path.join(HERE, "..", "data", "ne-countries.geojson")
+OUT = os.path.join(HERE, "..", "src", "data", "odyssey.json")
 
 YEAR = 365
 
@@ -71,6 +83,53 @@ FRAME = [
 
 RETURN_DAYS = 10 * YEAR
 
+# 지명. sure=True는 본문의 실재 지명, False는 널리 쓰이는 비정이다.
+# 좌표는 OSM에서 하나씩 확인했다.
+PLACES = {
+    "트로이":       (26.2380, 39.9574, True,  "히사를리크 유적"),
+    "이스마로스":   (25.5192, 40.9071, True,  "마로네이아"),
+    "말레아곶":     (23.1985, 36.4359, True,  ""),
+    "키테라":       (22.9980, 36.2580, True,  ""),
+    "로토파고이":   (10.8942, 33.7736, False, "제르바"),
+    "키클롭스":     (15.1614, 37.5638, False, "아치 트레차"),
+    "아이올리아":   (14.9391, 38.4813, False, "리파리"),
+    "라이스트리고네스": (12.5160, 38.0174, False, "트라파니"),
+    "아이아이에":   (13.0459, 41.2379, False, "몬테 치르체오"),
+    "스킬라":       (15.7190, 38.2507, False, "메시나 해협"),
+    "트리나키아":   (15.1541, 36.6889, False, "파세로곶"),
+    "오기기아":     (14.2599, 36.0468, False, "고초"),
+    "스케리아":     (19.9181, 39.6217, False, "케르키라"),
+    "이타카":       (20.6908, 38.4019, True,  ""),
+}
+
+# 걸음. (제목, 곁말, 날수, 권.행, 여기까지 오는 경로)
+BEATS = [
+    ("로토파고이", "말레아곶에서 밀려", 9, (9, 82),
+     ["트로이", "이스마로스", "말레아곶", "키테라", "로토파고이"]),
+    ("아이올리아", "아이올로스의 대접", 30, (10, 14),
+     ["키클롭스", "아이올리아"]),
+    # 이타카가 보이는 데까지 갔다가 잠든 사이 되밀린다. 갔다 오는 선이다.
+    ("이타카 코앞", "잠든 사이 되밀림", 9, (10, 28),
+     ["이타카", "아이올리아"]),
+    ("라이스트리고네스", "노를 저어", 6, (10, 80),
+     ["라이스트리고네스"]),
+    ("아이아이에", "키르케 곁에서", YEAR, (10, 467),
+     ["아이아이에"]),
+    ("트리나키아", "남풍이 멎지 않아", 30, (12, 325),
+     ["스킬라", "트리나키아"]),
+    ("오기기아", "칼립소 곁에서", 7 * YEAR, (7, 259),
+     ["오기기아"]),
+    ("스케리아", "뗏목으로", 17, (5, 278),
+     ["스케리아", "이타카"]),
+]
+
+BOXW = 1000.0
+TOL = 0.012          # 지중해는 넓어서 성기게 줄여도 된다
+MIN_RING = 3e-3
+# 북쪽을 41.9까지만 잘랐더니 이탈리아 장화가 잘려 티레니아해가
+# 육지처럼 읽혔다. 43.5까지 올려 반도를 다 담는다.
+CLIP = (9.5, 27.6, 30.5, 43.5)
+
 
 def load():
     text = open(GRC, encoding="utf-8").read()
@@ -95,6 +154,116 @@ def bare(s):
     s = "".join(c for c in unicodedata.normalize("NFD", s)
                 if unicodedata.category(c) != "Mn")
     return re.sub(r"[\u02bc\u2019\u1fbd']", "", s).lower()
+
+
+def ring_area(ring):
+    a = 0.0
+    n = len(ring)
+    for i in range(n):
+        x1, y1 = ring[i][0], ring[i][1]
+        x2, y2 = ring[(i + 1) % n][0], ring[(i + 1) % n][1]
+        a += x1 * y2 - x2 * y1
+    return abs(a) / 2
+
+
+def dp(pts, tol):
+    if len(pts) < 3:
+        return pts
+    ax, ay = pts[0]
+    bx, by = pts[-1]
+    dx, dy = bx - ax, by - ay
+    norm = math.hypot(dx, dy)
+    idx, far = 0, -1.0
+    for i in range(1, len(pts) - 1):
+        px, py = pts[i]
+        d = (math.hypot(px - ax, py - ay) if norm == 0
+             else abs(dy * px - dx * py + bx * ay - by * ax) / norm)
+        if d > far:
+            idx, far = i, d
+    if far > tol:
+        return dp(pts[: idx + 1], tol)[:-1] + dp(pts[idx:], tol)
+    return [pts[0], pts[-1]]
+
+
+def projector():
+    """지중해 상자를 가로 1000으로 맞춘다. 세로는 그만큼 따라온다."""
+    lon0, lon1, lat0, lat1 = CLIP
+    kx = math.cos(math.radians((lat0 + lat1) / 2))
+    scale = BOXW / ((lon1 - lon0) * kx)
+    h = (lat1 - lat0) * scale
+
+    def project(x, y):
+        return (round((x - lon0) * kx * scale, 1),
+                round(h - (y - lat0) * scale, 1))
+    return project, h
+
+
+def land_path(project):
+    gj = json.load(open(WORLD, encoding="utf-8"))
+    lon0, lon1, lat0, lat1 = CLIP
+    parts = []
+    for f in gj["features"]:
+        g = f["geometry"]
+        ps = (g["coordinates"] if g["type"] == "MultiPolygon"
+              else [g["coordinates"]])
+        for poly in ps:
+            ring = [(p[0], p[1]) for p in poly[0]]
+            xs = [p[0] for p in ring]
+            ys = [p[1] for p in ring]
+            if max(xs) < lon0 - 2 or min(xs) > lon1 + 2:
+                continue
+            if max(ys) < lat0 - 2 or min(ys) > lat1 + 2:
+                continue
+            if ring_area(ring) < MIN_RING:
+                continue
+            simple = dp(ring, TOL)
+            if len(simple) < 4:
+                continue
+            pts = [project(x, y) for x, y in simple]
+            parts.append("M" + "L".join(f"{x} {y}" for x, y in pts) + "Z")
+    return "".join(parts)
+
+
+def write_json(books):
+    project, h = projector()
+    stops = {}
+    for nm, (lon, lat, sure, note) in PLACES.items():
+        x, y = project(lon, lat)
+        stops[nm] = {"name": nm, "x": x, "y": y, "sure": sure, "note": note}
+
+    # 막대가 어디까지 차는지. 걸음마다 그 항목까지 다 채운다.
+    cite_at = {f"{b}.{ln}": i for i, (_, _, _, (b, ln), _) in enumerate(LEDGER)}
+
+    beats = []
+    for title, sub, days, (b, ln), route in BEATS:
+        beats.append({
+            "title": title, "sub": sub, "days": days,
+            "cite": f"{b}.{ln}",
+            # 막대는 이 항목까지 찬다. 마지막 걸음은 남은 것을 다 쓸어 담는다.
+            "upto": cite_at[f"{b}.{ln}"],
+            "route": [[stops[r]["x"], stops[r]["y"]] for r in route],
+            "at": [stops[route[-1]]["x"], stops[route[-1]]["y"]],
+            "stops": route,
+        })
+    beats[-1]["upto"] = len(LEDGER) - 1
+
+    # 막대. 본문 차례대로 쌓고, 끝에 날수가 없는 몫을 남긴다.
+    bar = [{"kind": k, "name": nm, "days": d, "cite": f"{b}.{ln}"}
+           for k, nm, d, (b, ln), _ in LEDGER]
+    told = sum(x["days"] for x in bar)
+
+    json.dump({
+        "viewBox": f"0 0 {int(BOXW)} {round(h)}",
+        "land": land_path(project),
+        "stops": list(stops.values()),
+        "beats": beats,
+        "bar": bar,
+        "toldDays": told,
+        "returnDays": RETURN_DAYS,
+        "sailDays": sum(x["days"] for x in bar if x["kind"] == "항해"),
+        "heldDays": sum(x["days"] for x in bar if x["kind"] == "붙잡힘"),
+    }, open(OUT, "w", encoding="utf-8"), ensure_ascii=False)
+    print("→", OUT)
 
 
 def main():
@@ -129,6 +298,7 @@ def main():
           f"= 10년의 {tot['항해'] / RETURN_DAYS * 100:.1f}%")
     if bad:
         print(f"\n행 번호 {bad}군데가 안 맞는다.")
+    write_json(books)
 
 
 if __name__ == "__main__":
