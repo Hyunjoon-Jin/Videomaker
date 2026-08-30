@@ -372,6 +372,11 @@ def sail(land, w, h, a, b):
                 nk = nj * w + ni
                 if land[nk] or nk in prev:
                     continue
+                # 대각선으로 뭍 모서리를 비집고 나가지 못하게 한다.
+                # 양옆이 다 뭍이면 실제로는 못 지나는 자리인데,
+                # 8방향 너비 우선은 그 틈으로 빠져나간다.
+                if di and dj and land[j * w + ni] and land[nj * w + i]:
+                    continue
                 prev[nk] = k
                 q.append(nk)
     if goal not in prev:
@@ -382,7 +387,67 @@ def sail(land, w, h, a, b):
         path.append(to_deg(k % w, k // w))
         k = prev[k]
     path.reverse()
-    return [a] + tighten(land, w, h, path) + [b]
+    return bend(land, w, h, [a] + tighten(land, w, h, path) + [b])
+
+
+def bezier(p0, p1, p2, p3, s, n):
+    """Catmull-Rom 한 마디를 3차 베지에로 펴서 n등분한다.
+
+    **구심(centripetal, alpha=0.5) 방식이다.** 등속으로 하면 점이
+    촘촘한 자리에서 접선이 과하게 길어져 고리가 생긴다. 곶을 돌아
+    나오는 대목마다 실이 엉킨 것처럼 말렸다.
+
+    s는 장력이다. 0이면 그냥 현이고 1이면 완전히 굽힌다.
+    """
+    def d(u, v):
+        return math.hypot(v[0] - u[0], v[1] - u[1]) ** 0.5
+
+    d1, d2, d3 = d(p0, p1), d(p1, p2), d(p2, p3)
+    # 곧은 현일 때의 제어점. 여기서 굽은 쪽으로 s만큼 당긴다
+    s1 = (p1[0] + (p2[0] - p1[0]) / 3, p1[1] + (p2[1] - p1[1]) / 3)
+    s2 = (p2[0] - (p2[0] - p1[0]) / 3, p2[1] - (p2[1] - p1[1]) / 3)
+    if d2 < 1e-9:
+        c1, c2 = s1, s2
+    else:
+        if d1 < 1e-9:
+            c1 = s1
+        else:
+            k = 3 * d1 * (d1 + d2)
+            c1 = tuple((d1 * d1 * p2[i] - d2 * d2 * p0[i]
+                        + (2 * d1 * d1 + 3 * d1 * d2 + d2 * d2) * p1[i]) / k
+                       for i in (0, 1))
+        if d3 < 1e-9:
+            c2 = s2
+        else:
+            k = 3 * d3 * (d3 + d2)
+            c2 = tuple((d3 * d3 * p1[i] - d2 * d2 * p3[i]
+                        + (2 * d3 * d3 + 3 * d3 * d2 + d2 * d2) * p2[i]) / k
+                       for i in (0, 1))
+    b1 = tuple(s1[i] + (c1[i] - s1[i]) * s for i in (0, 1))
+    b2 = tuple(s2[i] + (c2[i] - s2[i]) * s for i in (0, 1))
+
+    out = [p1]
+    for k in range(1, n + 1):
+        t = k / n
+        u = 1 - t
+        out.append(tuple(u ** 3 * p1[i] + 3 * u * u * t * b1[i]
+                         + 3 * u * t * t * b2[i] + t ** 3 * p2[i]
+                         for i in (0, 1)))
+    return out
+
+
+def thin(pts, eps=0.02):
+    """붙어 있는 점을 솎는다.
+
+    격자를 편 자리에는 0.02도짜리 마디가 서넛씩 몰려 있다. 그대로
+    굽히면 그 자리만 잔물결이 된다. 처음과 끝은 지명이라 남긴다.
+    """
+    out = [pts[0]]
+    for p in pts[1:-1]:
+        if math.hypot(p[0] - out[-1][0], p[1] - out[-1][1]) >= eps:
+            out.append(p)
+    out.append(pts[-1])
+    return out
 
 
 def dry(land, w, h, a, b):
@@ -394,6 +459,51 @@ def dry(land, w, h, a, b):
         if 0 <= i < w and 0 <= j < h and land[j * w + i]:
             return True
     return False
+
+
+def bend(land, w, h, pts, n=16, near=0.09):
+    """항로를 곡선으로 편다.
+
+    직선 마디를 이어 붙이면 배가 자로 그은 길을 간다. 점을 다
+    지나는 Catmull-Rom으로 굽힌다.
+
+    **굽히면 원래 선 바깥으로 부푼다.** 해안을 끼고 도는 자리에서
+    그냥 굽히면 배가 뭍으로 올라간다. 그래서 마디마다 굽힌 뒤
+    바다인지 다시 재고, 뭍을 지나면 그 마디만 장력을 반씩 줄인다.
+    끝까지 안 되면 그 마디는 현 그대로 둔다.
+
+    출발·도착 언저리(near)는 원래 뭍에 닿는 접안 구간이라 검사에서
+    뺀다.
+    """
+    pts = thin(pts)
+    if len(pts) < 3:
+        return list(pts)
+    q = [pts[0]] + list(pts) + [pts[-1]]
+    a, b = pts[0], pts[-1]
+
+    def far(p):
+        return (math.hypot(p[0] - a[0], p[1] - a[1]) > near
+                and math.hypot(p[0] - b[0], p[1] - b[1]) > near)
+
+    out = [pts[0]]
+    for i in range(len(pts) - 1):
+        p0, p1, p2, p3 = q[i], q[i + 1], q[i + 2], q[i + 3]
+        s = 1.0
+        while True:
+            seg = bezier(p0, p1, p2, p3, s, n)
+            bad = any(dry(land, w, h, seg[k], seg[k + 1])
+                      and far(seg[k]) and far(seg[k + 1])
+                      for k in range(len(seg) - 1))
+            if not bad or s < 0.03:
+                break
+            s /= 2
+        if bad:
+            # 섬을 칼날처럼 스치는 자리다. 조금만 부풀어도 얹힌다.
+            # 그런 마디는 굽히지 않고 원래 현을 그대로 쓴다.
+            seg = [(p1[0] + (p2[0] - p1[0]) * k / n,
+                    p1[1] + (p2[1] - p1[1]) * k / n) for k in range(n + 1)]
+        out += seg[1:]
+    return out
 
 
 def tighten(land, w, h, path):

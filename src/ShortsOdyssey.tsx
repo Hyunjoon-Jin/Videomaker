@@ -145,6 +145,34 @@ export const ShortsOdyssey: React.FC = () => {
     extrapolateRight: "clamp",
   });
 
+  /**
+   * i번째 줄이 지금 얼마나 보이는지.
+   *
+   * 걸음의 남은 시간을 글자 수로 나눠 한 줄씩 갈아 끼운다.
+   * 마지막 줄은 걸음이 끝날 때까지 남는다.
+   */
+  const lineOn = (i: number) => {
+    const n = c.what.length;
+    if (n === 1) return say;
+    const t0 = 4 + SAILF;
+    const span = SLOTS[bi].t1 - SLOTS[bi].t0 - t0;
+    const chars = c.what.map((l) => l.length);
+    const total = chars.reduce((a, b) => a + b, 0);
+    let head = t0;
+    for (let k = 0; k < i; k++) head += (span * chars[k]) / total;
+    const tail = head + (span * chars[i]) / total;
+    const inn = interpolate(age, [head - 6, head + 6], [0, 1], {
+      extrapolateLeft: "clamp",
+      extrapolateRight: "clamp",
+    });
+    if (i === n - 1) return Math.min(inn, say);
+    const outt = interpolate(age, [tail - 6, tail + 6], [1, 0], {
+      extrapolateLeft: "clamp",
+      extrapolateRight: "clamp",
+    });
+    return Math.min(inn, outt, say);
+  };
+
   const here = drawn(c.route, sail);
   const ship = here[here.length - 1];
   /** 마무리에서 마지막 이타카행이 그려지는 정도 */
@@ -339,7 +367,12 @@ export const ShortsOdyssey: React.FC = () => {
         </svg>
       )}
 
-      {/* ── 무슨 일이 있었는지 ── */}
+      {/* ── 무슨 일이 있었는지 ──
+           **한 번에 한 줄이다.** 두세 줄을 한꺼번에 띄우면 눈이
+           어디를 읽을지 고르느라 지도를 못 본다. 한 줄씩 갈아 끼우면
+           읽는 데가 늘 같은 자리다.
+           줄마다 머무는 시간은 글자 수로 나눈다 — 12자짜리와
+           23자짜리에 같은 시간을 주면 하나는 늘어지고 하나는 놓친다 */}
       {started && !inOutro && (
         <div
           style={{
@@ -347,23 +380,28 @@ export const ShortsOdyssey: React.FC = () => {
             left: TEXT_X,
             right: SAFE_RIGHT,
             bottom: BOTTOM_INSET + 76,
-            opacity: say,
           }}
         >
-          <div
-            style={{
-              color: INK,
-              // 한 줄이 23자까지 간다. 50이면 글자 자리를 넘는다
-              fontSize: 44,
-              fontWeight: 900,
-              lineHeight: 1.34,
-              textShadow: `0 0 40px ${BG}, 0 0 18px ${BG}`,
-            }}
-          >
-            {c.what.map((line) => (
-              <div key={line}>{line}</div>
-            ))}
-          </div>
+          {c.what.map((line, i) => (
+            <div
+              key={line}
+              style={{
+                position: i === 0 ? "relative" : "absolute",
+                left: 0,
+                right: 0,
+                bottom: 0,
+                color: INK,
+                // 한 줄이 23자까지 간다. 50이면 글자 자리를 넘는다
+                fontSize: 44,
+                fontWeight: 900,
+                lineHeight: 1.34,
+                textShadow: `0 0 40px ${BG}, 0 0 18px ${BG}`,
+                opacity: lineOn(i),
+              }}
+            >
+              {line}
+            </div>
+          ))}
         </div>
       )}
 
