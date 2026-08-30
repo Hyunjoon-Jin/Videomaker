@@ -54,12 +54,23 @@ const SAILF = Math.round(0.8 * FPS);
 const RIGHTISH = 560;
 
 /* ── 괴물 실루엣 ────────────────────────────────────
-   무엇과 맞닥뜨렸는지를 글자 말고 그림으로 보여준다. 계기판(남은 배)
-   맞은편, 오른쪽 위 한켠이다. 오른쪽 180px은 쇼츠 UI가 덮으니
-   885에서 끊고, 위는 안전선 352 아래로 내린다. */
-const FIG_X = 685;
-const FIG_Y = 364;
-const FIG_W = 200;
+   맞닥뜨린 것을 **그 자리 옆에** 놓는다. 한켠에 몰아 두면 무엇을
+   만났는지는 알아도 어디서 벌어진 일인지가 안 붙는다.
+
+   자리는 손으로 잡았다. 이름표와 안 겹치고, 뭍보다 바다 쪽으로
+   민다. 위 352px·아래·오른쪽 180px은 쇼츠 UI가 덮으니 그 안에
+   다 들어가야 한다(`src/safe.ts`). 왼쪽 위 모서리 화면 좌표다. */
+const FIG_W = 150;
+const FIG_AT: Record<string, [number, number]> = {
+  전사: [735, 645],     // 이스마로스 이름표 아래, 에게해
+  로토스: [225, 900],    // 제르바 위 바다
+  키클롭스: [420, 900],  // 시칠리아 동쪽 이오니아해
+  자루: [700, 900],      // 이타카 남쪽 바다
+  거인: [160, 880],      // 트라파니 아래 시칠리아 해협
+  돼지: [250, 645],      // 몬테 치르체오 아래 바다
+  스킬라: [520, 880],    // 메시나 남쪽 바다
+  소: [350, 1030],       // 몰타 남쪽 바다
+};
 
 /* ── 남은 배 ────────────────────────────────────────
    트로이를 떠날 때 12척. 라이스트리고네스에서 11척이 한꺼번에 죽고,
@@ -298,7 +309,7 @@ export const ShortsOdyssey: React.FC = () => {
       )}
 
       {/* ── 맞닥뜨린 것 ── */}
-      {started && !inOutro && (
+      {started && !inOutro && FIG_AT[c.fig] && (
         <svg
           viewBox="0 0 1080 1920"
           style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
@@ -306,20 +317,22 @@ export const ShortsOdyssey: React.FC = () => {
           <defs>
             {/* 지도가 밝은 자리에 걸려도 실루엣이 읽히게 뒤를 눌러 둔다 */}
             <radialGradient id="figveil">
-              <stop offset="0%" stopColor={BG} stopOpacity={0.92} />
-              <stop offset="62%" stopColor={BG} stopOpacity={0.72} />
+              <stop offset="0%" stopColor={BG} stopOpacity={0.85} />
+              <stop offset="58%" stopColor={BG} stopOpacity={0.6} />
               <stop offset="100%" stopColor={BG} stopOpacity={0} />
             </radialGradient>
           </defs>
           <g opacity={say}>
             <ellipse
-              cx={FIG_X + FIG_W / 2}
-              cy={FIG_Y + FIG_W / 2}
-              rx={FIG_W * 0.85}
-              ry={FIG_W * 0.8}
+              cx={FIG_AT[c.fig][0] + FIG_W / 2}
+              cy={FIG_AT[c.fig][1] + FIG_W / 2}
+              rx={FIG_W * 0.76}
+              ry={FIG_W * 0.72}
               fill="url(#figveil)"
             />
-            <g transform={`translate(${FIG_X} ${FIG_Y}) scale(${FIG_W / 100})`}>
+            <g
+              transform={`translate(${FIG_AT[c.fig][0]} ${FIG_AT[c.fig][1]}) scale(${FIG_W / 100})`}
+            >
               <OdysseyFigure name={c.fig} />
             </g>
           </g>
