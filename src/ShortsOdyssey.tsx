@@ -6,7 +6,7 @@ import {
   staticFile,
   useCurrentFrame,
 } from "remotion";
-import { BEATS, HOLD, LAND, MAP, SHIPS, STOPS } from "./data/odyssey";
+import { BEATS, HOLD, LAND, LAST, MAP, SHIPS, STOPS } from "./data/odyssey";
 import { FPS } from "./theme";
 import { Grain } from "./Grain";
 import { useFonts } from "./fonts";
@@ -124,6 +124,13 @@ export const ShortsOdyssey: React.FC = () => {
 
   const here = drawn(c.route, sail);
   const ship = here[here.length - 1];
+  /** 마무리에서 마지막 이타카행이 그려지는 정도 */
+  const lastG = interpolate(frame, [BODY_END, BODY_END + Math.round(1.6 * FPS)], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const lastPts = drawn(LAST, lastG);
+  const lastShip = lastPts[lastPts.length - 1];
   const ships = inOutro ? 0 : sail >= 1 ? c.ships : bi === 0 ? SHIPS : BEATS[bi - 1].ships;
 
   return (
@@ -189,13 +196,44 @@ export const ShortsOdyssey: React.FC = () => {
           );
         })}
 
-        {/* 배 */}
-        {started && !inOutro && (
-          <circle cx={mx(ship[0])} cy={my(ship[1])} r={13} fill={INK} />
+        {/* 마무리에서 마지막 이타카행을 이어 동선을 닫는다 */}
+        {inOutro && (
+          <>
+            <polyline
+              points={lastPts.map((p) => `${mx(p[0])},${my(p[1])}`).join(" ")}
+              fill="none"
+              stroke={HOT}
+              strokeWidth={5}
+              strokeLinejoin="round"
+            />
+            <text
+              x={mx(LAST[LAST.length - 1][0]) - 22}
+              y={my(LAST[LAST.length - 1][1]) + 13}
+              fontSize={40}
+              fontWeight={900}
+              fill={INK}
+              textAnchor="end"
+              stroke={BG}
+              strokeWidth={7}
+              paintOrder="stroke"
+              opacity={lastG}
+            >
+              이타카
+            </text>
+          </>
         )}
 
-        {/* 이번 자리 이름표. 배가 닿을 때 켠다.
-            오케아노스 끝은 지도 밖이라 서쪽 가장자리로 당겨 놓는다 */}
+        {/* 배 */}
+        {started && (
+          <circle
+            cx={mx(inOutro ? lastShip[0] : ship[0])}
+            cy={my(inOutro ? lastShip[1] : ship[1])}
+            r={13}
+            fill={INK}
+          />
+        )}
+
+        {/* 이번 자리 이름표. 배가 닿을 때 켠다 */}
         {started && !inOutro && (
           <text
             x={Math.min(1000, Math.max(60, mx(c.mark[0]))) +

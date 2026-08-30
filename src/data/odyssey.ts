@@ -43,14 +43,24 @@ export const BEATS = raw.beats as unknown as Beat[];
 export const SHIPS = raw.ships as number;
 
 /**
+ * 마지막 이타카행. 걸음으로 안 세운다.
+ *
+ * 파이아케스인들이 잠든 오디세우스를 배에 실어다 놓는 대목이라
+ * 「무슨 일이 있었는지」로 적을 것이 없다. 마무리에서 길만 이어
+ * 동선을 닫는다.
+ */
+export const LAST = raw.last as [number, number][];
+
+/**
  * 한 자리에 머무는 시간(초).
  *
- * 두 줄을 읽을 시간이다. 서른 자 남짓이라 배가 옮겨 가는 0.8초를 빼고도
- * 3초는 있어야 한다.
+ * 글자 수로 정한다. 걸음마다 사건 길이가 달라서 고정값으로 두면
+ * 긴 줄은 못 읽고 짧은 줄은 늘어진다. 초당 8자에, 배가 옮겨 가는
+ * 0.8초와 여유 0.1초를 더한다.
  */
-export const HOLD = [
-  3.8, 3.8, 4.2, 3.8, 4.0, 4.0, 4.2, 3.8, 4.2, 3.8, 4.2, 3.8,
-];
+export const HOLD = BEATS.map(
+  (b) => Math.round((b.what.join("").length / 8 + 0.9) * 10) / 10
+);
 
 /**
  * 지도 자리.
