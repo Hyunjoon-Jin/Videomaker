@@ -33,6 +33,8 @@ export interface Beat {
   stops: string[];
   /** 그 걸음이 끝났을 때 남은 배 */
   ships: number;
+  /** 한켠에 그릴 실루엣. `src/OdysseyFigure.tsx`의 이름이다 */
+  fig: string;
 }
 
 /**

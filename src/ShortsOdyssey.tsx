@@ -9,6 +9,7 @@ import {
 import { BEATS, HOLD, LAND, LAST, MAP, SHIPS, STOPS } from "./data/odyssey";
 import { FPS } from "./theme";
 import { Grain } from "./Grain";
+import { OdysseyFigure } from "./OdysseyFigure";
 import { useFonts } from "./fonts";
 import { BOTTOM_INSET, SAFE_RIGHT, SAFE_TOP, OUTRO_PAD, TEXT_X } from "./safe";
 
@@ -51,6 +52,14 @@ const SAILF = Math.round(0.8 * FPS);
 
 /** 이보다 오른쪽에 있는 이름표는 왼쪽으로 편다. 안 그러면 화면을 넘는다 */
 const RIGHTISH = 560;
+
+/* ── 괴물 실루엣 ────────────────────────────────────
+   무엇과 맞닥뜨렸는지를 글자 말고 그림으로 보여준다. 계기판(남은 배)
+   맞은편, 오른쪽 위 한켠이다. 오른쪽 180px은 쇼츠 UI가 덮으니
+   885에서 끊고, 위는 안전선 352 아래로 내린다. */
+const FIG_X = 685;
+const FIG_Y = 364;
+const FIG_W = 200;
 
 /* ── 남은 배 ────────────────────────────────────────
    트로이를 떠날 때 12척. 라이스트리고네스에서 11척이 한꺼번에 죽고,
@@ -285,6 +294,35 @@ export const ShortsOdyssey: React.FC = () => {
           >
             {ships}척
           </text>
+        </svg>
+      )}
+
+      {/* ── 맞닥뜨린 것 ── */}
+      {started && !inOutro && (
+        <svg
+          viewBox="0 0 1080 1920"
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
+        >
+          <defs>
+            {/* 지도가 밝은 자리에 걸려도 실루엣이 읽히게 뒤를 눌러 둔다 */}
+            <radialGradient id="figveil">
+              <stop offset="0%" stopColor={BG} stopOpacity={0.92} />
+              <stop offset="62%" stopColor={BG} stopOpacity={0.72} />
+              <stop offset="100%" stopColor={BG} stopOpacity={0} />
+            </radialGradient>
+          </defs>
+          <g opacity={say}>
+            <ellipse
+              cx={FIG_X + FIG_W / 2}
+              cy={FIG_Y + FIG_W / 2}
+              rx={FIG_W * 0.85}
+              ry={FIG_W * 0.8}
+              fill="url(#figveil)"
+            />
+            <g transform={`translate(${FIG_X} ${FIG_Y}) scale(${FIG_W / 100})`}>
+              <OdysseyFigure name={c.fig} />
+            </g>
+          </g>
         </svg>
       )}
 
