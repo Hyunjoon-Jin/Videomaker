@@ -254,14 +254,14 @@ export const ShortsOdyssey: React.FC = () => {
             position: "absolute",
             left: TEXT_X,
             right: SAFE_RIGHT,
-            bottom: BOTTOM_INSET + 84,
+            bottom: BOTTOM_INSET + 76,
             opacity: say,
           }}
         >
           <div
             style={{
               color: INK,
-              fontSize: 46,
+              fontSize: 50,
               fontWeight: 900,
               lineHeight: 1.32,
               textShadow: `0 0 40px ${BG}, 0 0 18px ${BG}`,
@@ -270,9 +270,6 @@ export const ShortsOdyssey: React.FC = () => {
             {c.what.map((line) => (
               <div key={line}>{line}</div>
             ))}
-          </div>
-          <div style={{ color: DIM, fontSize: 27, fontWeight: 800, marginTop: 8 }}>
-            {c.cite}
           </div>
         </div>
       )}
@@ -290,7 +287,7 @@ export const ShortsOdyssey: React.FC = () => {
             fontWeight: 700,
           }}
         >
-          빈 점은 널리 쓰이는 비정
+          빈 점은 추정 위치
         </div>
       )}
 
@@ -315,7 +312,7 @@ export const ShortsOdyssey: React.FC = () => {
               whiteSpace: "nowrap",
             }}
           >
-            호메로스 오디세이아 · 숫자는 권.행 · 빈 점은 널리 쓰이는 비정
+            호메로스 오디세이아 · 빈 점은 추정 위치
           </div>
           <div
             style={{
