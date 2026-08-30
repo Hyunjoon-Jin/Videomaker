@@ -17,12 +17,14 @@ export interface Stop {
 export interface Beat {
   /** 그 자리의 이름 */
   title: string;
-  /** 거기서 무슨 일이 있었는지 한 줄 */
-  what: string;
+  /** 거기서 누구를 만나 무슨 일이 있었는지. 두 줄 */
+  what: [string, string];
   /** 권.행 */
   cite: string;
   route: [number, number][];
   at: [number, number];
+  /** 이름표를 붙일 자리. 제목이 가리키는 곳이다 */
+  mark: [number, number];
   stops: string[];
   /** 그 걸음이 끝났을 때 남은 배 */
   ships: number;
@@ -43,11 +45,11 @@ export const SHIPS = raw.ships as number;
 /**
  * 한 자리에 머무는 시간(초).
  *
- * 사건 한 줄을 읽을 시간이다. 배가 옮겨 가는 데 0.9초를 쓰고 나머지가
- * 읽는 시간이라, 짧은 줄도 2.8초는 있어야 한다.
+ * 두 줄을 읽을 시간이다. 서른 자 남짓이라 배가 옮겨 가는 0.8초를 빼고도
+ * 3초는 있어야 한다.
  */
 export const HOLD = [
-  2.8, 3.0, 2.8, 2.8, 3.0, 3.2, 3.0, 2.8, 2.8, 2.8, 2.8, 3.6, 3.4,
+  3.8, 3.8, 4.2, 3.8, 4.0, 4.0, 4.2, 3.8, 4.2, 3.8, 4.2, 3.8,
 ];
 
 /**

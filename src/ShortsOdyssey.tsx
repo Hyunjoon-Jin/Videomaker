@@ -47,7 +47,7 @@ const mx = (x: number) => MAP.left + x * MSCALE;
 const my = (y: number) => MAP.top + y * MSCALE;
 
 /** 배가 다음 자리로 옮겨 가는 데 걸리는 시간 */
-const SAILF = Math.round(0.9 * FPS);
+const SAILF = Math.round(0.8 * FPS);
 
 /* ── 남은 배 ────────────────────────────────────────
    트로이를 떠날 때 12척. 라이스트리고네스에서 11척이 한꺼번에 죽고,
@@ -58,17 +58,38 @@ const SHIP_W = 26;
 const SHIP_H = 34;
 const SHIP_GAP = 8;
 
-/** 한 걸음의 길을 진행도만큼 그린다 */
+/**
+ * 한 걸음의 길을 진행도만큼 그린다.
+ *
+ * 점 번호가 아니라 **길이로** 나눈다. 뱃길은 마디 길이가 제각각이라
+ * 번호로 나누면 배가 좁은 해협에서 갑자기 빨라진다.
+ */
 function drawn(route: [number, number][], g: number): [number, number][] {
   const n = route.length;
   if (n < 2) return route;
-  const t = g * (n - 1);
-  const k = Math.min(n - 2, Math.floor(t));
-  const kt = t - k;
-  const pts = route.slice(0, k + 1);
-  const a = route[k];
-  const z = route[k + 1];
-  return [...pts, [a[0] + (z[0] - a[0]) * kt, a[1] + (z[1] - a[1]) * kt]];
+  const seg: number[] = [];
+  let total = 0;
+  for (let i = 0; i < n - 1; i++) {
+    const d = Math.hypot(route[i + 1][0] - route[i][0], route[i + 1][1] - route[i][1]);
+    seg.push(d);
+    total += d;
+  }
+  let want = g * total;
+  const out: [number, number][] = [route[0]];
+  for (let i = 0; i < n - 1; i++) {
+    if (want >= seg[i]) {
+      want -= seg[i];
+      out.push(route[i + 1]);
+      continue;
+    }
+    const t = seg[i] === 0 ? 0 : want / seg[i];
+    out.push([
+      route[i][0] + (route[i + 1][0] - route[i][0]) * t,
+      route[i][1] + (route[i + 1][1] - route[i][1]) * t,
+    ]);
+    break;
+  }
+  return out;
 }
 
 export const ShortsOdyssey: React.FC = () => {
@@ -173,15 +194,17 @@ export const ShortsOdyssey: React.FC = () => {
           <circle cx={mx(ship[0])} cy={my(ship[1])} r={13} fill={INK} />
         )}
 
-        {/* 이번 자리 이름표. 배가 닿을 때 켠다 */}
+        {/* 이번 자리 이름표. 배가 닿을 때 켠다.
+            오케아노스 끝은 지도 밖이라 서쪽 가장자리로 당겨 놓는다 */}
         {started && !inOutro && (
           <text
-            x={mx(c.at[0]) + (c.at[0] > 620 ? -22 : 22)}
-            y={my(c.at[1]) + 13}
+            x={Math.min(1000, Math.max(60, mx(c.mark[0]))) +
+               (c.mark[0] > 620 ? -22 : 22)}
+            y={my(c.mark[1]) + 13}
             fontSize={40}
             fontWeight={900}
             fill={INK}
-            textAnchor={c.at[0] > 620 ? "end" : "start"}
+            textAnchor={c.mark[0] > 620 ? "end" : "start"}
             stroke={BG}
             strokeWidth={7}
             paintOrder="stroke"
@@ -238,13 +261,15 @@ export const ShortsOdyssey: React.FC = () => {
           <div
             style={{
               color: INK,
-              fontSize: 52,
+              fontSize: 46,
               fontWeight: 900,
-              lineHeight: 1.26,
+              lineHeight: 1.32,
               textShadow: `0 0 40px ${BG}, 0 0 18px ${BG}`,
             }}
           >
-            {c.what}
+            {c.what.map((line) => (
+              <div key={line}>{line}</div>
+            ))}
           </div>
           <div style={{ color: DIM, fontSize: 27, fontWeight: 800, marginTop: 8 }}>
             {c.cite}

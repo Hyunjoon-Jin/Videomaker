@@ -46,6 +46,7 @@ import math
 import os
 import re
 import unicodedata
+from collections import deque
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 GRC = os.path.join(HERE, "..", "data", "odyssey-grc.xml")
@@ -99,7 +100,7 @@ PLACES = {
     "스킬라":       (15.7190, 38.2507, False, "메시나 해협"),
     # 오케아노스 끝. 본문이 「해가 안 비치는 곳」이라 자리가 없다.
     # 지도 서쪽 밖으로 배가 나갔다 오는 것으로 그린다. 점은 안 찍는다.
-    "저승":         (7.2000, 36.5000, False, "오케아노스 끝 · 지도 밖"),
+    "저승":         (7.9000, 37.4000, False, "오케아노스 끝 · 지도 밖"),
     "트리나키아":   (15.1541, 36.6889, False, "파세로곶"),
     "오기기아":     (14.2599, 36.0468, False, "고초"),
     "스케리아":     (19.9181, 39.6217, False, "케르키라"),
@@ -109,41 +110,48 @@ PLACES = {
 # 걸음. 이 편은 동선이 주인공이다. 한 자리에 하나씩,
 # **거기서 무슨 일이 있었는지**를 한 줄로 적는다.
 #
-# (지명, 사건 한 줄, 권.행, 여기까지 오는 경로, 남은 배)
+# (지명, 사건 두 줄, 권.행, 거쳐 가는 자리, 남은 배)
+#   경로는 자리와 자리 사이를 **바다 격자로 길찾기** 해서 잇는다.
+#   직선으로 이으면 배가 시칠리아를 뚫고 지나간다.
 #   남은 배 — 트로이를 떠날 때 12척(9.159). 라이스트리고네스에서
 #   11척이 한꺼번에 죽고(10.132), 트리나키아 뒤 벼락에 마지막
 #   한 척이 부서진다(12.417).
 BEATS = [
-    ("이스마로스", "성을 털다 반격, 배마다 6명", (9, 60),
-     ["트로이", "이스마로스"], 12),
-    ("로토파고이", "연꽃을 먹고 잊은 고향 · 9일 표류", (9, 82),
-     ["말레아곶", "키테라", "로토파고이"], 12),
-    ("키클롭스", "외눈 거인의 동굴에서 6명", (9, 289),
-     ["키클롭스"], 12),
-    ("아이올리아", "바람을 담아 준 자루 · 한 달", (10, 14),
-     ["아이올리아"], 12),
-    ("이타카 코앞", "부하가 연 자루, 되밀림 · 9일", (10, 28),
-     ["이타카", "아이올리아"], 12),
-    ("라이스트리고네스", "거인이 던진 바위에 배 11척", (10, 132),
-     ["라이스트리고네스"], 1),
-    ("아이아이에", "돼지가 된 부하들 · 1년", (10, 239),
-     ["아이아이에"], 1),
-    ("오케아노스 끝", "해가 안 비치는 곳에서 물은 뱃길", (11, 14),
-     ["저승"], 1),
-    ("세이렌", "돛대에 묶인 채 지나간 노래", (12, 178),
-     ["아이아이에", "세이렌"], 1),
-    ("스킬라", "여섯 머리에 채인 6명", (12, 246),
-     ["스킬라"], 1),
-    ("트리나키아", "태양신의 소를 잡아먹다 · 한 달", (12, 325),
-     ["트리나키아"], 1),
-    ("오기기아", "벼락에 마지막 배 · 칼립소 곁 7년", (7, 259),
-     ["오기기아"], 0),
-    ("이타카", "20년 만의 고향", (16, 206),
-     ["스케리아", "이타카"], 0),
+    ("이스마로스", ["키코네스의 성을 털다가", "이웃이 몰려와 배마다 6명"],
+     (9, 60), ["트로이", "이스마로스"], 12),
+    ("로토파고이", ["로토스 열매를 먹은 부하들", "돌아가기를 잊고 울며 버팀"],
+     (9, 94), ["말레아곶", "키테라", "로토파고이"], 12),
+    ("키클롭스", ["폴리페모스의 동굴에 갇혀 6명", "눈을 찌르고 양 밑에 매달려 탈출"],
+     (9, 383), ["키클롭스"], 12),
+    ("아이올리아", ["바람의 왕 아이올로스", "서풍만 남기고 묶은 소가죽 자루"],
+     (10, 19), ["아이올리아"], 12),
+    ("이타카 코앞", ["고향이 보이는데 잠든 사이", "부하들이 자루를 열어 되밀림"],
+     (10, 47), ["이타카", "아이올리아"], 12),
+    ("라이스트리고네스", ["식인 거인들이 던진 바위에", "항구 안의 배 11척이 부서짐"],
+     (10, 132), ["라이스트리고네스"], 1),
+    ("아이아이에", ["마녀 키르케가 부하들을 돼지로", "헤르메스의 몰뤼로 풀고 1년"],
+     (10, 305), ["아이아이에"], 1),
+    ("오케아노스 끝", ["해가 안 비치는 킴메르인의 땅", "죽은 예언자 테이레시아스에게"],
+     (11, 14), ["저승"], 1),
+    ("세이렌 · 스킬라", ["부하 귀를 밀랍으로 막고 돛대에 묶여", "여섯 머리 스킬라에게 6명"],
+     (12, 246), ["아이아이에", "세이렌", "스킬라"], 1),
+    ("트리나키아", ["태양신 헬리오스의 소를 잡아먹고", "한 달 남풍에 발이 묶임"],
+     (12, 325), ["트리나키아"], 1),
+    ("오기기아", ["제우스의 벼락에 마지막 배", "혼자 떠밀려 칼립소 곁에서 7년"],
+     (7, 259), ["오기기아"], 0),
+    ("이타카", ["파이아케스인들의 배에 실려", "20년 만에 밟은 고향 땅"],
+     (16, 206), ["스케리아", "이타카"], 0),
 ]
 
 # 떠날 때 배 12척 (9.159)
 SHIPS = 12
+
+# 뱃길 찾기. 배는 직선으로 못 간다 — 육지를 뚫고 지나가는 선은 거짓이다.
+# 지중해를 0.04도 격자로 깔고 바다 칸만 밟아 최단 경로를 찾는다.
+# 0.04도(4.4km)로 깔았더니 메시나 해협이 막혀서, 스킬라와 카립디스
+# 사이를 지나야 할 배가 시칠리아를 빙 돌아갔다. 0.02도면 열린다.
+SEA_STEP = 0.02
+SEA_BOX = (7.0, 28.6, 30.0, 44.6)
 
 BOXW = 1000.0
 TOL = 0.012          # 지중해는 넓어서 성기게 줄여도 된다
@@ -248,6 +256,135 @@ def land_path(project):
     return parts
 
 
+def sea_mask():
+    """지중해를 격자로 깔고 육지를 칠한다. 남는 칸이 바다다."""
+    lon0, lon1, lat0, lat1 = SEA_BOX
+    w = int((lon1 - lon0) / SEA_STEP) + 1
+    h = int((lat1 - lat0) / SEA_STEP) + 1
+    land = bytearray(w * h)
+    gj = json.load(open(WORLD, encoding="utf-8"))
+    for f in gj["features"]:
+        g = f["geometry"]
+        ps = (g["coordinates"] if g["type"] == "MultiPolygon"
+              else [g["coordinates"]])
+        for poly in ps:
+            ring = poly[0]
+            ys = [p[1] for p in ring]
+            if max(ys) < lat0 or min(ys) > lat1:
+                continue
+            xs = [p[0] for p in ring]
+            if max(xs) < lon0 or min(xs) > lon1:
+                continue
+            j0 = max(0, int((min(ys) - lat0) / SEA_STEP))
+            j1 = min(h - 1, int((max(ys) - lat0) / SEA_STEP))
+            n = len(ring)
+            for j in range(j0, j1 + 1):
+                y = lat0 + (j + 0.5) * SEA_STEP
+                xx = []
+                for a in range(n):
+                    xa, ya = ring[a][0], ring[a][1]
+                    xb, yb = ring[(a + 1) % n][0], ring[(a + 1) % n][1]
+                    if (ya > y) != (yb > y):
+                        xx.append((xb - xa) * (y - ya) / (yb - ya) + xa)
+                xx.sort()
+                base = j * w
+                for k in range(0, len(xx) - 1, 2):
+                    i0 = max(0, int((xx[k] - lon0) / SEA_STEP))
+                    i1 = min(w - 1, int((xx[k + 1] - lon0) / SEA_STEP))
+                    for i in range(i0, i1 + 1):
+                        land[base + i] = 1
+    return land, w, h
+
+
+def to_cell(lon, lat):
+    lon0, _, lat0, _ = SEA_BOX
+    return int((lon - lon0) / SEA_STEP), int((lat - lat0) / SEA_STEP)
+
+
+def to_deg(i, j):
+    lon0, _, lat0, _ = SEA_BOX
+    return lon0 + (i + 0.5) * SEA_STEP, lat0 + (j + 0.5) * SEA_STEP
+
+
+def snap(land, w, h, lon, lat):
+    """뭍에 있는 지명을 가장 가까운 바다 칸으로 옮긴다."""
+    ci, cj = to_cell(lon, lat)
+    for r in range(0, 40):
+        for i in range(max(0, ci - r), min(w, ci + r + 1)):
+            for j in range(max(0, cj - r), min(h, cj + r + 1)):
+                if max(abs(i - ci), abs(j - cj)) != r:
+                    continue
+                if not land[j * w + i]:
+                    return i, j
+    return ci, cj
+
+
+def sail(land, w, h, a, b):
+    """바다 칸만 밟아 a에서 b까지. 너비 우선이라 칸 수로 최단이다."""
+    si, sj = snap(land, w, h, *a)
+    ti, tj = snap(land, w, h, *b)
+    start = sj * w + si
+    goal = tj * w + ti
+    if start == goal:
+        return [a, b]
+    prev = {start: -1}
+    q = deque([start])
+    while q:
+        k = q.popleft()
+        if k == goal:
+            break
+        i, j = k % w, k // w
+        for di in (-1, 0, 1):
+            for dj in (-1, 0, 1):
+                if di == 0 and dj == 0:
+                    continue
+                ni, nj = i + di, j + dj
+                if not (0 <= ni < w and 0 <= nj < h):
+                    continue
+                nk = nj * w + ni
+                if land[nk] or nk in prev:
+                    continue
+                prev[nk] = k
+                q.append(nk)
+    if goal not in prev:
+        return [a, b]           # 못 찾으면 직선으로 둔다
+    path = []
+    k = goal
+    while k != -1:
+        path.append(to_deg(k % w, k // w))
+        k = prev[k]
+    path.reverse()
+    return [a] + tighten(land, w, h, path) + [b]
+
+
+def dry(land, w, h, a, b):
+    """두 점을 이은 선분이 뭍을 지나는지."""
+    n = max(2, int(max(abs(b[0] - a[0]), abs(b[1] - a[1])) / (SEA_STEP / 2)))
+    for k in range(1, n):
+        t = k / n
+        i, j = to_cell(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t)
+        if 0 <= i < w and 0 <= j < h and land[j * w + i]:
+            return True
+    return False
+
+
+def tighten(land, w, h, path):
+    """격자 자국을 편다. 단, **펴서 뭍을 지나면 안 편다.**
+
+    보통 Douglas-Peucker로 줄였더니 시칠리아를 뚫고 지나가는 선이
+    서른한 군데 나왔다. 거리로 재지 않고 바다인지로 재야 한다.
+    """
+    out = [path[0]]
+    i = 0
+    while i < len(path) - 1:
+        j = len(path) - 1
+        while j > i + 1 and dry(land, w, h, path[i], path[j]):
+            j -= 1
+        out.append(path[j])
+        i = j
+    return out
+
+
 def write_json(books):
     project, h = projector()
     stops = {}
@@ -255,13 +392,26 @@ def write_json(books):
         x, y = project(lon, lat)
         stops[nm] = {"name": nm, "x": x, "y": y, "sure": sure, "note": note}
 
+    land, gw, gh = sea_mask()
+    print(f"바다 격자 {gw}×{gh} · 육지 {sum(land):,}칸", flush=True)
+
     beats = []
+    at = "트로이"
     for title, what, (b, ln), route, ships in BEATS:
+        pts = []
+        for nm in route:
+            leg = sail(land, gw, gh, PLACES[at][:2], PLACES[nm][:2])
+            pts += leg if not pts else leg[1:]
+            at = nm
+        # 이름표는 제목이 가리키는 자리에 붙인다. 「이타카 코앞」은
+        # 배가 아이올리아로 되밀려 끝나지만 이름표는 이타카에 있어야 한다.
+        mark = next((r for r in route if r in title), route[-1])
         beats.append({
             "title": title, "what": what,
             "cite": f"{b}.{ln}",
-            "route": [[stops[r]["x"], stops[r]["y"]] for r in route],
+            "route": [list(project(x, y)) for x, y in pts],
             "at": [stops[route[-1]]["x"], stops[route[-1]]["y"]],
+            "mark": [stops[mark]["x"], stops[mark]["y"]],
             "stops": route,
             "ships": ships,
         })
