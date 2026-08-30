@@ -17,13 +17,18 @@ export interface Stop {
 export interface Beat {
   /** 그 자리의 이름 */
   title: string;
-  /** 거기서 누구를 만나 무슨 일이 있었는지. 두 줄 */
-  what: [string, string];
+  /**
+   * 거기서 누구를 만나 무슨 일이 있었는지.
+   *
+   * 두세 줄이다. 조사를 다 붙이고 서술어로 닫는다 —
+   * 「배마다 6명」이 아니라 「각 선박마다 6명의 선원을 잃다」.
+   */
+  what: string[];
   /** 권.행 */
   cite: string;
   route: [number, number][];
   at: [number, number];
-  /** 이름표를 붙일 자리. 제목이 가리키는 곳이다 */
+  /** 이름표를 붙일 자리. 배가 멈춘 자리와 다를 수 있다 */
   mark: [number, number];
   stops: string[];
   /** 그 걸음이 끝났을 때 남은 배 */

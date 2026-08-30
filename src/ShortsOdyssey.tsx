@@ -12,7 +12,7 @@ import { Grain } from "./Grain";
 import { useFonts } from "./fonts";
 import { BOTTOM_INSET, SAFE_RIGHT, SAFE_TOP, OUTRO_PAD, TEXT_X } from "./safe";
 
-const HOOK = Math.round(2.2 * FPS);
+const HOOK = Math.round(2.8 * FPS);
 
 /** 바탕이 바다다 */
 const BG = "#0E1418";
@@ -34,7 +34,7 @@ const SLOTS: Array<{ t0: number; t1: number }> = [];
   });
 }
 const BODY_END = SLOTS[SLOTS.length - 1].t1;
-const OUTRO = Math.round(6.0 * FPS);
+const OUTRO = Math.round(5.0 * FPS);
 export const ODYSSEY_DURATION = BODY_END + OUTRO;
 
 function beatAt(frame: number): number {
@@ -48,6 +48,9 @@ const my = (y: number) => MAP.top + y * MSCALE;
 
 /** 배가 다음 자리로 옮겨 가는 데 걸리는 시간 */
 const SAILF = Math.round(0.8 * FPS);
+
+/** 이보다 오른쪽에 있는 이름표는 왼쪽으로 편다. 안 그러면 화면을 넘는다 */
+const RIGHTISH = 560;
 
 /* ── 남은 배 ────────────────────────────────────────
    트로이를 떠날 때 12척. 라이스트리고네스에서 11척이 한꺼번에 죽고,
@@ -237,12 +240,12 @@ export const ShortsOdyssey: React.FC = () => {
         {started && !inOutro && (
           <text
             x={Math.min(1000, Math.max(60, mx(c.mark[0]))) +
-               (c.mark[0] > 620 ? -22 : 22)}
+               (c.mark[0] > RIGHTISH ? -22 : 22)}
             y={my(c.mark[1]) + 13}
             fontSize={40}
             fontWeight={900}
             fill={INK}
-            textAnchor={c.mark[0] > 620 ? "end" : "start"}
+            textAnchor={c.mark[0] > RIGHTISH ? "end" : "start"}
             stroke={BG}
             strokeWidth={7}
             paintOrder="stroke"
@@ -299,9 +302,10 @@ export const ShortsOdyssey: React.FC = () => {
           <div
             style={{
               color: INK,
-              fontSize: 50,
+              // 한 줄이 23자까지 간다. 50이면 글자 자리를 넘는다
+              fontSize: 44,
               fontWeight: 900,
-              lineHeight: 1.32,
+              lineHeight: 1.34,
               textShadow: `0 0 40px ${BG}, 0 0 18px ${BG}`,
             }}
           >
@@ -367,8 +371,8 @@ export const ShortsOdyssey: React.FC = () => {
               ),
             }}
           >
-            <div>배 12척으로 떠나</div>
-            <div>혼자 돌아오기까지 20년</div>
+            <div>12척으로 떠나</div>
+            <div>20년 만에 혼자 돌아오다</div>
           </div>
         </AbsoluteFill>
       )}
@@ -411,8 +415,8 @@ export const ShortsOdyssey: React.FC = () => {
                 textShadow: `0 0 24px ${BG}`,
               }}
             >
-              <div>트로이를 떠난 배</div>
-              <div>20년 뒤 돌아온 사람 1명</div>
+              <div>트로이 전쟁을 끝내고</div>
+              <div>이타카로 돌아가는 길</div>
             </div>
           </div>
         </>
