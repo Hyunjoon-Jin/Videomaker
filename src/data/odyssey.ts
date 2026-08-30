@@ -1,5 +1,5 @@
 /**
- * 오디세우스가 10년을 어떻게 보냈나 (scripts/prep-odyssey.py 산출물).
+ * 오디세우스의 동선 (scripts/prep-odyssey.py 산출물).
  *
  * 좌표는 지중해 상자를 가로 1000으로 맞춘 투영이다.
  */
@@ -15,52 +15,45 @@ export interface Stop {
 }
 
 export interface Beat {
+  /** 그 자리의 이름 */
   title: string;
-  sub: string;
-  days: number;
+  /** 거기서 무슨 일이 있었는지 한 줄 */
+  what: string;
   /** 권.행 */
   cite: string;
-  /** 막대가 이 항목까지 찬다 */
-  upto: number;
   route: [number, number][];
   at: [number, number];
   stops: string[];
+  /** 그 걸음이 끝났을 때 남은 배 */
+  ships: number;
 }
-
-export interface Slice {
-  /** 항해 · 붙잡힘 · 뭍 */
-  kind: string;
-  name: string;
-  days: number;
-  cite: string;
-}
-
-export const LAND = raw.land as string;
-export const STOPS = raw.stops as unknown as Stop[];
-export const BEATS = raw.beats as unknown as Beat[];
-export const BAR = raw.bar as unknown as Slice[];
-
-/** 본문에 날수가 적힌 것의 합 */
-export const TOLD = raw.toldDays as number;
-/** 귀환 10년 */
-export const TOTAL = raw.returnDays as number;
-export const SAIL = raw.sailDays as number;
-export const HELD = raw.heldDays as number;
-
-/** 막대의 누적 */
-export const CUM: number[] = BAR.reduce<number[]>((a, s) => {
-  a.push((a.length ? a[a.length - 1] : 0) + s.days);
-  return a;
-}, []);
-
-/** 한 자리에 머무는 시간(초) */
-export const HOLD = [4.4, 4.2, 4.6, 4.0, 5.0, 4.2, 6.4, 5.2];
 
 /**
- * 자리.
+ * 육지. 나라마다 따로 그린다.
  *
- * 이 편은 막대가 주인공이다. 그래서 눈이 위에서 아래로 숫자 → 막대 →
- * 지도로 내려가게 놓는다. 지도를 위에 두면 막대가 곁다리로 보인다.
+ * 한 path로 이었더니 nonzero 규칙 때문에 감기 방향이 다른 나라끼리
+ * 서로 지워서, 이탈리아와 그리스가 통째로 바다색이 됐다.
  */
-export const BAR_Y = 624;
-export const MAP = { top: 790, scale: 0.74, left: 170 };
+export const LAND = raw.land as string[];
+export const STOPS = raw.stops as unknown as Stop[];
+export const BEATS = raw.beats as unknown as Beat[];
+/** 트로이를 떠날 때 배 12척 (9.159) */
+export const SHIPS = raw.ships as number;
+
+/**
+ * 한 자리에 머무는 시간(초).
+ *
+ * 사건 한 줄을 읽을 시간이다. 배가 옮겨 가는 데 0.9초를 쓰고 나머지가
+ * 읽는 시간이라, 짧은 줄도 2.8초는 있어야 한다.
+ */
+export const HOLD = [
+  2.8, 3.0, 2.8, 2.8, 3.0, 3.2, 3.0, 2.8, 2.8, 2.8, 2.8, 3.6, 3.4,
+];
+
+/**
+ * 지도 자리.
+ *
+ * 이 편은 **동선이 주인공이다.** 지도를 화면 폭까지 키우고 글자는
+ * 위아래 띠로 민다.
+ */
+export const MAP = { top: 420, scale: 1.023, left: 28 };
