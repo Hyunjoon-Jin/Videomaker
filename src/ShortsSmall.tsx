@@ -171,19 +171,14 @@ export const ShortsSmall: React.FC = () => {
         style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
       >
         {/* 전국. 성기게 줄인 지도라 바탕으로만 쓴다.
-
-            **다른 지자체 경계는 안 그린다.** 이 편에서 봐야 할 선은
-            지금 그 시·군·구의 테두리 하나뿐이다. 옆 동네 경계까지
-            그어 두면 어느 선이 3km²인지 알 수 없다.
-
-            테두리를 아예 빼면 폴리곤 사이가 실오라기처럼 벌어진다.
-            같은 색으로 얇게 둘러 이음매를 메운다 */}
+            옆 동네 경계는 그대로 둔다 — 그 자리가 어떤 동네들
+            사이에 끼어 있는지가 같이 보여야 한다 */}
         {REGIONS.map((r) => (
           <path
             key={r.code}
             d={r.d}
             fill={LAND}
-            stroke={LAND}
+            stroke={BG}
             strokeWidth={px}
           />
         ))}
@@ -227,28 +222,10 @@ export const ShortsSmall: React.FC = () => {
             />
           ))}
 
-        {/* 지나온 순위는 윤곽으로 이번 자리에 겹쳐 남는다.
-            나란히 놓아서는 줄어드는 게 안 보인다 — 인천 동구(7.2)가
-            부산 동구(10.1)보다 가로로 길어서 3위가 5위보다 커 보인다.
-            한자리에 겹쳐야 안쪽으로 오므라드는 게 눈에 박힌다 */}
-        {!inOutro &&
-          STEPS.slice(0, bi).map((u) => (
-            <g
-              key={"g" + u.name + u.sido}
-              transform={`translate(${c.cx - u.cx} ${c.cy - u.cy})`}
-              opacity={0.32 * settle}
-            >
-              {u.d.map((d, j) => (
-                <path
-                  key={j}
-                  d={d}
-                  fill="none"
-                  stroke={HOT}
-                  strokeWidth={px * 2}
-                />
-              ))}
-            </g>
-          ))}
+        {/* 지나온 순위를 윤곽으로 겹쳐 남겨 봤다가 뺐다.
+            줄어드는 것은 잘 보였지만 넷이 쌓이니 지도 위가
+            엉킨 실타래가 됐다. 크기는 배율이 고정이라는 것과
+            1km² 격자가 이미 말한다 */}
 
         {/* 이번 자리 — 또는 마무리에서는 다섯 다 */}
         {started &&
