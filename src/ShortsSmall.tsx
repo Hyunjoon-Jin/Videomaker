@@ -170,13 +170,20 @@ export const ShortsSmall: React.FC = () => {
         viewBox={viewBox}
         style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
       >
-        {/* 전국. 성기게 줄인 지도라 바탕으로만 쓴다 */}
+        {/* 전국. 성기게 줄인 지도라 바탕으로만 쓴다.
+
+            **다른 지자체 경계는 안 그린다.** 이 편에서 봐야 할 선은
+            지금 그 시·군·구의 테두리 하나뿐이다. 옆 동네 경계까지
+            그어 두면 어느 선이 3km²인지 알 수 없다.
+
+            테두리를 아예 빼면 폴리곤 사이가 실오라기처럼 벌어진다.
+            같은 색으로 얇게 둘러 이음매를 메운다 */}
         {REGIONS.map((r) => (
           <path
             key={r.code}
             d={r.d}
             fill={LAND}
-            stroke={BG}
+            stroke={LAND}
             strokeWidth={px}
           />
         ))}
