@@ -5,9 +5,15 @@
 
 **차이를 글자로 말하지 않고 그림으로 보인다.**
 
-1km² 격자를 깔고 그 위에 시·군·구의 실제 모양을 얹는다. 축척은
-다섯 걸음 내내 고정이다. 몇 칸을 덮는지가 눈으로 세어지고, 순위가
-올라갈수록 도형이 줄어든다.
+전국 지도 위를 카메라가 날아 그 자리로 간다. **배율은 다섯 걸음
+내내 고정이다** — 그래야 크기가 서로 견줘진다. 옮겨 갈 때만 잠깐
+빠졌다가 같은 배율로 다시 붙는다.
+
+1km² 격자를 함께 깔아 몇 칸을 덮는지가 눈으로 세어지게 한다.
+
+**지도 없이 도형만 띄우면 어디인지가 안 붙는다.** 처음에 빈 격자
+위에 모양만 놓았더니 부산 중구인지 대구 중구인지 그림이 말해 주는
+것이 없었다.
 
 ## 넓이는 재지 않고 받아 쓴다
 
@@ -32,6 +38,13 @@
 부산 동구 10.121, 부산 수영구 10.217. 다섯에서 끊는 것이 아슬아슬해
 고정댓글에 적는다.
 
+## 지도 좌표
+
+`src/data/korea-paths.json`(0..1000 상자)과 **같은 투영**을 여기서
+다시 계산한다. 전국 지도는 시·군·구마다 37~49점으로 성기게 줄여
+놓아서, 3km짜리 구를 화면 가득 키우면 각이 진다. 그 다섯만 30m
+허용오차로 다시 그려 위에 얹는다.
+
 사용:  python3 scripts/prep-small.py
 자료:  data/land-area.json            (없으면 scripts/fetch-area.py)
        data/skorea-municipalities.json
@@ -50,7 +63,9 @@ OUT = os.path.join(HERE, "..", "src", "data", "small.json")
 
 TOP = 5
 DEG_LAT_KM = 110.574
-TOL_KM = 0.015          # 15m. 2km짜리 구를 그리는 데 이만하면 넉넉하다
+BOX = 1000.0
+# scripts/prep-map.py와 같은 값. 전국 지도와 좌표계를 맞춘다
+TOL_DEG = 0.00035
 
 SHORT = {"서울특별시": "서울", "부산광역시": "부산", "대구광역시": "대구",
          "인천광역시": "인천", "광주광역시": "광주", "대전광역시": "대전",
@@ -99,36 +114,56 @@ def dp(pts, tol):
     return [pts[0], pts[-1]]
 
 
-def shape(feature):
-    """경계를 km 좌표로 옮긴다. 원점은 그 도형의 한가운데, y는 아래로.
+def projector(feats):
+    """`scripts/prep-map.py`와 똑같은 투영. 전국 지도와 좌표계를 맞춘다."""
+    lons, lats = [], []
+    for f in feats:
+        g = f["geometry"]
+        polys = (g["coordinates"] if g["type"] == "MultiPolygon"
+                 else [g["coordinates"]])
+        for poly in polys:
+            for x, y in poly[0]:
+                lons.append(x)
+                lats.append(y)
+    lon0, lon1 = min(lons), max(lons)
+    lat0, lat1 = min(lats), max(lats)
+    kx = math.cos(math.radians((lat0 + lat1) / 2))
+    w = (lon1 - lon0) * kx
+    h = lat1 - lat0
+    scale = BOX / max(w, h)
+    offx = (BOX - w * scale) / 2
+    offy = (BOX - h * scale) / 2
 
-    같은 축척으로 나란히 놓을 것이라 도형마다 제 크기를 지녀야 한다.
-    화면에 맞추는 일은 그리는 쪽에서 한다.
+    def project(x, y):
+        return ((x - lon0) * kx * scale + offx,
+                BOX - ((y - lat0) * scale + offy))
+
+    # 지도 1단위가 몇 km인가. 배율이 고정이라 이 값 하나로 격자를 깐다
+    km_per_unit = DEG_LAT_KM / scale
+    return project, km_per_unit
+
+
+def shape(feature, project):
+    """경계를 전국 지도와 같은 0..1000 상자 좌표로 옮긴다.
+
+    **구멍(안쪽 링)도 살린다.** 전국 지도는 바깥 링 하나만 남기는데,
+    화면 가득 키우는 다섯은 안이 뚫려 있으면 그대로 보여야 한다.
     """
     g = feature["geometry"]
     polys = (g["coordinates"] if g["type"] == "MultiPolygon"
              else [g["coordinates"]])
-    xs = [c[0] for poly in polys for r in poly for c in r]
-    ys = [c[1] for poly in polys for r in poly for c in r]
-    lat0 = (min(ys) + max(ys)) / 2
-    kx = math.cos(math.radians(lat0)) * DEG_LAT_KM
-    cx = (min(xs) + max(xs)) / 2
-    cy = (min(ys) + max(ys)) / 2
-
-    def km(p):
-        return ((p[0] - cx) * kx, (cy - p[1]) * DEG_LAT_KM)
-
     parts = []
+    xs, ys = [], []
     for poly in polys:
         for ring in poly:
-            pts = dp([km(p) for p in ring], TOL_KM)
-            if len(pts) < 3:
+            pts = dp([tuple(p) for p in ring], TOL_DEG)
+            if len(pts) < 4:
                 continue
-            parts.append("M" + " ".join(f"{x:.3f},{y:.3f}" for x, y in pts)
-                         + "Z")
-    w = (max(xs) - min(xs)) * kx
-    h = (max(ys) - min(ys)) * DEG_LAT_KM
-    return parts, round(w, 3), round(h, 3)
+            q = [project(x, y) for x, y in pts]
+            xs += [p[0] for p in q]
+            ys += [p[1] for p in q]
+            parts.append("M" + " ".join(f"{x:.2f},{y:.2f}" for x, y in q) + "Z")
+    return parts, (min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2
 
 
 def main():
@@ -141,6 +176,8 @@ def main():
     print(f"   가장 작은 곳의 {rows[-1][0] / rows[0][0]:.0f}배")
 
     gj = json.load(open(GEO, encoding="utf-8"))
+    project, kmu = projector(gj["features"])
+    print(f"지도 1단위 = {kmu:.4f}km", flush=True)
     feat = {}
     for f in gj["features"]:
         p = f["properties"]
@@ -154,22 +191,17 @@ def main():
             raise SystemExit(f"{sd} {nm} 조각이 {len(fs)}개다")
         return fs[0]
 
-    # 훅에서 전국 지도에 점을 찍을 자리. 0..1000 상자 좌표다
-    paths = json.load(open(PATHS, encoding="utf-8"))
-    spot = {(GEO_SIDO[r["sido"]], r["name"]): (r["cx"], r["cy"])
-            for r in paths["regions"]}
-
     small = []
     for i, (a, sd, nm) in enumerate(rows[:TOP], 1):
-        d, w, h = shape(one(sd, nm))
+        d, cx, cy = shape(one(sd, nm), project)
         small.append({"rank": i, "sido": sd, "name": nm, "area": a,
-                      "d": d, "w": w, "h": h,
-                      "at": list(spot[(sd, nm)])})
-        print(f"  {i}위 {sd} {nm} {a}km² · {w}×{h}km · 조각 {len(d)}")
+                      "d": d, "cx": round(cx, 2), "cy": round(cy, 2)})
+        print(f"  {i}위 {sd} {nm} {a}km² · 조각 {len(d)} · "
+              f"지도 {cx:.1f},{cy:.1f}")
 
     ba, bsd, bnm = rows[-1]
-    bd, bw, bh = shape(one(bsd, bnm))
-    print(f"  가장 큰 곳 {bsd} {bnm} {ba}km² · {bw}×{bh}km")
+    bd, bcx, bcy = shape(one(bsd, bnm), project)
+    print(f"  가장 큰 곳 {bsd} {bnm} {ba}km²")
 
     # 여섯째. 화면에는 안 쓰고 고정댓글에서 다섯에서 끊은 까닭을 댄다
     sixth = {"sido": rows[TOP][1], "name": rows[TOP][2], "area": rows[TOP][0]}
@@ -177,9 +209,10 @@ def main():
     json.dump({
         "day": day,
         "units": len(rows),
+        "kmPerUnit": round(kmu, 5),
         "small": small,
-        "big": {"sido": bsd, "name": bnm, "area": ba,
-                "d": bd, "w": bw, "h": bh},
+        "big": {"sido": bsd, "name": bnm, "area": ba, "d": bd,
+                "cx": round(bcx, 2), "cy": round(bcy, 2)},
         "sixth": sixth,
     }, open(OUT, "w", encoding="utf-8"), ensure_ascii=False)
     print("→", OUT)
