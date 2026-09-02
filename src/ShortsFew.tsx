@@ -8,11 +8,10 @@ import {
 } from "remotion";
 import {
   BIG,
-  DONG_COUNT,
-  DONG_MEDIAN,
-  DONG_OVER,
   FEW,
-  MEDIAN_DOTS,
+  TIMES,
+  TOP_DONG,
+  TOP_DOTS,
   HOLD,
   HOOK_SEC,
   OUTRO_SEC,
@@ -342,62 +341,50 @@ export const ShortsFew: React.FC = () => {
       )}
 
       {/* ── 마무리 ──
-          **울릉군과 「행정동 하나」를 나란히 센다.** 나레이션이
-          「동네 하나보다 적어요」라고 하니 화면도 그것을 보여야
-          한다. 처음엔 수원시(11,853점)를 뒀는데 말과 그림이
-          딴 데를 봤다.
-
-          지도를 벗어나 점만 격자로 놓는다. 여기서는 자리가 아니라
-          **개수**가 전부다.
+          **간결하게.** 중앙값도 퍼센트도 뺐다. 두 덩어리와 배수
+          하나만 남긴다.
 
           **끝을 열어 둔다.** 지금까지는 「틀린 곳 알려주세요」로
-          닫았는데 그건 초대가 아니라 마침표다. 마지막 한 줄을
-          질문으로 둔다 */}
+          닫았는데 그건 초대가 아니라 마침표다 */}
       {inOutro && (
         <AbsoluteFill style={{ backgroundColor: `${BG}F2`, opacity: outroIn }}>
           <svg
             viewBox="0 0 1080 1920"
             style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
           >
-            {/* 숫자는 점 개수를 되돌린 값이 아니라 기록값이다.
-                점 87개를 100배 하면 8,700인데 실제는 8,780이다 */}
+            {/* 칸 수를 맞춰 두면 높이가 곧 배수다 */}
             {([
-              [FEW[0].dots.length, 130, "경북 울릉군", HOT, FEW[0].pop],
-              [MEDIAN_DOTS, 566, "동 하나", DIM, DONG_MEDIAN],
-            ] as const).map(([count, x0, label, col, real]) => (
+              [FEW[0].dots.length, 122, `${FEW[0].sido} ${FEW[0].name}`,
+               FEW[0].pop, HOT],
+              [TOP_DOTS, 560, `${TOP_DONG.sigungu} ${TOP_DONG.name}`,
+               TOP_DONG.pop, DIM],
+            ] as const).map(([count, x0, label, pop, col]) => (
               <g key={label}>
-                {Array.from({ length: count }).map((_, i) => {
-                  const shownN = Math.round(count * outFill);
-                  if (i >= shownN) return null;
-                  return (
-                    <circle
-                      key={i}
-                      cx={x0 + (i % 12) * 28}
-                      cy={548 + Math.floor(i / 12) * 28}
-                      r={9}
-                      fill={col}
-                    />
-                  );
-                })}
-                <text
-                  x={x0 - 8}
-                  y={452}
-                  fontSize={38}
-                  fontWeight={900}
-                  fill={col}
-                >
+                <text x={x0} y={556} fontSize={34} fontWeight={900} fill={col}>
                   {label}
                 </text>
                 <text
-                  x={x0 - 8}
-                  y={512}
-                  fontSize={50}
+                  x={x0}
+                  y={610}
+                  fontSize={48}
                   fontWeight={900}
                   fill={col}
                   style={{ fontVariantNumeric: "tabular-nums" }}
                 >
-                  {real.toLocaleString()}명
+                  {pop.toLocaleString()}명
                 </text>
+                {Array.from({ length: count }).map((_, i) => {
+                  if (i >= Math.round(count * outFill)) return null;
+                  return (
+                    <circle
+                      key={i}
+                      cx={x0 + 5 + (i % 30) * 11}
+                      cy={649 + Math.floor(i / 30) * 11}
+                      r={4}
+                      fill={col}
+                    />
+                  );
+                })}
               </g>
             ))}
           </svg>
@@ -410,22 +397,28 @@ export const ShortsFew: React.FC = () => {
               bottom: OUTRO_PAD,
             }}
           >
-            <div style={{ color: DIM, fontSize: 27, fontWeight: 700 }}>
-              전국 동 {DONG_COUNT.toLocaleString()}곳 가운데{" "}
-              {DONG_OVER.toLocaleString()}곳이 울릉군보다 많음 · 점 하나{" "}
-              {PER_DOT}명
-            </div>
             <div
               style={{
                 color: HOT,
-                fontSize: 64,
+                fontSize: 120,
                 fontWeight: 900,
-                lineHeight: 1.18,
+                lineHeight: 1,
+                letterSpacing: -2,
+                fontVariantNumeric: "tabular-nums",
+              }}
+            >
+              {TIMES}배
+            </div>
+            <div
+              style={{
+                color: INK,
+                fontSize: 52,
+                fontWeight: 900,
+                lineHeight: 1.2,
                 marginTop: 14,
               }}
             >
-              <div>여러분 동네는</div>
-              <div>몇 명인가요?</div>
+              여러분 동네는 몇 명인가요?
             </div>
           </div>
         </AbsoluteFill>

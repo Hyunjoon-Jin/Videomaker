@@ -38,17 +38,23 @@ export const STEPS = [...FEW].reverse();
 export const BIG = raw.big as unknown as Unit;
 export const SIXTH = raw.sixth as { sido: string; name: string; pop: number };
 /**
- * 전국 **「동」**의 한가운데 값. 마무리에서 쓰는 자다.
+ * 전국에서 사람이 가장 많은 동.
  *
- * 자료에는 읍·면·동과 출장소가 다 들어 있어 3,619개인데, 면
- * 1,166개의 한가운데가 2,505명이라 다 섞으면 10,481명으로
- * 내려앉는다. 그 값을 「동네 하나」라고 부르면 듣는 사람이
- * 떠올리는 동네와 다르다. **동만 세서 17,389명이다.**
+ * **한가운데(중앙값)로 견주다가 접었다.** 「동 하나가 보통 만 7천
+ * 명」은 통계지 그림이 아니다. 보는 사람 머릿속에 아무것도 안
+ * 그려진다.
+ *
+ * 이름이 있는 진짜 동네라야 「저기 하나에 울릉군이 열두 개」가 선다.
  */
-export const DONG_MEDIAN = raw.dongMedian as number;
-export const DONG_COUNT = raw.dongCount as number;
-/** 그 가운데 1위보다 사람이 많은 곳 */
-export const DONG_OVER = raw.dongOver as number;
+export const TOP_DONG = raw.topDong as {
+  sido: string;
+  sigungu: string;
+  name: string;
+  pop: number;
+};
+
+/** 울릉군 한 개에 견줘 몇 배인가 */
+export const TIMES = Math.round(TOP_DONG.pop / FEW[0].pop);
 
 export interface Line {
   file: string;
@@ -84,15 +90,18 @@ export const HOLD = STEPS.map((_, i) =>
 export const OUTRO_SEC = VOICE[6].sec + 0.7;
 
 /**
- * 마무리에서 견주는 「동 하나」의 점 개수.
+ * 마무리에서 견주는 「가장 큰 동」의 점 개수. 1,056개다.
  *
- * 전국 동 2,156개의 한가운데가 17,389명이다. 점 하나가 100명이니
- * 174개. 울릉군은 87개다 — **행정 등급은 군이 동보다 위인데 사람은
- * 절반이다.**
+ * **세 번 고쳤다.**
  *
- * 두 번 고쳤다. 처음에는 수원시(11,853점)를 뒀는데 나레이션과 화면이
- * 딴 데를 봤다. 그다음에는 읍·면·동을 다 섞은 한가운데(10,481명)를
- * 「행정동 하나」라고 불렀는데, 이름도 틀렸고(3,619개는 행정동이
- * 아니라 읍·면·동 전체다) 면이 섞여 값도 낮았다.
+ * 1. 수원시(11,853점) — 나레이션은 동네를 말하는데 그림은 시를
+ *    보여 줬다. 눈과 귀가 딴 데를 봤다.
+ * 2. 읍·면·동을 다 섞은 한가운데(10,481명)를 「행정동 하나」라고
+ *    불렀다. 이름이 틀렸고(3,619개는 읍·면·동 전체다) 면이 섞여
+ *    값도 낮았다.
+ * 3. 동만 세서 한가운데 17,389명. 이름은 맞았지만 **여전히
+ *    통계였다.** 「보통 동 하나」가 머릿속에 안 그려진다.
+ *
+ * 이름이 있는 진짜 동네로 바꿨다.
  */
-export const MEDIAN_DOTS = Math.round(DONG_MEDIAN / PER_DOT);
+export const TOP_DOTS = Math.round(TOP_DONG.pop / PER_DOT);

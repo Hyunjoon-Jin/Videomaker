@@ -242,6 +242,13 @@ def main():
     print(f"   동 {len(only):,}개 한가운데 {mid:,}명 · "
           f"1위보다 많은 동 {over:,}개 ({over / len(only) * 100:.0f}%)")
 
+    # **가장 큰 동.** 한가운데(중앙값)는 머릿속에 그림이 안 그려진다.
+    # 이름이 있는 진짜 동네라야 「저기 하나에 울릉군이 몇 개」가 선다.
+    big_dong = max((d for d in dong if d[2].endswith("동")),
+                   key=lambda d: d[3])
+    print(f"   가장 큰 동 {big_dong[1]} {big_dong[2]} {big_dong[3]:,}명 · "
+          f"1위의 {big_dong[3] / rows[0][0]:.1f}배")
+
     gj = json.load(open(GEO, encoding="utf-8"))
     project, kmu = projector(gj["features"])
     print(f"지도 1단위 = {kmu:.4f}km", flush=True)
@@ -312,6 +319,9 @@ def main():
         "big": big,
         "sixth": {"sido": rows[TOP][1], "name": rows[TOP][2],
                   "pop": rows[TOP][0]},
+        "topDong": {"sido": SHORT.get(big_dong[0], big_dong[0]),
+                    "sigungu": big_dong[1], "name": big_dong[2],
+                    "pop": big_dong[3]},
         "dongCount": len(only),
         "dongMedian": mid,
         "dongOver": over,
