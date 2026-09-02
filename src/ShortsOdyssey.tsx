@@ -13,7 +13,18 @@ import { OdysseyFigure } from "./OdysseyFigure";
 import { useFonts } from "./fonts";
 import { BOTTOM_INSET, SAFE_RIGHT, SAFE_TOP, OUTRO_PAD, TEXT_X } from "./safe";
 
-const HOOK = Math.round(2.8 * FPS);
+/**
+ * 훅.
+ *
+ * **답을 먼저 주면 스크롤을 못 잡는다.** 처음에는 「트로이 전쟁을
+ * 끝내고 / 이타카로 돌아가는 길」이라고 상황을 적어 뒀는데, 그건
+ * 설명이지 질문이 아니다. 넘기는 사람에게 0.5초 안에 걸리는 것은
+ * 궁금증이다.
+ *
+ * 「몇 척이 돌아왔을까」로 바꾸고 2.8초에서 2.2초로 줄였다. 답은
+ * 화면 맨 위 열두 칸이 하나씩 꺼지면서 저절로 나온다.
+ */
+const HOOK = Math.round(2.2 * FPS);
 
 /** 바탕이 바다다 */
 const BG = "#0E1418";
@@ -504,8 +515,8 @@ export const ShortsOdyssey: React.FC = () => {
                 textShadow: `0 0 24px ${BG}`,
               }}
             >
-              <div>트로이 전쟁을 끝내고</div>
-              <div>이타카로 돌아가는 길</div>
+              <div>트로이를 떠나</div>
+              <div>몇 척이 돌아왔을까</div>
             </div>
           </div>
         </>
