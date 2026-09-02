@@ -19,6 +19,13 @@ export interface Unit {
   x1: number;
   y0: number;
   y1: number;
+  /**
+   * 사람이 안 살아 점이 안 찍히는 딴 섬.
+   *
+   * 카메라를 점에 맞추니 화면 밖으로 잘린다. **울릉군은 독도까지가
+   * 울릉군이라** 한켠에 따로 그린다. 좌표는 그 섬 한가운데가 원점이다.
+   */
+  away?: { label: string; km: number; w: number; d: string[] };
 }
 
 export const DAY = raw.day as string;

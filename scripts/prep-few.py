@@ -58,6 +58,11 @@ DEG_LAT_KM = 110.574
 TOL_DEG = 0.00035
 SEED = 21
 
+# 사람이 안 살아 점이 안 찍히는 딴 섬. 카메라가 점에 맞춰지니
+# 화면 밖으로 밀려나는데, **울릉군은 독도까지가 울릉군이다.**
+# 한켠에 따로 그리고 이름과 거리를 적는다.
+AWAY = {("경북", "울릉군"): "독도"}
+
 SHORT = {"서울특별시": "서울", "부산광역시": "부산", "대구광역시": "대구",
          "인천광역시": "인천", "대전광역시": "대전", "울산광역시": "울산",
          "세종특별자치시": "세종", "경기도": "경기", "강원특별자치도": "강원",
@@ -130,7 +135,7 @@ def projector(feats):
     def project(x, y):
         return ((x - lon0) * kx * scale + offx,
                 BOX - ((y - lat0) * scale + offy))
-    return project
+    return project, DEG_LAT_KM / scale
 
 
 def area2(ring):
@@ -234,7 +239,8 @@ def main():
           f"1위보다 많은 동 {over:,}개 ({over / len(only) * 100:.0f}%)")
 
     gj = json.load(open(GEO, encoding="utf-8"))
-    project = projector(gj["features"])
+    project, kmu = projector(gj["features"])
+    print(f"지도 1단위 = {kmu:.4f}km", flush=True)
     feat = {}
     for f in gj["features"]:
         p = f["properties"]
@@ -252,6 +258,39 @@ def main():
         rec = {"sido": sd, "name": nm, "pop": n, "d": paths, "dots": dots,
                "x0": round(min(xs), 2), "x1": round(max(xs), 2),
                "y0": round(min(ys), 2), "y1": round(max(ys), 2)}
+
+        # 점이 안 찍힌 딴 섬을 따로 뽑는다. 카메라는 점에 맞추므로
+        # 그냥 두면 화면 밖으로 잘린다
+        label = AWAY.get((sd, nm))
+        if label and dots:
+            dx = [p[0] for p in dots]
+            dy = [p[1] for p in dots]
+            hx, hy = (min(dx) + max(dx)) / 2, (min(dy) + max(dy)) / 2
+            far = []
+            for part in parts:
+                px = [p[0] for p in part[0]]
+                py = [p[1] for p in part[0]]
+                cx, cy = (min(px) + max(px)) / 2, (min(py) + max(py)) / 2
+                if (min(dx) - 2 <= cx <= max(dx) + 2
+                        and min(dy) - 2 <= cy <= max(dy) + 2):
+                    continue
+                far.append((math.hypot(cx - hx, cy - hy) * kmu, part[0]))
+            if far:
+                far.sort()
+                km, ring = far[-1]
+                fx = [p[0] for p in ring]
+                fy = [p[1] for p in ring]
+                ox, oy = (min(fx) + max(fx)) / 2, (min(fy) + max(fy)) / 2
+                rec["away"] = {
+                    "label": label,
+                    "km": round(km),
+                    "w": round(max(max(fx) - min(fx), max(fy) - min(fy)), 3),
+                    "d": ["M" + " ".join(f"{x - ox:.3f},{y - oy:.3f}"
+                                         for x, y in r) + "Z"
+                          for _, r in far],
+                }
+                print(f"    딴 섬 {label} · {km:.0f}km · 조각 {len(far)}",
+                      flush=True)
         if rank:
             rec["rank"] = rank
         print(f"  {rank or '큰곳'} {sd} {nm} {n:,}명 · 점 {len(dots):,} · "

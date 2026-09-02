@@ -225,6 +225,56 @@ export const ShortsFew: React.FC = () => {
             ))}
       </svg>
 
+      {/* ── 딴 섬 ──
+          **울릉군은 독도까지가 울릉군이다.** 카메라를 사람 사는
+          본섬에 맞추니 95km 동쪽 독도가 화면 밖으로 잘렸다.
+          한켠에 따로 그려 땅이 빠지지 않게 한다.
+
+          거리는 화면에 안 쓴다. 여기 잰 값은 점이 몰린 자리
+          한가운데에서 잰 것이라, 도동 기준 87.4km라는 기록값과
+          다르다. 섞으면 안 되니 고정댓글로 뺀다 */}
+      {started && !inOutro && c.away && (
+        <svg
+          viewBox="0 0 1080 1920"
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
+          opacity={settle}
+        >
+          <rect
+            x={716}
+            y={398}
+            width={230}
+            height={200}
+            rx={14}
+            fill={`${BG}E6`}
+            stroke={DIM}
+            strokeWidth={2}
+          />
+          <g
+            transform={`translate(831 502) scale(${74 / c.away.w})`}
+          >
+            {c.away.d.map((d, j) => (
+              <path
+                key={j}
+                d={d}
+                fill={HOT}
+                stroke={INK}
+                strokeWidth={(c.away!.w / 74) * 1.5}
+              />
+            ))}
+          </g>
+          <text
+            x={831}
+            y={578}
+            fontSize={34}
+            fontWeight={900}
+            fill={INK}
+            textAnchor="middle"
+          >
+            {c.away.label}
+          </text>
+        </svg>
+      )}
+
       {/* ── 순위 · 이름 · 인구 ── */}
       {started && !inOutro && (
         <div
