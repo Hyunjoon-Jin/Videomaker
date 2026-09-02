@@ -24,6 +24,7 @@ import { ShortsTiger, TIGER_DURATION } from "./ShortsTiger";
 import { ShortsSpan, SPAN_DURATION } from "./ShortsSpan";
 import { ShortsInland, INLAND_DURATION } from "./ShortsInland";
 import { ShortsSmall, SMALL_DURATION } from "./ShortsSmall";
+import { ShortsFew, FEW_DURATION } from "./ShortsFew";
 import { ShortsOdyssey, ODYSSEY_DURATION } from "./ShortsOdyssey";
 import { ChannelBanner, ChannelIcon, ChannelWatermark } from "./Channel";
 import { ThumbBongsu, ThumbGanchuk, ThumbKoreanWar, ThumbPower, ThumbRail, ThumbQuake, ThumbSillok, ThumbTimezone, ThumbTongsinsa, ThumbTyphoon, ThumbWar, ThumbDatum, ThumbExtremes, ThumbCanopus, ThumbSnow, ThumbWind } from "./Thumbs";
@@ -203,6 +204,15 @@ export const RemotionRoot: React.FC = () => (
       id="ShortsOdyssey"
       component={ShortsOdyssey}
       durationInFrames={ODYSSEY_DURATION}
+      fps={FPS}
+      width={SHORT_W}
+      height={SHORT_H}
+    />
+    {/* 기획 25 — 전국에서 인구가 가장 적은 지자체 */}
+    <Composition
+      id="ShortsFew"
+      component={ShortsFew}
+      durationInFrames={FEW_DURATION}
       fps={FPS}
       width={SHORT_W}
       height={SHORT_H}

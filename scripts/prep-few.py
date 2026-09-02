@@ -157,11 +157,18 @@ def inside(pt, ring):
     return ok
 
 
-def shape(feature, project):
-    """경계를 0..1000 상자 좌표로. 조각마다 (바깥 링, 구멍들)을 남긴다."""
-    g = feature["geometry"]
-    polys = (g["coordinates"] if g["type"] == "MultiPolygon"
-             else [g["coordinates"]])
+def shape(features, project):
+    """경계를 0..1000 상자 좌표로. 조각마다 (바깥 링, 구멍들)을 남긴다.
+
+    **일반구로 갈린 시는 조각을 다 이어 붙인다.** 수원시는 경계
+    자료에 장안·권선·팔달·영통 넷으로 들어 있는데, 인구는 시 하나로
+    세므로 모양도 하나여야 한다.
+    """
+    polys = []
+    for feature in features:
+        g = feature["geometry"]
+        polys += (g["coordinates"] if g["type"] == "MultiPolygon"
+                  else [g["coordinates"]])
     parts, paths = [], []
     for poly in polys:
         rings = []
@@ -238,10 +245,7 @@ def main():
     rng = random.Random(SEED)
 
     def build(n, sd, nm, rank=None):
-        fs = feat[(sd, nm)]
-        if len(fs) > 1:
-            raise SystemExit(f"{sd} {nm} 조각이 {len(fs)}개다")
-        parts, paths = shape(fs[0], project)
+        parts, paths = shape(feat[(sd, nm)], project)
         dots = scatter(parts, round(n / PER_DOT), rng)
         xs = [p[0] for part in parts for p in part[0]]
         ys = [p[1] for part in parts for p in part[0]]
