@@ -10,6 +10,7 @@ import {
   BIG,
   DONG_COUNT,
   DONG_MEDIAN,
+  DONG_OVER,
   FEW,
   MEDIAN_DOTS,
   HOLD,
@@ -361,8 +362,8 @@ export const ShortsFew: React.FC = () => {
             {/* 숫자는 점 개수를 되돌린 값이 아니라 기록값이다.
                 점 87개를 100배 하면 8,700인데 실제는 8,780이다 */}
             {([
-              [FEW[0].dots.length, 150, "경북 울릉군", HOT, FEW[0].pop],
-              [MEDIAN_DOTS, 600, "행정동 하나", DIM, DONG_MEDIAN],
+              [FEW[0].dots.length, 130, "경북 울릉군", HOT, FEW[0].pop],
+              [MEDIAN_DOTS, 566, "동 하나", DIM, DONG_MEDIAN],
             ] as const).map(([count, x0, label, col, real]) => (
               <g key={label}>
                 {Array.from({ length: count }).map((_, i) => {
@@ -371,16 +372,16 @@ export const ShortsFew: React.FC = () => {
                   return (
                     <circle
                       key={i}
-                      cx={x0 + (i % 10) * 34}
-                      cy={520 + Math.floor(i / 10) * 34}
-                      r={11}
+                      cx={x0 + (i % 12) * 28}
+                      cy={548 + Math.floor(i / 12) * 28}
+                      r={9}
                       fill={col}
                     />
                   );
                 })}
                 <text
-                  x={x0 - 6}
-                  y={480}
+                  x={x0 - 8}
+                  y={452}
                   fontSize={38}
                   fontWeight={900}
                   fill={col}
@@ -388,9 +389,9 @@ export const ShortsFew: React.FC = () => {
                   {label}
                 </text>
                 <text
-                  x={x0 - 6}
-                  y={950}
-                  fontSize={46}
+                  x={x0 - 8}
+                  y={512}
+                  fontSize={50}
                   fontWeight={900}
                   fill={col}
                   style={{ fontVariantNumeric: "tabular-nums" }}
@@ -410,8 +411,9 @@ export const ShortsFew: React.FC = () => {
             }}
           >
             <div style={{ color: DIM, fontSize: 27, fontWeight: 700 }}>
-              전국 행정동 {DONG_COUNT.toLocaleString()}개의 한가운데 ·
-              점 하나 {PER_DOT}명
+              전국 동 {DONG_COUNT.toLocaleString()}곳 가운데{" "}
+              {DONG_OVER.toLocaleString()}곳이 울릉군보다 많음 · 점 하나{" "}
+              {PER_DOT}명
             </div>
             <div
               style={{

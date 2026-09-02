@@ -232,10 +232,14 @@ def main():
     print(f"== 가장 많은 곳  {top[0]:,} {top[1]} {top[2]}")
     print(f"   가장 적은 곳의 {top[0] / rows[0][0]:.0f}배")
 
-    only = sorted(d[3] for d in dong)
+    # **「동」만 센다.** 자료에는 읍·면·동과 출장소가 다 들어 있어
+    # 3,619개인데, 면 1,166개의 한가운데가 2,505명이라 다 섞으면
+    # 한가운데가 10,481명으로 내려앉는다. 그 값을 「동네 하나」라고
+    # 부르면 듣는 사람이 떠올리는 동네와 다르다.
+    only = sorted(d[3] for d in dong if d[2].endswith("동"))
     mid = only[len(only) // 2]
     over = sum(1 for v in only if v > rows[0][0])
-    print(f"   행정동 {len(only):,}개 중앙값 {mid:,}명 · "
+    print(f"   동 {len(only):,}개 한가운데 {mid:,}명 · "
           f"1위보다 많은 동 {over:,}개 ({over / len(only) * 100:.0f}%)")
 
     gj = json.load(open(GEO, encoding="utf-8"))

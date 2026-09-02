@@ -37,9 +37,18 @@ export const STEPS = [...FEW].reverse();
 /** 가장 많은 곳. 마무리에서 점이 쏟아진다 */
 export const BIG = raw.big as unknown as Unit;
 export const SIXTH = raw.sixth as { sido: string; name: string; pop: number };
-/** 전국 행정동 3,619개의 한가운데 값. 마무리에서 쓰는 자다 */
+/**
+ * 전국 **「동」**의 한가운데 값. 마무리에서 쓰는 자다.
+ *
+ * 자료에는 읍·면·동과 출장소가 다 들어 있어 3,619개인데, 면
+ * 1,166개의 한가운데가 2,505명이라 다 섞으면 10,481명으로
+ * 내려앉는다. 그 값을 「동네 하나」라고 부르면 듣는 사람이
+ * 떠올리는 동네와 다르다. **동만 세서 17,389명이다.**
+ */
 export const DONG_MEDIAN = raw.dongMedian as number;
 export const DONG_COUNT = raw.dongCount as number;
+/** 그 가운데 1위보다 사람이 많은 곳 */
+export const DONG_OVER = raw.dongOver as number;
 
 export interface Line {
   file: string;
@@ -75,13 +84,15 @@ export const HOLD = STEPS.map((_, i) =>
 export const OUTRO_SEC = VOICE[6].sec + 0.7;
 
 /**
- * 마무리에서 견주는 「행정동 하나」의 점 개수.
+ * 마무리에서 견주는 「동 하나」의 점 개수.
  *
- * 전국 행정동 3,619개의 한가운데가 10,481명이다. 점 하나가 100명이니
- * 105개. 울릉군은 87개다 — **군 하나가 웬만한 동네 하나보다 적다.**
+ * 전국 동 2,156개의 한가운데가 17,389명이다. 점 하나가 100명이니
+ * 174개. 울릉군은 87개다 — **행정 등급은 군이 동보다 위인데 사람은
+ * 절반이다.**
  *
- * 처음에는 수원시(11,853점)를 마무리에 뒀는데, 나레이션이 하는 말과
- * 화면이 어긋났다. 말은 「동네 하나보다 적다」인데 그림은 수원을
- * 보여 주니 눈과 귀가 딴 데를 봤다.
+ * 두 번 고쳤다. 처음에는 수원시(11,853점)를 뒀는데 나레이션과 화면이
+ * 딴 데를 봤다. 그다음에는 읍·면·동을 다 섞은 한가운데(10,481명)를
+ * 「행정동 하나」라고 불렀는데, 이름도 틀렸고(3,619개는 행정동이
+ * 아니라 읍·면·동 전체다) 면이 섞여 값도 낮았다.
  */
 export const MEDIAN_DOTS = Math.round(DONG_MEDIAN / PER_DOT);
