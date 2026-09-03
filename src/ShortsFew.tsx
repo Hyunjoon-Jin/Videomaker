@@ -60,6 +60,26 @@ function beatAt(frame: number): number {
 
 const ASPECT = 1920 / 1080;
 
+/* ── 마무리 저울 ──
+   격차를 막대 높이로만 보이다가 저울로 바꿨다. 높이는 견주려고
+   눈이 한 번 재야 하는데, **기울어진 저울은 재기 전에 이미 안다.**
+
+   접시에 담기는 것은 그대로 점이다. 점 하나가 100명이라는 자를
+   앞에서 다섯 걸음 내내 썼으니 여기서 바꾸면 안 된다. */
+/** 받침대 꼭짓점 */
+const PIV = { x: 528, y: 620 };
+/** 저울대 반 길이 */
+const ARM = 250;
+/** 다 기울었을 때 각도(도). 12배라 끝까지 내려앉는다 */
+const TILT = 16;
+/** 저울대에서 접시까지 매단 줄 */
+const HANG = 58;
+/** 접시 너비 */
+const PAN = 250;
+/** 점 격자 — 칸 수를 맞춰 두면 덩어리 높이가 곧 배수다 */
+const COLS = 30;
+const GAP = 8;
+
 /**
  * 카메라가 겨누는 자리가 화면 세로 어디에 오는지.
  * 한가운데에 두면 아래 글자 블록이 그림 밑동을 덮는다.
@@ -156,6 +176,23 @@ export const ShortsFew: React.FC = () => {
     [0, 1],
     { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
   );
+  /**
+   * 저울이 기우는 정도.
+   *
+   * **점이 다 담긴 뒤에 기운다.** 담기면서 같이 기울면 무엇 때문에
+   * 기우는지가 안 보인다. 수평으로 놓고, 채우고, 그다음에 내려앉는다.
+   */
+  const tiltT = interpolate(
+    frame,
+    [BODY_END + Math.round(3.5 * FPS), BODY_END + Math.round(4.7 * FPS)],
+    [0, 1],
+    { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+  );
+  const ang = ((TILT * Math.PI) / 180) * ease(tiltT);
+  const ends = {
+    l: { x: PIV.x - ARM * Math.cos(ang), y: PIV.y - ARM * Math.sin(ang) },
+    r: { x: PIV.x + ARM * Math.cos(ang), y: PIV.y + ARM * Math.sin(ang) },
+  };
   const outroIn = interpolate(
     frame,
     [BODY_END + Math.round(1.6 * FPS), BODY_END + Math.round(2.4 * FPS)],
@@ -341,7 +378,7 @@ export const ShortsFew: React.FC = () => {
       )}
 
       {/* ── 마무리 ──
-          **간결하게.** 중앙값도 퍼센트도 뺐다. 두 덩어리와 배수
+          **간결하게.** 중앙값도 퍼센트도 뺐다. 저울 하나와 배수
           하나만 남긴다.
 
           **끝을 열어 둔다.** 지금까지는 「틀린 곳 알려주세요」로
@@ -352,41 +389,122 @@ export const ShortsFew: React.FC = () => {
             viewBox="0 0 1080 1920"
             style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
           >
-            {/* 칸 수를 맞춰 두면 높이가 곧 배수다 */}
+            {/* 받침대. 꼭짓점이 저울대 한가운데를 받친다 */}
+            <path
+              d={`M${PIV.x} ${PIV.y} L${PIV.x - 64} 1108 L${PIV.x + 64} 1108 Z`}
+              fill="none"
+              stroke={DIM}
+              strokeWidth={4}
+            />
+            <line
+              x1={PIV.x - 96}
+              y1={1108}
+              x2={PIV.x + 96}
+              y2={1108}
+              stroke={DIM}
+              strokeWidth={8}
+              strokeLinecap="round"
+            />
+            {/* 저울대 */}
+            <line
+              x1={ends.l.x}
+              y1={ends.l.y}
+              x2={ends.r.x}
+              y2={ends.r.y}
+              stroke={INK}
+              strokeWidth={9}
+              strokeLinecap="round"
+            />
+            <circle cx={PIV.x} cy={PIV.y} r={13} fill={INK} />
+
             {([
-              [FEW[0].dots.length, 122, `${FEW[0].sido} ${FEW[0].name}`,
+              [FEW[0].dots.length, ends.l, `${FEW[0].sido} ${FEW[0].name}`,
                FEW[0].pop, HOT],
-              [TOP_DOTS, 560, `${TOP_DONG.sigungu} ${TOP_DONG.name}`,
+              [TOP_DOTS, ends.r, `${TOP_DONG.sigungu} ${TOP_DONG.name}`,
                TOP_DONG.pop, DIM],
-            ] as const).map(([count, x0, label, pop, col]) => (
-              <g key={label}>
-                <text x={x0} y={556} fontSize={34} fontWeight={900} fill={col}>
-                  {label}
-                </text>
-                <text
-                  x={x0}
-                  y={610}
-                  fontSize={48}
-                  fontWeight={900}
-                  fill={col}
-                  style={{ fontVariantNumeric: "tabular-nums" }}
-                >
-                  {pop.toLocaleString()}명
-                </text>
-                {Array.from({ length: count }).map((_, i) => {
-                  if (i >= Math.round(count * outFill)) return null;
-                  return (
-                    <circle
-                      key={i}
-                      cx={x0 + 5 + (i % 30) * 11}
-                      cy={649 + Math.floor(i / 30) * 11}
-                      r={4}
-                      fill={col}
-                    />
-                  );
-                })}
-              </g>
-            ))}
+            ] as const).map(([count, e, label, pop, col]) => {
+              const py = e.y + HANG;
+              return (
+                <g key={label}>
+                  {/* 매단 줄 */}
+                  <path
+                    d={`M${e.x - PAN / 2} ${py} L${e.x} ${e.y} L${e.x + PAN / 2} ${py}`}
+                    fill="none"
+                    stroke={DIM}
+                    strokeWidth={3}
+                  />
+                  {/* 접시 */}
+                  <line
+                    x1={e.x - PAN / 2}
+                    y1={py}
+                    x2={e.x + PAN / 2}
+                    y2={py}
+                    stroke={col}
+                    strokeWidth={7}
+                    strokeLinecap="round"
+                  />
+                  {/* 접시에 담긴 사람. 점 하나가 100명이다 */}
+                  {Array.from({ length: count }).map((_, i) => {
+                    if (i >= Math.round(count * outFill)) return null;
+                    return (
+                      <circle
+                        key={i}
+                        cx={e.x - ((COLS - 1) * GAP) / 2 + (i % COLS) * GAP}
+                        cy={py + 17 + Math.floor(i / COLS) * GAP}
+                        r={3}
+                        fill={col}
+                      />
+                    );
+                  })}
+                </g>
+              );
+            })}
+
+            {/* 이름표. 저울대보다 위라 어느 쪽으로 기울어도 안 겹친다 */}
+            <text x={122} y={402} fontSize={38} fontWeight={900} fill={HOT}>
+              {FEW[0].sido} {FEW[0].name}
+            </text>
+            <text
+              x={122}
+              y={458}
+              fontSize={48}
+              fontWeight={900}
+              fill={HOT}
+              style={{ fontVariantNumeric: "tabular-nums" }}
+            >
+              {FEW[0].pop.toLocaleString()}명
+            </text>
+            <text
+              x={540}
+              y={438}
+              fontSize={40}
+              fontWeight={900}
+              fill={DIM}
+              textAnchor="middle"
+            >
+              vs
+            </text>
+            <text
+              x={958}
+              y={402}
+              fontSize={38}
+              fontWeight={900}
+              fill={INK}
+              textAnchor="end"
+            >
+              {TOP_DONG.sigungu} {TOP_DONG.name}
+            </text>
+            <text
+              x={958}
+              y={458}
+              fontSize={48}
+              fontWeight={900}
+              fill={INK}
+              textAnchor="end"
+              style={{ fontVariantNumeric: "tabular-nums" }}
+            >
+              {TOP_DONG.pop.toLocaleString()}명
+            </text>
           </svg>
 
           <div
@@ -399,23 +517,34 @@ export const ShortsFew: React.FC = () => {
           >
             <div
               style={{
-                color: HOT,
-                fontSize: 120,
+                color: INK,
+                fontSize: 46,
                 fontWeight: 900,
-                lineHeight: 1,
+                lineHeight: 1.2,
+              }}
+            >
+              동 하나가 울릉군 인구의
+            </div>
+            <div
+              style={{
+                color: HOT,
+                fontSize: 116,
+                fontWeight: 900,
+                lineHeight: 1.05,
                 letterSpacing: -2,
+                marginTop: 2,
                 fontVariantNumeric: "tabular-nums",
               }}
             >
-              {TIMES}배
+              무려 {TIMES}배
             </div>
             <div
               style={{
                 color: INK,
-                fontSize: 52,
+                fontSize: 48,
                 fontWeight: 900,
                 lineHeight: 1.2,
-                marginTop: 14,
+                marginTop: 12,
               }}
             >
               여러분 동네는 몇 명인가요?
