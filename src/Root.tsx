@@ -25,6 +25,7 @@ import { ShortsSpan, SPAN_DURATION } from "./ShortsSpan";
 import { ShortsInland, INLAND_DURATION } from "./ShortsInland";
 import { ShortsSmall, SMALL_DURATION } from "./ShortsSmall";
 import { ShortsFew, FEW_DURATION } from "./ShortsFew";
+import { ShortsTide, TIDE_DURATION } from "./ShortsTide";
 import { ShortsOdyssey, ODYSSEY_DURATION } from "./ShortsOdyssey";
 import { ChannelBanner, ChannelIcon, ChannelWatermark } from "./Channel";
 import { ThumbBongsu, ThumbGanchuk, ThumbKoreanWar, ThumbPower, ThumbRail, ThumbQuake, ThumbSillok, ThumbTimezone, ThumbTongsinsa, ThumbTyphoon, ThumbWar, ThumbDatum, ThumbExtremes, ThumbCanopus, ThumbSnow, ThumbWind } from "./Thumbs";
@@ -213,6 +214,14 @@ export const RemotionRoot: React.FC = () => (
       id="ShortsFew"
       component={ShortsFew}
       durationInFrames={FEW_DURATION}
+      fps={FPS}
+      width={SHORT_W}
+      height={SHORT_H}
+    />
+    <Composition
+      id="ShortsTide"
+      component={ShortsTide}
+      durationInFrames={TIDE_DURATION}
       fps={FPS}
       width={SHORT_W}
       height={SHORT_H}
