@@ -4497,7 +4497,7 @@ https://gongu.copyright.or.kr/gongu/wrt/wrt/view.do?wrtSn=13312637
 
 ## 25. 아침 8시의 신림역
 
-43.07초. **신림역은 하루 총량 12위인데, 아침 한 시간만은 서울
+42.40초. **신림역은 하루 총량 12위인데, 아침 한 시간만은 서울
 1위다.** 08-09시 승차 11,479명 — 1초에 3.2명. 같은 시각 서울교통공사
 241역 평균이 2,018명(1초에 0.56명)이니 5.7배고, 강남(2,726명)의
 4.2배다.
@@ -4586,7 +4586,8 @@ https://gongu.copyright.or.kr/gongu/wrt/wrt/view.do?wrtSn=13312637
 
 여러분 동네 역은 몇 시에 가장 붐비나요?
 
-MUSIC_LINE
+음악: BGM_09_01_도시적인 chill out 브금 — 공유마당, CC BY
+https://gongu.copyright.or.kr/gongu/wrt/wrt/view.do?wrtSn=13355261
 
 #신림역 #지하철 #출근시간
 ```
