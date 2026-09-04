@@ -7,24 +7,18 @@ import {
   useCurrentFrame,
 } from "remotion";
 import {
-  BY_SIDO,
-  EAST,
+  FLOOR_KM,
   HOLD,
   HOOK_SEC,
-  LAPS,
-  LOOP,
-  LOOP_KM,
-  LOOP_STATIONS,
-  NORTH,
+  ONE,
   OUTRO_SEC,
-  OUTSIDE,
-  PATH_STATIONS,
+  PAIRS,
   SEG,
-  SOUTH,
-  SPAN_KM,
-  STATIONS,
+  SEOUL_STATIONS,
+  TOP,
   VOICE,
   VOICE_ESTIMATED,
+  type Pair,
 } from "./data/metro";
 import { REGIONS } from "./data/regions";
 import { FPS } from "./theme";
@@ -38,8 +32,11 @@ const HAS_BGM = false;
 const BG = "#0E1418";
 const LAND = "#2F2820";
 /** 노선망 */
-const RAIL = "#5E7C86";
+const RAIL = "#4C6670";
+/** 돌아가는 길 */
 const HOT = "#D4694F";
+/** 직선 */
+const STRAIGHT = "#7FB2C4";
 const INK = "#EDE5D4";
 const DIM = "#8E8474";
 
@@ -58,8 +55,7 @@ const BODY_END = SLOTS[SLOTS.length - 1].t1;
 export const METRO_DURATION = BODY_END + Math.round(OUTRO_SEC * FPS);
 
 const ASPECT = 1920 / 1080;
-/** 카메라가 겨누는 자리가 화면 세로 어디에 오는지 */
-const CENTER_Y = 800;
+const CENTER_Y = 760;
 const FLY = Math.round(0.8 * FPS);
 
 interface Cam {
@@ -82,21 +78,19 @@ function fit(pts: [number, number][], pad: number, min: number): Cam {
   };
 }
 
-const ALL: [number, number][] = SEG.flatMap((s) => [
-  [s[0], s[1]],
-  [s[2], s[3]],
-]) as [number, number][];
+const pts = (p: Pair): [number, number][] =>
+  p.path.map((s) => [s.x, s.y] as [number, number]);
 
 /* ── 걸음마다 카메라가 어디를 보나 ──
-   21편은 좁은 데로 파고들었고 이 편은 반대로 **계속 빠진다.**
-   자(2호선)를 화면에 먼저 크게 세워 두고, 그 자가 작아지는 것으로
-   크기를 말한다. */
+   1·2·3등이 서울 여기저기라 걸음마다 날아간다. **도는 길 전체가
+   화면에 담겨야** 「돌아간다」가 보이므로 경로에 맞춰 잡는다.
+   첫 걸음만 두 역에 바짝 붙어 직선이 얼마나 짧은지 보인다. */
 const AT: Cam[] = [
-  fit(LOOP, 1.7, 40), // 1  2호선 — 자를 세운다
-  fit([[SOUTH.x, SOUTH.y]], 1, 90), // 2  신창
-  fit([[NORTH.x, NORTH.y]], 1, 90), // 3  연천
-  fit([[EAST.x, EAST.y]], 1, 90), // 4  춘천
-  fit(ALL, 1.24, 60), // 5  다 빠진다
+  fit([pts(ONE)[0], pts(ONE)[pts(ONE).length - 1]], 6.5, 26), // 1  두 역만
+  fit(pts(ONE), 1.5, 26), // 2  도는 길
+  fit(pts(ONE), 1.5, 26), // 3  9.9배
+  fit(pts(TOP[1]), 1.5, 26), // 4  2등
+  fit(pts(TOP[2]), 1.5, 26), // 5  3등
 ];
 const START = AT[0];
 
@@ -121,10 +115,11 @@ function camAt(frame: number): Cam {
   const i = Math.min(beatAt(frame), AT.length - 1);
   const from = i === 0 ? START : AT[i - 1];
   const t = (frame - SLOTS[i].t0) / FLY;
-  /** 남 → 북 → 동으로 건너뛸 때만 살짝 띄운다 */
-  const arc = i >= 2 && i <= 3 ? 0.28 : 0;
-  return blend(from, AT[i], t, arc);
+  return blend(from, AT[i], t, i >= 3 ? 0.3 : 0);
 }
+
+/** 그 걸음이 보여주는 쌍 */
+const PAIR_OF = [ONE, ONE, ONE, TOP[1], TOP[2]];
 
 export const ShortsMetro: React.FC = () => {
   useFonts();
@@ -148,31 +143,33 @@ export const ShortsMetro: React.FC = () => {
     extrapolateRight: "clamp",
   });
 
+  const cur = inOutro ? ONE : PAIR_OF[bi];
+  const P = cur.path;
+
   const cam = camAt(frame);
   const px = cam.w / 1080;
   const vx = cam.cx - cam.w / 2;
   const vy = cam.cy - CENTER_Y * px;
   const viewBox = `${vx} ${vy} ${cam.w} ${cam.w * ASPECT}`;
-  /** 지도 좌표 → 화면 좌표. 이름표는 HTML로 얹는다 */
   const sx = (x: number) => (x - vx) / px;
   const sy = (y: number) => (y - vy) / px;
 
-  /** 2호선을 붉게 짚는 걸음 */
-  const loopOn = started && bi === 0 ? settle : bi > 0 ? 0.34 : 0;
-  /** 신창~연천 자를 대는 걸음 */
-  const spanOn =
-    started && bi >= 4
-      ? interpolate(age, [FLY, FLY + Math.round(0.9 * FPS)], [0, 1], {
-          extrapolateLeft: "clamp",
-          extrapolateRight: "clamp",
-        })
-      : 0;
-
-  const ends = [
-    { p: SOUTH, from: 1 },
-    { p: NORTH, from: 2 },
-    { p: EAST, from: 3 },
-  ];
+  /**
+   * 도는 길이 한 정거장씩 그려진다.
+   *
+   * 한꺼번에 띄우면 고리가 그냥 선이다. **지나가는 것을 봐야**
+   * 돌아간다는 말이 몸에 붙는다.
+   */
+  const draw =
+    inOutro
+      ? 1
+      : started && bi >= 1
+        ? interpolate(age, [FLY, FLY + Math.round(1.5 * FPS)], [0, 1], {
+            extrapolateLeft: "clamp",
+            extrapolateRight: "clamp",
+          })
+        : 0;
+  const shown = Math.max(1, Math.round((P.length - 1) * draw));
 
   return (
     <AbsoluteFill style={{ backgroundColor: BG, fontFamily: "Pretendard" }}>
@@ -200,7 +197,6 @@ export const ShortsMetro: React.FC = () => {
           <path key={r.code} d={r.d} fill={LAND} stroke={BG} strokeWidth={px} />
         ))}
 
-        {/* 노선망 844구간. 0프레임부터 다 그려져 있다 */}
         {SEG.map((s, i) => (
           <line
             key={i}
@@ -214,114 +210,106 @@ export const ShortsMetro: React.FC = () => {
           />
         ))}
 
-        {/* 2호선 순환선 — 이 편의 자 */}
-        {loopOn > 0 && (
+        {/* 두 역을 잇는 직선 */}
+        <line
+          x1={P[0].x}
+          y1={P[0].y}
+          x2={P[P.length - 1].x}
+          y2={P[P.length - 1].y}
+          stroke={STRAIGHT}
+          strokeWidth={px * 5}
+          strokeDasharray={`${px * 12} ${px * 9}`}
+          strokeLinecap="round"
+          opacity={settle}
+        />
+
+        {/* 지하철로 도는 길 */}
+        {draw > 0 && (
           <polyline
-            points={LOOP.map((p) => `${p[0]},${p[1]}`).join(" ")}
+            points={P.slice(0, shown + 1)
+              .map((s) => `${s.x},${s.y}`)
+              .join(" ")}
             fill="none"
             stroke={HOT}
-            strokeWidth={px * 6}
+            strokeWidth={px * 7}
             strokeLinejoin="round"
-            opacity={loopOn}
+            strokeLinecap="round"
           />
         )}
 
-        {/* 신창 ↔ 연천. 47km 눈금이 세 칸 찬다 */}
-        {spanOn > 0 && (
-          <g opacity={spanOn}>
-            <line
-              x1={SOUTH.x}
-              y1={SOUTH.y}
-              x2={SOUTH.x + (NORTH.x - SOUTH.x) * spanOn}
-              y2={SOUTH.y + (NORTH.y - SOUTH.y) * spanOn}
+        {/* 지나온 정거장 */}
+        {draw > 0 &&
+          P.slice(1, shown).map((s) => (
+            <circle
+              key={s.name}
+              cx={s.x}
+              cy={s.y}
+              r={px * 6}
+              fill={BG}
               stroke={HOT}
-              strokeWidth={px * 5}
-              strokeLinecap="round"
+              strokeWidth={px * 3}
             />
-            {[1, 2, 3].map((k) => {
-              const f = (k * LOOP_KM) / SPAN_KM;
-              if (f > spanOn) return null;
-              const x = SOUTH.x + (NORTH.x - SOUTH.x) * f;
-              const y = SOUTH.y + (NORTH.y - SOUTH.y) * f;
-              const dx = -(NORTH.y - SOUTH.y);
-              const dy = NORTH.x - SOUTH.x;
-              const n = Math.hypot(dx, dy);
-              const L = px * 22;
-              return (
-                <line
-                  key={k}
-                  x1={x - (dx / n) * L}
-                  y1={y - (dy / n) * L}
-                  x2={x + (dx / n) * L}
-                  y2={y + (dy / n) * L}
-                  stroke={INK}
-                  strokeWidth={px * 4}
-                  strokeLinecap="round"
-                />
-              );
-            })}
-          </g>
-        )}
+          ))}
 
-        {/* 네 끝 */}
-        {ends.map(
-          ({ p, from }) =>
-            started &&
-            bi >= from && (
-              <circle
-                key={p.name}
-                cx={p.x}
-                cy={p.y}
-                r={px * (bi === from ? 12 : 8)}
-                fill={HOT}
-                stroke={BG}
-                strokeWidth={px * 3}
-              />
-            )
-        )}
+        {[P[0], P[P.length - 1]].map((s) => (
+          <circle
+            key={s.name}
+            cx={s.x}
+            cy={s.y}
+            r={px * 11}
+            fill={INK}
+            stroke={BG}
+            strokeWidth={px * 3}
+            opacity={settle}
+          />
+        ))}
       </svg>
 
-      {/* 이름표는 화면 좌표에 얹는다. 배율이 달라도 글자 크기가 안 흔들린다 */}
-      {started &&
-        ends.map(({ p, from }) => {
-          if (bi < from) return null;
-          const on = bi === from ? settle : 1;
-          /** 오른쪽에 붙은 점은 이름표를 왼쪽으로 넘긴다.
-              다 빠진 걸음에서 춘천이 화면 밖으로 잘렸다 */
-          const flip = sx(p.x) > 680;
-          return (
-            <div
-              key={p.name}
-              style={{
-                position: "absolute",
-                ...(flip
-                  ? { right: 1080 - sx(p.x) + 24, textAlign: "right" as const }
-                  : { left: sx(p.x) + 24 }),
-                top: sy(p.y) - 30,
-                opacity: on,
-                color: INK,
-                fontWeight: 900,
-                textShadow: `0 0 26px ${BG}, 0 0 10px ${BG}`,
-                whiteSpace: "nowrap",
-              }}
-            >
-              <div style={{ fontSize: 44 }}>{p.name}</div>
-              <div style={{ fontSize: 26, color: DIM }}>
-                {p.sido} {p.sigungu}
-              </div>
-            </div>
-          );
-        })}
+      {/* 이름표는 화면 좌표에 얹는다. 배율이 달라도 글자가 안 흔들린다 */}
+      {[
+        { s: P[0], line: cur.lineA },
+        { s: P[P.length - 1], line: cur.lineB },
+      ].map(({ s, line }, i, arr) => {
+        /**
+         * 두 역이 붙어 있다. 1등 쌍은 화면에서 50px밖에 안 떨어져서
+         * 이름표가 서로 위에 얹혔다.
+         *
+         * **바깥쪽으로 밀어 놓는다** — 왼쪽 역은 이름표를 왼쪽에,
+         * 오른쪽 역은 오른쪽에. 그러면 둘이 벌어진다.
+         */
+        const other = arr[1 - i].s;
+        const left = sx(s.x) <= sx(other.x);
+        const flip = left ? sx(s.x) > 400 : sx(s.x) > 680;
+        return (
+          <div
+            key={s.name}
+            style={{
+              position: "absolute",
+              ...(flip
+                ? { right: 1080 - sx(s.x) + 26, textAlign: "right" as const }
+                : { left: sx(s.x) + 26 }),
+              top: sy(s.y) - 28,
+              opacity: settle,
+              color: INK,
+              fontWeight: 900,
+              textShadow: `0 0 26px ${BG}, 0 0 10px ${BG}`,
+              whiteSpace: "nowrap",
+            }}
+          >
+            <div style={{ fontSize: 46 }}>{s.name}</div>
+            <div style={{ fontSize: 27, color: DIM }}>{line.join("·")}호선</div>
+          </div>
+        );
+      })}
 
-      {/* 글자 자리를 비운다 */}
       <div
         style={{
           position: "absolute",
           left: 0,
           right: 0,
           bottom: 0,
-          height: 620,
-          background: `linear-gradient(to bottom, ${BG}00 0%, ${BG}D9 38%, ${BG} 64%)`,
+          height: 600,
+          background: `linear-gradient(to bottom, ${BG}00 0%, ${BG}D9 36%, ${BG} 62%)`,
         }}
       />
 
@@ -338,45 +326,30 @@ export const ShortsMetro: React.FC = () => {
         >
           {bi === 0 && (
             <>
-              <div style={cap}>2호선 한 바퀴</div>
-              <div style={big}>
-                {LOOP_STATIONS}역 · {LOOP_KM}km
-              </div>
-              <div style={note}>여기서부터 이걸 자로 쓴다</div>
+              <div style={cap}>두 역 사이 직선</div>
+              <div style={big}>{cur.straightKm}km</div>
             </>
           )}
-          {bi === 1 && (
+          {(bi === 1 || bi >= 3) && (
             <>
-              <div style={cap}>남쪽 끝</div>
+              <div style={cap}>{bi >= 3 ? `${bi - 1}등 · ` : ""}지하철로</div>
               <div style={big}>
-                {SOUTH.sido} {SOUTH.sigungu}
+                {cur.hops}정거장 · {cur.railKm}km
+              </div>
+              <div style={note}>
+                직선 {cur.straightKm}km의 {cur.ratio}배
               </div>
             </>
           )}
           {bi === 2 && (
             <>
-              <div style={cap}>북쪽 끝</div>
-              <div style={big}>북위 {NORTH.lat}도</div>
-              <div style={note}>38선보다 북쪽</div>
-            </>
-          )}
-          {bi === 3 && (
-            <>
-              <div style={cap}>동쪽 끝</div>
-              <div style={big}>
-                {EAST.sido} {EAST.sigungu}
-              </div>
-            </>
-          )}
-          {bi >= 4 && (
-            <>
               <div style={cap}>
-                {SOUTH.name} ↔ {NORTH.name} 직선 {SPAN_KM}km
+                직선 {cur.straightKm}km · 지하철 {cur.railKm}km
               </div>
-              <div style={big}>2호선 {Math.floor(LAPS)}바퀴</div>
-              <div style={note}>
-                1호선 완행으로 {PATH_STATIONS}역
+              <div style={{ ...big, fontSize: 132, color: HOT }}>
+                {cur.ratio}배
               </div>
+              <div style={note}>서울에서 가장 많이 돌아가는 두 역</div>
             </>
           )}
         </div>
@@ -396,40 +369,27 @@ export const ShortsMetro: React.FC = () => {
           <div
             style={{
               color: INK,
-              fontSize: 50,
+              fontSize: 44,
               fontWeight: 900,
-              lineHeight: 1.24,
+              lineHeight: 1.28,
               fontVariantNumeric: "tabular-nums",
             }}
           >
+            <div>서울 안 역 {SEOUL_STATIONS}곳</div>
             <div>
-              역 {STATIONS}곳 가운데
+              {FLOOR_KM}km 넘게 떨어진 {PAIRS.toLocaleString()}쌍
             </div>
-            <div>
-              수도권 밖 <span style={{ color: HOT }}>{OUTSIDE.length}곳</span>
-            </div>
-          </div>
-          <div
-            style={{
-              color: DIM,
-              fontSize: 30,
-              fontWeight: 700,
-              marginTop: 12,
-              fontVariantNumeric: "tabular-nums",
-            }}
-          >
-            충남 {BY_SIDO["충남"]} · 강원 {BY_SIDO["강원"]}
           </div>
           <div
             style={{
               color: INK,
-              fontSize: 46,
+              fontSize: 48,
               fontWeight: 900,
-              marginTop: 22,
+              marginTop: 26,
               lineHeight: 1.2,
             }}
           >
-            가장 멀리 가 보신 역은 어디인가요?
+            여러분 동네에도 이런 데 있나요?
           </div>
         </div>
       )}
@@ -448,28 +408,28 @@ export const ShortsMetro: React.FC = () => {
           <div
             style={{
               color: INK,
-              fontSize: 78,
+              fontSize: 74,
               fontWeight: 900,
               lineHeight: 1.18,
+              fontVariantNumeric: "tabular-nums",
             }}
           >
-            수도권 전철
+            직선으로 {ONE.straightKm}km
           </div>
           <div
             style={{
               color: HOT,
-              fontSize: 78,
+              fontSize: 74,
               fontWeight: 900,
               lineHeight: 1.18,
               marginTop: 4,
             }}
           >
-            어디까지 갈까요?
+            지하철로는?
           </div>
         </div>
       )}
 
-      {/* 무엇을 세고 어디서 잰 값인지는 다 적는다 */}
       <div
         style={{
           position: "absolute",
@@ -481,9 +441,7 @@ export const ShortsMetro: React.FC = () => {
           fontWeight: 700,
         }}
       >
-        {inOutro
-          ? "거리는 역 사이 직선"
-          : `수도권 전철 ${STATIONS}역 · 거리는 역 사이 직선`}
+        거리는 정거장 사이 직선을 더한 값 · 급행 제외
       </div>
 
       <Grain opacity={0.26} vignette={0.34} />
@@ -498,7 +456,7 @@ const cap: React.CSSProperties = {
 };
 const big: React.CSSProperties = {
   color: INK,
-  fontSize: 84,
+  fontSize: 88,
   fontWeight: 900,
   lineHeight: 1.06,
   marginTop: 4,
@@ -506,7 +464,8 @@ const big: React.CSSProperties = {
 };
 const note: React.CSSProperties = {
   color: HOT,
-  fontSize: 34,
+  fontSize: 36,
   fontWeight: 900,
-  marginTop: 8,
+  marginTop: 10,
+  fontVariantNumeric: "tabular-nums",
 };
