@@ -141,11 +141,19 @@ export const ShortsRush: React.FC = () => {
   const to = started ? { hour: cur.hour, on: cur.on } : from;
   const warm = inOutro ? true : to.on;
 
+  /** 승차에서 하차로 넘어가는 걸음 */
+  const flip = started && from.on !== to.on;
+
   const radius = (s: (typeof STATIONS)[number]) => {
     if (inOutro) return rOf(s.on[PEAK_HOUR]) * outroIn;
-    const a = rOf((from.on ? s.on : s.off)[from.hour]);
+    if (!started) return rOf(s.on[CALM]);
     const b = rOf((to.on ? s.on : s.off)[to.hour]);
-    return started ? a + (b - a) * grow : a;
+    /* **세는 값이 바뀌면 크기를 잇지 않는다.** 승차 값에서 하차
+       값으로 이어 붙이면 그 0.7초 동안 화면에 뜬 원은 어느 쪽도
+       아닌 숫자다. 0에서 새로 자라게 한다 */
+    if (flip) return b * grow;
+    const a = rOf((from.on ? s.on : s.off)[from.hour]);
+    return a + (b - a) * grow;
   };
 
   /* 마무리에서는 정점(08시 승차)으로 되돌아간다. **시계도 같이
