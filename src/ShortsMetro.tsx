@@ -11,6 +11,7 @@ import {
   HOLD,
   HOOK_SEC,
   ONE,
+  km1,
   OUTRO_SEC,
   PAIRS,
   SEG,
@@ -20,6 +21,7 @@ import {
   VOICE_ESTIMATED,
   type Pair,
 } from "./data/metro";
+import { styleOf } from "./data/lines";
 import { REGIONS } from "./data/regions";
 import { FPS } from "./theme";
 import { Grain } from "./Grain";
@@ -31,12 +33,16 @@ const HAS_BGM = false;
 
 const BG = "#0E1418";
 const LAND = "#2F2820";
-/** 노선망 */
-const RAIL = "#4C6670";
-/** 돌아가는 길 */
-const HOT = "#D4694F";
-/** 직선 */
-const STRAIGHT = "#7FB2C4";
+/**
+ * 돌아가는 길.
+ *
+ * 노선망을 호선 색으로 칠하고 나니 3호선 주황(#EF7C1C)·인천2
+ * (#ED8B00)와 겹쳐 보였다. **밑에 어두운 테를 깔아** 어느 색 위에
+ * 얹혀도 떠 보이게 한다.
+ */
+const HOT = "#F2603C";
+/** 직선. 걸어가면 이만큼이라는 선이라 노선 색과 안 겹치는 흰빛으로 */
+const STRAIGHT = "#EDE5D4";
 const INK = "#EDE5D4";
 const DIM = "#8E8474";
 
@@ -197,6 +203,7 @@ export const ShortsMetro: React.FC = () => {
           <path key={r.code} d={r.d} fill={LAND} stroke={BG} strokeWidth={px} />
         ))}
 
+        {/* 노선망. 호선 색 그대로다 — 사람들이 이미 외운 색이다 */}
         {SEG.map((s, i) => (
           <line
             key={i}
@@ -204,9 +211,10 @@ export const ShortsMetro: React.FC = () => {
             y1={s[1]}
             x2={s[2]}
             y2={s[3]}
-            stroke={RAIL}
-            strokeWidth={px * 3}
+            stroke={styleOf(s[4]).c}
+            strokeWidth={px * 3.4}
             strokeLinecap="round"
+            opacity={0.72}
           />
         ))}
 
@@ -223,19 +231,24 @@ export const ShortsMetro: React.FC = () => {
           opacity={settle}
         />
 
-        {/* 지하철로 도는 길 */}
-        {draw > 0 && (
-          <polyline
-            points={P.slice(0, shown + 1)
-              .map((s) => `${s.x},${s.y}`)
-              .join(" ")}
-            fill="none"
-            stroke={HOT}
-            strokeWidth={px * 7}
-            strokeLinejoin="round"
-            strokeLinecap="round"
-          />
-        )}
+        {/* 지하철로 도는 길. 어두운 테를 깔아 호선 색 위에서도 뜬다 */}
+        {draw > 0 &&
+          ([
+            [BG, px * 13],
+            [HOT, px * 7],
+          ] as const).map(([col, w]) => (
+            <polyline
+              key={col}
+              points={P.slice(0, shown + 1)
+                .map((s) => `${s.x},${s.y}`)
+                .join(" ")}
+              fill="none"
+              stroke={col}
+              strokeWidth={w}
+              strokeLinejoin="round"
+              strokeLinecap="round"
+            />
+          ))}
 
         {/* 지나온 정거장 */}
         {draw > 0 &&
@@ -288,7 +301,11 @@ export const ShortsMetro: React.FC = () => {
               ...(flip
                 ? { right: 1080 - sx(s.x) + 26, textAlign: "right" as const }
                 : { left: sx(s.x) + 26 }),
-              top: sy(s.y) - 28,
+              // 세로로도 갈라 놓는다. 아이콘 줄이 붙으면서 이름표가
+              // 다시 겹쳤다 — 왼쪽 역은 점 아래, 오른쪽 역은 점 위다
+              ...(left
+                ? { top: sy(s.y) + 12 }
+                : { bottom: 1920 - sy(s.y) + 12 }),
               opacity: settle,
               color: INK,
               fontWeight: 900,
@@ -297,7 +314,18 @@ export const ShortsMetro: React.FC = () => {
             }}
           >
             <div style={{ fontSize: 46 }}>{s.name}</div>
-            <div style={{ fontSize: 27, color: DIM }}>{line.join("·")}호선</div>
+            <div
+              style={{
+                display: "flex",
+                gap: 6,
+                marginTop: 4,
+                justifyContent: flip ? "flex-end" : "flex-start",
+              }}
+            >
+              {line.map((r) => (
+                <Badge key={r} ref_={r} />
+              ))}
+            </div>
           </div>
         );
       })}
@@ -327,7 +355,7 @@ export const ShortsMetro: React.FC = () => {
           {bi === 0 && (
             <>
               <div style={cap}>두 역 사이 직선</div>
-              <div style={big}>{cur.straightKm}km</div>
+              <div style={big}>{km1(cur.straightKm)}km</div>
             </>
           )}
           {(bi === 1 || bi >= 3) && (
@@ -337,14 +365,14 @@ export const ShortsMetro: React.FC = () => {
                 {cur.hops}정거장 · {cur.railKm}km
               </div>
               <div style={note}>
-                직선 {cur.straightKm}km의 {cur.ratio}배
+                직선 {km1(cur.straightKm)}km의 {cur.ratio}배
               </div>
             </>
           )}
           {bi === 2 && (
             <>
               <div style={cap}>
-                직선 {cur.straightKm}km · 지하철 {cur.railKm}km
+                직선 {km1(cur.straightKm)}km · 지하철 {cur.railKm}km
               </div>
               <div style={{ ...big, fontSize: 132, color: HOT }}>
                 {cur.ratio}배
@@ -414,7 +442,7 @@ export const ShortsMetro: React.FC = () => {
               fontVariantNumeric: "tabular-nums",
             }}
           >
-            직선으로 {ONE.straightKm}km
+            직선으로 {km1(ONE.straightKm)}km
           </div>
           <div
             style={{
@@ -446,6 +474,38 @@ export const ShortsMetro: React.FC = () => {
 
       <Grain opacity={0.26} vignette={0.34} />
     </AbsoluteFill>
+  );
+};
+
+/**
+ * 호선 아이콘.
+ *
+ * 숫자 노선은 동그라미, 이름 노선은 알약이다. 실제 노선도가
+ * 그렇게 생겼고, 이름표 옆에 붙으면 「몇 호선인지」를 글자로 다시
+ * 안 써도 된다.
+ */
+const Badge: React.FC<{ ref_: string }> = ({ ref_ }) => {
+  const st = styleOf(ref_);
+  const round = /^\d$/.test(st.t);
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: st.c,
+        color: st.ink ?? "#FFFFFF",
+        fontSize: 25,
+        fontWeight: 900,
+        lineHeight: 1,
+        height: 40,
+        minWidth: 40,
+        padding: round ? 0 : "0 13px",
+        borderRadius: 20,
+      }}
+    >
+      {st.t}
+    </span>
   );
 };
 

@@ -26,6 +26,15 @@
 이름에 「급행」이 든 계통은 역을 건너뛰어 이어져 있다. 정거장 수를
 세려면 완행이어야 한다.
 
+## 노선 색
+
+**선을 호선 색으로 칠한다.** 한 구간을 여러 노선이 같이 쓰면 하나를
+골라야 하는데, `LINE_ORDER` 차례로 앞선 것을 쓴다 — 1~9호선이 먼저고
+그다음이 광역 노선이다. 서울 도심에서 1호선과 경의·중앙이 겹치면
+1호선 색이 이긴다.
+
+`ref`가 없는 관계가 둘 있다(의정부경전철). 이름으로 붙인다.
+
 ## 거리는 직선이다
 
 역과 역을 대권거리로 이은 값이라 선로 길이가 아니다. 노선 거리도
@@ -53,6 +62,13 @@ R = 6371.0088
 # 이보다 가까우면 걸어가는 거리라 「돌아간다」는 말이 안 선다
 FLOOR_KM = 1.0
 TOP = 3
+
+# 한 구간을 여러 노선이 같이 쓸 때 앞선 것을 그린다
+LINE_ORDER = ["1", "2", "3", "4", "5", "6", "7", "8", "9",
+              "수인·분당", "경의·중앙", "경춘", "경강", "서해", "공항철도",
+              "신분당", "GTX-A", "인천1", "I2", "용인", "U",
+              "김포 골드라인", "Silim", "의정부경전철"]
+RANK = {r: i for i, r in enumerate(LINE_ORDER)}
 
 
 def km(a, b):
@@ -113,11 +129,16 @@ def main():
         st.setdefault(nm(n), (n["lon"], n["lat"]))
 
     seg = {}
+    segline = {}
     G = collections.defaultdict(dict)
     line = collections.defaultdict(set)
     for r in raw["routes"]:
         slow = "급행" not in (r["tags"].get("name", "") or "")
-        ref = r["tags"].get("ref") or "?"
+        ref = r["tags"].get("ref")
+        if not ref:
+            # ref가 없는 관계는 의정부경전철 둘뿐이다
+            ref = ("의정부경전철" if "의정부" in r["tags"].get("name", "")
+                   else "?")
         s = [nod[m["ref"]] for m in r["members"]
              if m["type"] == "node" and m["role"].startswith("stop")
              and m["ref"] in nod]
@@ -131,6 +152,8 @@ def main():
             k = tuple(sorted((x, y)))
             if k not in seg or d < seg[k]:
                 seg[k] = d
+            if RANK.get(ref, 99) < RANK.get(segline.get(k), 99):
+                segline[k] = ref
             if slow and (y not in G[x] or d < G[x][y]):
                 G[x][y] = d
                 G[y][x] = d
@@ -208,7 +231,9 @@ def main():
             break
 
     out = {
-        "seg": [[*project(*st[a]), *project(*st[b])] for a, b in seg],
+        # [x1, y1, x2, y2, 호선]
+        "seg": [[*project(*st[a]), *project(*st[b]), segline.get((a, b), "?")]
+                for a, b in seg],
         "seoulStations": len(names),
         "floorKm": FLOOR_KM,
         "pairs": pairs,

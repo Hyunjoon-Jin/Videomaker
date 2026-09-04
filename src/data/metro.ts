@@ -26,8 +26,8 @@ export interface Pair {
   path: Stop[];
 }
 
-/** 노선망. 지도 바탕이다 */
-export const SEG = raw.seg as [number, number, number, number][];
+/** 노선망. `[x1, y1, x2, y2, 호선]`. 지도 바탕이다 */
+export const SEG = raw.seg as [number, number, number, number, string][];
 export const SEOUL_STATIONS = raw.seoulStations as number;
 /**
  * 직선 하한.
@@ -45,6 +45,9 @@ export const PAIRS = raw.pairs as number;
  */
 export const TOP = raw.top as Pair[];
 export const ONE = TOP[0];
+
+/** 화면에 쓰는 km. 소수 한 자리로 맞춘다 — 1.16과 1.1이 섞이면 지저분하다 */
+export const km1 = (v: number) => v.toFixed(1);
 
 export interface Line {
   file: string;
