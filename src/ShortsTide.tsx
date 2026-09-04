@@ -32,8 +32,12 @@ import { Grain } from "./Grain";
 import { useFonts } from "./fonts";
 import { BOTTOM_INSET, SAFE_RIGHT, TEXT_X } from "./safe";
 
-/** BGM은 나레이션이 온 뒤에 고른다 */
-const HAS_BGM = false;
+/**
+ * 나레이션이 온 뒤에 고르려 했는데 크레딧이 안 풀려 계속 무음이었다.
+ * **무음으로 두느니 다른 편들처럼 깐다.** 목소리가 생기면 그때
+ * 균형을 다시 잡는다.
+ */
+const HAS_BGM = true;
 
 const BG = "#0E1418";
 const LAND = "#2F2820";

@@ -29,8 +29,12 @@ import { BOTTOM_INSET, OUTRO_PAD, SAFE_RIGHT, TEXT_X } from "./safe";
 
 const HOOK = Math.round(HOOK_SEC * FPS);
 
-/** BGM을 아직 안 골랐으면 안 건다 */
-const HAS_BGM = false;
+/**
+ * 나레이션이 온 뒤에 고르려 했는데 크레딧이 안 풀려 계속 무음이었다.
+ * **무음으로 두느니 다른 편들처럼 깐다.** 목소리가 생기면 그때
+ * 균형을 다시 잡는다.
+ */
+const HAS_BGM = true;
 
 const BG = "#0E1418";
 /** 나머지 전국 */
