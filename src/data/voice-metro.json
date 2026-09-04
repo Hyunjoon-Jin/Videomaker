@@ -1,0 +1,42 @@
+{
+ "voice": "sQ3a15DhENXU8pKTHlcc",
+ "model": "eleven_multilingual_v2",
+ "estimated": true,
+ "lines": [
+  {
+   "file": "vo-metro-0.mp3",
+   "text": "수도권 전철, 어디까지 갈까요?",
+   "sec": 2.45
+  },
+  {
+   "file": "vo-metro-1.mp3",
+   "text": "2호선 한 바퀴가 43개 역, 47킬로미터입니다. 이걸 자로 쓸게요.",
+   "sec": 5.37
+  },
+  {
+   "file": "vo-metro-2.mp3",
+   "text": "남쪽 끝은 충청남도 아산, 신창역입니다.",
+   "sec": 3.12
+  },
+  {
+   "file": "vo-metro-3.mp3",
+   "text": "북쪽 끝은 경기도 연천. 북위 38.1도, 38선보다 북쪽이에요.",
+   "sec": 5.03
+  },
+  {
+   "file": "vo-metro-4.mp3",
+   "text": "동쪽 끝은 강원도 춘천입니다.",
+   "sec": 2.45
+  },
+  {
+   "file": "vo-metro-5.mp3",
+   "text": "신창에서 연천까지 직선으로 148킬로미터. 2호선을 3바퀴 도는 거리입니다.",
+   "sec": 6.37
+  },
+  {
+   "file": "vo-metro-6.mp3",
+   "text": "역 668곳 가운데 17곳이 수도권 밖에 있어요. 가장 멀리 가 보신 역은 어디인가요?",
+   "sec": 6.53
+  }
+ ]
+}
