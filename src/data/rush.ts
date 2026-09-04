@@ -1,5 +1,5 @@
 /**
- * 시각마다 부푸는 서울 지하철 (scripts/prep-rush.py 산출물).
+ * 시간대별 승차 TOP 5 (scripts/prep-rush.py 산출물).
  *
  * 좌표는 전국 지도(`korea-paths.json`)와 같은 0..1000 상자다.
  */
@@ -11,24 +11,25 @@ export interface Station {
   x: number;
   y: number;
   /**
-   * 시간대별 승차·하차 인원. **13-14시간대는 `null`이다** —
-   * 그 칸이 오염돼 있다(`scripts/fetch-rush.py` 참고).
+   * 시간대별 승차 인원. **13-14시간대는 `null`이다** — 그 칸이
+   * 오염돼 있다(`scripts/fetch-rush.py` 참고).
    */
   on: (number | null)[];
-  off: (number | null)[];
+}
+
+export interface Rank {
+  name: string;
+  n: number;
+  x: number;
+  y: number;
 }
 
 export interface Beat {
   /** 시간대 번호 */
   hour: number;
-  /** 승차를 세는 걸음인가 */
-  on: boolean;
-  lead: string;
-  leadN: number;
-  second: string;
-  secondN: number;
-  starN: number;
-  starRank: number;
+  /** 그 시각 241역 평균. **이 편의 자다** — 순위표 밑에 같이 띄운다 */
+  avg: number;
+  top: Rank[];
 }
 
 export const HOURS = raw.hours as string[];
@@ -40,23 +41,25 @@ export const SEG = raw.seg as [number, number, number, number, string][];
 export const LAND = raw.land as string[];
 export const SEOUL = raw.seoul as string[];
 
-/** 이 편의 주인공 */
-export const STAR = raw.star as string;
+export const BEATS = raw.beats as Beat[];
+/** 하루 중 승차가 가장 몰리는 시간대 */
 export const PEAK_HOUR = raw.peakHour as number;
+export const PEAK_NAME = raw.peakName as string;
 export const PEAK_N = raw.peakN as number;
 export const PEAK_PER_SEC = raw.peakPerSec as number;
-/** 같은 시각 241역 평균. **이 편의 자다** */
-export const AVG_N = raw.avgN as number;
-export const AVG_PER_SEC = raw.avgPerSec as number;
 export const GANGNAM_N = raw.gangnamN as number;
-/** 하루 총량으로는 12위다. 붐빔이 총량이 아니라 시각에 있다는 증거 */
-export const DAY_RANK = raw.dayRank as number;
-export const BEATS = raw.beats as Beat[];
 
-/** 「08-09시간대」에서 「8시」만 뽑는다 */
+/** 1위 자리를 나눠 갖는 역들. 이 편의 야마다 */
+export const HOLDERS = raw.holders as string[];
+export const HOLDER_PTS = raw.holderPts as { name: string; x: number; y: number }[];
+/** 1위가 하루에 바뀌는 횟수 */
+export const SWAPS = raw.swaps as number;
+
+/** 「08-09시간대」에서 「8시」만 뽑는다. 첫 칸과 마지막 칸은 이름이 다르다 */
 export const hourLabel = (i: number) => {
   const m = /^(\d+)-/.exec(HOURS[i]);
-  return m ? `${Number(m[1])}시` : HOURS[i];
+  if (m) return `${Number(m[1])}시`;
+  return i === 0 ? "첫차" : "막차";
 };
 
 export interface Line {

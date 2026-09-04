@@ -7,12 +7,11 @@ import {
   useCurrentFrame,
 } from "remotion";
 import {
-  AVG_N,
   BEATS,
-  DAY_RANK,
   DAYS,
-  GANGNAM_N,
   HOLD,
+  HOLDER_PTS,
+  HOLDERS,
   HOOK_SEC,
   HOURS,
   LAND,
@@ -21,8 +20,8 @@ import {
   PEAK_PER_SEC,
   SEG,
   SEOUL,
-  STAR,
   STATIONS,
+  SWAPS,
   VOICE,
   VOICE_ESTIMATED,
   hourLabel,
@@ -40,10 +39,7 @@ const BG = "#0D1116";
 /** 노선망이 닿는 바깥 시군구. 물러나 있다 */
 const OUT_LAND = "#171C22";
 const SEOUL_LAND = "#232A32";
-/** 타는 사람 — 동네에서 빠져나간다 */
 const HOT = "#F2603C";
-/** 내리는 사람 — 동네로 돌아온다 */
-const COOL = "#5FB9EA";
 const INK = "#EDE5D4";
 const DIM = "#8B94A0";
 
@@ -76,26 +72,33 @@ const SEOUL_BOX = { x0: 296.7, x1: 354.4, y0: 187.6, y1: 233.9 };
 const CAM = {
   cx: (SEOUL_BOX.x0 + SEOUL_BOX.x1) / 2,
   cy: (SEOUL_BOX.y0 + SEOUL_BOX.y1) / 2,
-  w: (SEOUL_BOX.x1 - SEOUL_BOX.x0) * 1.22,
+  /* 순위표가 여섯 줄이라 지도를 그만큼 줄여야 한다. 폭을 넓게 잡으면
+     같은 화면 높이에 지도가 작게 들어간다 */
+  w: (SEOUL_BOX.x1 - SEOUL_BOX.x0) * 1.3,
 };
 const PX = CAM.w / 1080;
 const VX = CAM.cx - CAM.w / 2;
-/** 지도를 화면 위쪽에 올려 밑에 시계와 글자 자리를 남긴다 */
-const VY = CAM.cy - 731 * PX;
+/** 지도를 화면 위쪽에 올려 밑에 시계와 순위표 자리를 남긴다 */
+const VY = CAM.cy - 700 * PX;
 const VIEW = `${VX} ${VY} ${CAM.w} ${CAM.w * ASPECT}`;
 const sx = (x: number) => (x - VX) / PX;
 const sy = (y: number) => (y - VY) / PX;
 
 /* 거품 반지름. **넓이가 인원에 비례하도록** 제곱근을 쓴다.
-   정점(11,479명)이 화면에서 32px가 되게 맞췄다 — 더 키우면 이웃
-   역들과 뭉쳐 한 덩어리가 되고, 그러면 1위가 1위로 안 보인다. */
-const K = 0.0195;
+   하루 정점(11,479명)이 화면에서 30px가 되게 맞췄다 — 더 키우면
+   이웃 역들과 뭉쳐 한 덩어리가 되고, 그러면 1위가 1위로 안 보인다. */
+const K = 0.0182;
 const rOf = (n: number | null) => (n && n > 0 ? Math.sqrt(n) * K : 0);
 
 /** 훅에서는 첫차 시간대다. 아직 아무도 안 움직인다 */
 const CALM = 0;
 
-const STAR_I = STATIONS.findIndex((s) => s.name === STAR);
+/** 순위표 자리 */
+const LIST_TOP = 1234;
+const LEAD_H = 82;
+const ROW_H = 60;
+/** 오른쪽 기둥(930~1080)을 피해 숫자를 여기에 맞춰 세운다 */
+const NUM_RIGHT = 1080 - SAFE_RIGHT;
 
 function beatAt(frame: number): number {
   for (let i = SLOTS.length - 1; i >= 0; i--) if (frame >= SLOTS[i].t0) return i;
@@ -128,43 +131,32 @@ export const ShortsRush: React.FC = () => {
   const prev = bi > 0 ? BEATS[bi - 1] : null;
 
   /* 거품이 앞 걸음에서 이번 걸음으로 자란다. **시간이 흐르는 화면이라
-     값이 튀면 안 된다.** 마무리에서는 정점(08시)으로 되돌아간다 */
+     값이 튀면 안 된다.** */
   const grow = interpolate(age, [0, Math.round(0.7 * FPS)], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  const from = started
-    ? prev
-      ? { hour: prev.hour, on: prev.on }
-      : { hour: CALM, on: true }
-    : { hour: CALM, on: true };
-  const to = started ? { hour: cur.hour, on: cur.on } : from;
-  const warm = inOutro ? true : to.on;
-
-  /** 승차에서 하차로 넘어가는 걸음 */
-  const flip = started && from.on !== to.on;
+  const fromHour = started ? (prev ? prev.hour : CALM) : CALM;
+  const toHour = started ? cur.hour : CALM;
 
   const radius = (s: (typeof STATIONS)[number]) => {
-    if (inOutro) return rOf(s.on[PEAK_HOUR]) * outroIn;
+    const b = rOf(s.on[toHour]);
     if (!started) return rOf(s.on[CALM]);
-    const b = rOf((to.on ? s.on : s.off)[to.hour]);
-    /* **세는 값이 바뀌면 크기를 잇지 않는다.** 승차 값에서 하차
-       값으로 이어 붙이면 그 0.7초 동안 화면에 뜬 원은 어느 쪽도
-       아닌 숫자다. 0에서 새로 자라게 한다 */
-    if (flip) return b * grow;
-    const a = rOf((from.on ? s.on : s.off)[from.hour]);
+    const a = rOf(s.on[fromHour]);
     return a + (b - a) * grow;
   };
 
-  /* 마무리에서는 정점(08시 승차)으로 되돌아간다. **시계도 같이
-     되돌린다** — 화면은 8시인데 시계만 23시에 멈춰 있으면 거짓말이다 */
+  /* 이번 걸음 TOP 5만 진하게 채운다.
+
+     **마무리에서는 아무 역도 안 채운다.** 마무리 그림은 하루 전체인데
+     거품 크기는 한 시각의 값이라, 채워서 강조하면 그 시각 값을 하루의
+     값처럼 읽게 된다. 여섯 자리에 테만 두른다 */
+  const litNames = new Set(
+    inOutro ? [] : started ? cur.top.map((r) => r.name) : []
+  );
+  const lead = cur.top[0];
+  const leadStation = STATIONS.find((s) => s.name === lead.name)!;
   const showHour = inOutro ? PEAK_HOUR : cur.hour;
-  const showOn = inOutro ? true : cur.on;
-  const tint = warm ? HOT : COOL;
-  const star = STATIONS[STAR_I];
-  const leadI = STATIONS.findIndex((s) => s.name === cur.lead);
-  const lead = STATIONS[leadI];
-  const showLead = started && !inOutro && cur.lead !== STAR;
 
   return (
     <AbsoluteFill style={{ backgroundColor: BG, fontFamily: "Pretendard" }}>
@@ -217,74 +209,102 @@ export const ShortsRush: React.FC = () => {
           />
         ))}
 
-        {/* 거품 — 그 시간대에 탄(내린) 사람.
-            **한 번에 한 값만 센다.** 승차와 하차를 같이 띄우지 않는다 */}
-        {STATIONS.map((s, i) => {
+        {/* 거품 — 그 시간대에 탄 사람.
+            **한 값만 센다.** 하차는 이 편에 없다.
+            속을 옅게 두고 테를 둘러 **겹쳐도 원이 원으로 보이게** 한다.
+            꽉 채우면 이웃끼리 뭉쳐 얼룩이 된다 */}
+        {/* 마무리에서는 거품을 걷는다. 그림이 하루 전체인데 크기는
+            한 시각의 값이라, 남겨 두면 그 시각을 하루로 읽게 된다 */}
+        <g opacity={inOutro ? 1 - outroIn : 1}>
+        {STATIONS.map((s) => {
           const r = radius(s);
           if (r <= 0) return null;
+          const lit = started && litNames.has(s.name);
           return (
             <circle
               key={s.name}
               cx={s.x}
               cy={s.y}
               r={r}
-              fill={tint}
-              /* 속을 옅게 두고 테를 두른다. **겹쳐도 원이 원으로
-                 보이게** 하려는 것이다 — 꽉 채우면 이웃끼리 뭉쳐
-                 얼룩이 된다 */
-              fillOpacity={started && (i === STAR_I || i === leadI) ? 0.88 : 0.12}
-              stroke={tint}
+              fill={HOT}
+              fillOpacity={lit ? 0.85 : 0.12}
+              stroke={HOT}
               strokeWidth={PX * 1.3}
-              strokeOpacity={started && (i === STAR_I || i === leadI) ? 1 : 0.34}
+              strokeOpacity={lit ? 1 : 0.32}
             />
           );
         })}
+        </g>
 
-        {/* 걸음이 시작되면 주인공에 테를 두른다. 32위로 내려앉은
-            걸음에서도 어디 있는지 놓치면 안 된다.
+        {/* 1위에만 테를 두른다.
 
             **훅에서는 안 두른다.** 「어디일까요?」라고 묻는 화면에
             답이 표시돼 있으면 물음이 아니다 */}
-        {started && (
+        {started && !inOutro && (
           <circle
-            cx={star.x}
-            cy={star.y}
-            r={Math.max(radius(star), PX * 9)}
+            cx={lead.x}
+            cy={lead.y}
+            r={radius(leadStation)}
             fill="none"
             stroke={INK}
             strokeWidth={PX * 2.4}
           />
         )}
-        {showLead && (
-          <circle
-            cx={lead.x}
-            cy={lead.y}
-            r={Math.max(radius(lead), PX * 9)}
-            fill="none"
-            stroke={DIM}
-            strokeWidth={PX * 2.2}
-          />
-        )}
+        {inOutro &&
+          HOLDER_PTS.map((p) => (
+            <g key={p.name} opacity={outroIn}>
+              <circle cx={p.x} cy={p.y} r={PX * 9} fill={HOT} />
+              <circle
+                cx={p.x}
+                cy={p.y}
+                r={PX * 22}
+                fill="none"
+                stroke={INK}
+                strokeWidth={PX * 2.4}
+              />
+            </g>
+          ))}
       </svg>
 
-      {/* 역 이름표. 화면 좌표에 얹어야 배율과 무관하게 읽힌다 */}
-      {started && (
-        <Tag
-          x={sx(star.x)}
-          y={sy(star.y) - radius(star) / PX - 46}
-          text={STAR}
-          color={INK}
-        />
+      {/* 1위 이름표. 화면 좌표에 얹어야 배율과 무관하게 읽힌다 */}
+      {started && !inOutro && (
+        <div
+          style={{
+            position: "absolute",
+            left: Math.min(Math.max(sx(lead.x) - 130, 64), 1080 - 260 - 64),
+            top: sy(lead.y) - rOf(lead.n) / PX - 48,
+            width: 260,
+            textAlign: "center",
+            color: INK,
+            fontSize: 40,
+            fontWeight: 900,
+            opacity: settle,
+            textShadow: `0 0 24px ${BG}, 0 0 9px ${BG}`,
+          }}
+        >
+          {lead.name}
+        </div>
       )}
-      {showLead && (
-        <Tag
-          x={sx(lead.x)}
-          y={sy(lead.y) - radius(lead) / PX - 42}
-          text={cur.lead}
-          color={DIM}
-          small
-        />
-      )}
+      {inOutro &&
+        HOLDER_PTS.map((p) => (
+          <div
+            key={p.name}
+            style={{
+              position: "absolute",
+              left: Math.min(Math.max(sx(p.x) - 110, 40), 1080 - 220 - 40),
+              top: sy(p.y) - 62,
+              width: 220,
+              textAlign: "center",
+              color: INK,
+              fontSize: 30,
+              fontWeight: 900,
+              opacity: outroIn,
+              textShadow: `0 0 22px ${BG}, 0 0 8px ${BG}`,
+            }}
+          >
+            {p.name}
+          </div>
+        ))}
 
       <div
         style={{
@@ -292,8 +312,8 @@ export const ShortsRush: React.FC = () => {
           left: 0,
           right: 0,
           bottom: 0,
-          height: 900,
-          background: `linear-gradient(to bottom, ${BG}00 0%, ${BG}D8 26%, ${BG} 46%)`,
+          height: 960,
+          background: `linear-gradient(to bottom, ${BG}00 0%, ${BG}D8 24%, ${BG} 44%)`,
         }}
       />
 
@@ -303,7 +323,7 @@ export const ShortsRush: React.FC = () => {
           style={{
             position: "absolute",
             left: TEXT_X,
-            top: 1132,
+            top: 1076,
             display: "flex",
             alignItems: "baseline",
             gap: 18,
@@ -312,93 +332,104 @@ export const ShortsRush: React.FC = () => {
           <div
             style={{
               color: INK,
-              fontSize: 78,
+              fontSize: 70,
               fontWeight: 900,
               fontVariantNumeric: "tabular-nums",
               lineHeight: 1,
             }}
           >
-            {hourLabel(showHour)}
+            {inOutro ? "하루" : hourLabel(showHour)}
           </div>
-          <div style={{ color: tint, fontSize: 46, fontWeight: 900 }}>
-            {showOn ? "승차" : "하차"}
+          <div style={{ color: HOT, fontSize: 42, fontWeight: 900 }}>
+            {inOutro ? "승차 1위" : "승차"}
           </div>
         </div>
       )}
 
       {/* 첫차에서 막차까지. 지금 어디쯤인지만 알려준다 */}
       {started && (
-        <div
-          style={{
-            position: "absolute",
-            left: TEXT_X,
-            top: 1246,
-            width: 1080 - TEXT_X - 180,
-            display: "flex",
-            gap: 5,
-          }}
-        >
-          {HOURS.map((h, i) => (
-            <div
-              key={h}
-              style={{
-                flex: 1,
-                height: 14,
-                borderRadius: 3,
-                background: i === showHour ? tint : INK,
-                opacity: i === showHour ? 1 : i < showHour ? 0.3 : 0.12,
-              }}
-            />
-          ))}
-        </div>
-      )}
-      {started && (
-        <div
-          style={{
-            position: "absolute",
-            left: TEXT_X,
-            top: 1272,
-            width: 1080 - TEXT_X - 180,
-            display: "flex",
-            justifyContent: "space-between",
-            color: DIM,
-            fontSize: 22,
-            fontWeight: 700,
-          }}
-        >
-          <span>첫차</span>
-          <span>막차</span>
-        </div>
+        <>
+          <div
+            style={{
+              position: "absolute",
+              left: TEXT_X,
+              top: 1176,
+              width: NUM_RIGHT - TEXT_X,
+              display: "flex",
+              gap: 5,
+            }}
+          >
+            {HOURS.map((h, i) => (
+              <div
+                key={h}
+                style={{
+                  flex: 1,
+                  height: 13,
+                  borderRadius: 3,
+                  background: inOutro || i === showHour ? HOT : INK,
+                  opacity: inOutro ? 0.75 : i === showHour ? 1 : i < showHour ? 0.3 : 0.12,
+                }}
+              />
+            ))}
+          </div>
+          <div
+            style={{
+              position: "absolute",
+              left: TEXT_X,
+              top: 1200,
+              width: NUM_RIGHT - TEXT_X,
+              display: "flex",
+              justifyContent: "space-between",
+              color: DIM,
+              fontSize: 21,
+              fontWeight: 700,
+            }}
+          >
+            <span>첫차</span>
+            <span>막차</span>
+          </div>
+        </>
       )}
 
-      {/* ── 자막 ── */}
+      {/* ── 순위표 ── */}
       {started && !inOutro && (
-        <div
-          style={{
-            position: "absolute",
-            left: TEXT_X,
-            right: SAFE_RIGHT,
-            bottom: BOTTOM_INSET + 56,
-            opacity: settle,
-          }}
-        >
-          <div style={cap}>서울 {cur.starRank}위</div>
-          <div style={big}>{STAR}</div>
-          <div style={{ ...note, color: tint }}>
-            {cur.starN.toLocaleString()}명
-            {cur.hour === PEAK_HOUR && ` · 1초에 ${PEAK_PER_SEC}명`}
-          </div>
-          {cur.hour === PEAK_HOUR && (
-            <div style={sub}>
-              241역 평균 {AVG_N.toLocaleString()}명 · 강남{" "}
-              {GANGNAM_N.toLocaleString()}명
-            </div>
-          )}
-          {showLead && (
-            <div style={sub}>
-              1위 {cur.lead} {cur.leadN.toLocaleString()}명
-            </div>
-          )}
+        <div style={{ opacity: settle }}>
+          {cur.top.map((r, i) => (
+            <Row
+              key={r.name}
+              y={LIST_TOP + (i === 0 ? 0 : LEAD_H + (i - 1) * ROW_H)}
+              rank={`${i + 1}`}
+              name={r.name}
+              n={r.n}
+              lead={i === 0}
+              tail={
+                i === 0 && cur.hour === PEAK_HOUR
+                  ? `1초에 ${PEAK_PER_SEC}명`
+                  : undefined
+              }
+            />
+          ))}
+          {/* **자를 표 안에 둔다.** 241역 평균을 순위 밑에 같은 줄로
+              세우면 「1위가 평균의 몇 배인가」를 눈이 바로 잰다 */}
+          {/* 순위와 자 사이에 실선 하나. 평균이 6위처럼 읽히면 안 된다 */}
+          <div
+            style={{
+              position: "absolute",
+              left: TEXT_X,
+              top: LIST_TOP + LEAD_H + 4 * ROW_H + 2,
+              width: NUM_RIGHT - TEXT_X,
+              height: 2,
+              background: DIM,
+              opacity: 0.3,
+            }}
+          />
+          <Row
+            y={LIST_TOP + LEAD_H + 4 * ROW_H + 16}
+            rank=""
+            name="241역 평균"
+            n={cur.avg}
+            faint
+          />
         </div>
       )}
 
@@ -423,10 +454,11 @@ export const ShortsRush: React.FC = () => {
             }}
           >
             <div>
-              하루 총량 서울 <span style={{ color: DIM }}>{DAY_RANK}위</span>
+              1위 자리를 나눠 가진{" "}
+              <span style={{ color: HOT }}>{HOLDERS.length}개 역</span>
             </div>
             <div>
-              아침 1시간만 <span style={{ color: HOT }}>1위</span>
+              하루에 <span style={{ color: HOT }}>{SWAPS}번</span> 바뀜
             </div>
           </div>
           <div
@@ -495,55 +527,50 @@ export const ShortsRush: React.FC = () => {
   );
 };
 
-const Tag: React.FC<{
-  x: number;
+/** 순위표 한 줄. 이름은 왼쪽, 숫자는 오른쪽에 세로로 맞춰 세운다 */
+const Row: React.FC<{
   y: number;
-  text: string;
-  color: string;
-  small?: boolean;
-}> = ({ x, y, text, color, small }) => {
-  const w = 260;
+  rank: string;
+  name: string;
+  n: number;
+  lead?: boolean;
+  faint?: boolean;
+  tail?: string;
+}> = ({ y, rank, name, n, lead, faint, tail }) => {
+  const size = lead ? 54 : faint ? 32 : 38;
+  const ink = lead ? INK : faint ? DIM : "#C6CBD2";
   return (
     <div
       style={{
         position: "absolute",
-        left: Math.min(Math.max(x - w / 2, TEXT_X - 40), 1080 - w - 40),
+        left: TEXT_X,
         top: y,
-        width: w,
-        textAlign: "center",
-        color,
-        fontSize: small ? 30 : 40,
+        width: NUM_RIGHT - TEXT_X,
+        display: "flex",
+        alignItems: "baseline",
+        gap: 16,
+        color: ink,
         fontWeight: 900,
-        textShadow: `0 0 24px ${BG}, 0 0 9px ${BG}`,
+        fontVariantNumeric: "tabular-nums",
       }}
     >
-      {text}
+      <span style={{ color: DIM, fontSize: lead ? 34 : 26, width: 34 }}>
+        {rank}
+      </span>
+      <span style={{ fontSize: size }}>{name}</span>
+      {tail && (
+        <span style={{ color: HOT, fontSize: 32, marginLeft: -4 }}>{tail}</span>
+      )}
+      <span
+        style={{
+          marginLeft: "auto",
+          fontSize: lead ? 50 : faint ? 30 : 36,
+          color: lead ? HOT : ink,
+        }}
+      >
+        {n.toLocaleString()}
+        {lead ? "명" : ""}
+      </span>
     </div>
   );
-};
-
-const cap: React.CSSProperties = {
-  color: DIM,
-  fontSize: 36,
-  fontWeight: 900,
-};
-const big: React.CSSProperties = {
-  color: INK,
-  fontSize: 92,
-  fontWeight: 900,
-  lineHeight: 1.06,
-  marginTop: 2,
-};
-const note: React.CSSProperties = {
-  fontSize: 44,
-  fontWeight: 900,
-  marginTop: 10,
-  fontVariantNumeric: "tabular-nums",
-};
-const sub: React.CSSProperties = {
-  color: DIM,
-  fontSize: 30,
-  fontWeight: 800,
-  marginTop: 8,
-  fontVariantNumeric: "tabular-nums",
 };

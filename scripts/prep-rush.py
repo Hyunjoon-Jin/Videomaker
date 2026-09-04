@@ -1,17 +1,24 @@
 #!/usr/bin/env python3
-"""아침 8시의 신림역 — 시각마다 부푸는 서울 지하철.
+"""서울에서 가장 많이 타는 역 — 시간대별 승차 TOP 5.
 
 ## 야마
 
-**신림역은 하루 총량 12위인데, 아침 한 시간만은 서울 1위다.**
-08-09시 승차 11,479명, 1초에 3.2명. 같은 시각 241역 평균이 1초에
-0.56명이니 5.7배다. 재는 자가 자료 안에 있다.
+**서울에서 지하철을 가장 많이 타는 역은 하나가 아니다.**
+하루 동안 1위 자리를 **6개 역이 나눠 갖고, 8번 바뀐다** —
+첫차 대림, 아침 신림, 낮 잠실, 저녁 시청, 밤 강남, 막차 홍대입구.
+
+정점은 08-09시 신림역 11,479명, **1초에 3.2명**. 같은 시각
+241역 평균이 2,018명(1초에 0.56명)이니 5.7배다. 재는 자가 자료
+안에 있다.
 
 ## 무엇을 내보내나
 
-역마다 20개 시간대의 승차·하차 인원. 화면은 그 값으로 거품 반지름을
-정한다. **넓이가 인원에 비례하도록** 반지름은 화면에서 제곱근으로
-만든다 — 여기서는 인원을 그대로 넘긴다.
+역마다 20개 시간대의 승차 인원과, 걸음마다 그 시각 **승차 TOP 5**.
+화면은 그 값으로 거품 반지름을 정한다. **넓이가 인원에 비례하도록**
+반지름은 화면에서 제곱근으로 만든다 — 여기서는 인원을 그대로 넘긴다.
+
+**하차는 안 쓴다.** 한 편에서 두 값을 세면 「무엇의 1위인가」가
+흐려진다.
 
 ## 역 이름 붙이기
 
@@ -46,16 +53,18 @@ GEO = os.path.join(HERE, "..", "data", "skorea-municipalities.json")
 OUT = os.path.join(HERE, "..", "src", "data", "rush.json")
 
 BOX = 1000.0
-STAR = "신림"
+TOP = 5
 # 2024년 3월 개명. 승하차 자료가 옛 이름을 쓴다
 ALIAS = {"당고개": "불암산"}
 
 LINE_ORDER = ["1", "2", "3", "4", "5", "6", "7", "8"]
 RANK = {r: i for i, r in enumerate(LINE_ORDER)}
 
-# 걸음마다 [시간대 번호, 승차인가]
-BEATS = [(1, True), (2, True), (3, True), (10, True),
-         (15, False), (18, False)]
+# 걸음마다 시간대 번호. **1위가 바뀌는 자리만 골랐다** —
+# 첫차 대림 · 08시 신림 · 15시 잠실 · 18시 시청 · 21시 강남 ·
+# 막차 홍대입구. 여섯 걸음에 여섯 역이 다 나온다.
+# 13-14시간대(8번)는 오염돼 있어 애초에 고를 수 없다.
+BEATS = [0, 3, 10, 13, 16, 18]
 
 
 def rings(g):
@@ -167,6 +176,7 @@ def main():
         raise SystemExit(f"좌표를 못 붙인 역: {lost}")
 
     idx = {s["name"]: s for s in stations}
+    live = [i for i in range(len(hours)) if i != dirty]
 
     # ── 배경 땅. 노선망이 닿는 시군구만 남긴다 ──
     # 교통공사 구간은 하남·성남·부천·인천까지 뻗는다. 서울만 그리면
@@ -178,32 +188,32 @@ def main():
             if any(lo0 <= x <= lo1 and la0 <= y <= la1
                    for poly in rings(f["geometry"]) for x, y in poly[0])]
 
-    def top(i, boarding):
-        key = "on" if boarding else "off"
-        return sorted(stations, key=lambda s: -(s[key][i] or 0))
+    def top(i):
+        return sorted(stations, key=lambda s: -(s["on"][i] or 0))
 
-    # ── 걸음마다 1위와 인원 ──
+    # ── 걸음마다 그 시각 승차 TOP 5 ──
     beats = []
-    for i, boarding in BEATS:
-        key = "on" if boarding else "off"
-        rank = top(i, boarding)
-        star = idx[STAR]
+    for i in BEATS:
         beats.append({
-            "hour": i, "on": boarding,
-            "lead": rank[0]["name"], "leadN": rank[0][key][i],
-            "second": rank[1]["name"], "secondN": rank[1][key][i],
-            "starN": star[key][i],
-            "starRank": [s["name"] for s in rank].index(STAR) + 1,
+            "hour": i,
+            # **자는 표 안에 둔다.** 241역 평균을 순위 밑에 한 줄로
+            # 같이 띄우면 「1위가 평균의 몇 배인가」를 눈이 바로 잰다
+            "avg": round(sum(s["on"][i] for s in stations) / len(stations)),
+            "top": [{"name": r["name"], "n": r["on"][i],
+                     "x": r["x"], "y": r["y"]}
+                    for r in top(i)[:TOP]],
         })
 
+    # ── 1위 자리가 하루에 몇 번 바뀌나 ──
+    # **닫힌 집합을 따로 센다.** 걸음에 고른 여섯이 전부인지 확인해야
+    # 「6개 역이 나눠 갖는다」고 쓸 수 있다.
+    chain = [top(i)[0]["name"] for i in live]
+    swaps = sum(1 for a, b in zip(chain, chain[1:]) if a != b)
+    holders = list(dict.fromkeys(chain))
+
     # ── 편을 떠받치는 수치 ──
-    peak = 3                     # 08-09시간대
-    star = idx[STAR]
-    live = [i for i in range(len(hours)) if i != dirty]
+    peak = 3                     # 08-09시간대. 하루 중 승차가 가장 몰린다
     avg = sum(s["on"][peak] for s in stations) / len(stations)
-    total = {s["name"]: sum(s["on"][i] + s["off"][i] for i in live)
-             for s in stations}
-    order = sorted(total, key=lambda k: -total[k])
 
     out = {
         "hours": hours,
@@ -215,19 +225,18 @@ def main():
         "seoul": [path_of(f["geometry"], project) for f in feats
                   if str(f["properties"].get("code", "")).startswith("11")],
         "stations": stations,
-        "star": STAR,
         "peakHour": peak,
-        "peakN": star["on"][peak],
-        "peakPerSec": round(star["on"][peak] / 3600, 1),
+        "peakName": top(peak)[0]["name"],
+        "peakN": top(peak)[0]["on"][peak],
+        "peakPerSec": round(top(peak)[0]["on"][peak] / 3600, 1),
         "avgN": round(avg),
         "avgPerSec": round(avg / 3600, 2),
-        "peakSecond": top(peak, True)[1]["name"],
-        "peakSecondN": top(peak, True)[1]["on"][peak],
         "gangnamN": idx["강남"]["on"][peak],
-        "dayRank": order.index(STAR) + 1,
-        "dayN": round(total[STAR]),
-        "dayTop": order[0],
-        "dayTopN": round(total[order[0]]),
+        # 1위 자리를 나눠 갖는 역들과 바뀐 횟수
+        "holders": holders,
+        "holderPts": [{"name": n, "x": idx[n]["x"], "y": idx[n]["y"]}
+                      for n in holders],
+        "swaps": swaps,
         "beats": beats,
     }
     json.dump(out, open(OUT, "w", encoding="utf-8"),
@@ -236,18 +245,17 @@ def main():
     print(f"{len(stations)}역 · 평일 {hrs['days']}일 평균 · "
           f"{hours[dirty]} 칸은 비웠다")
     print(f"\n{hours[peak]} 승차")
-    for s in top(peak, True)[:5]:
-        print(f"  {s['name']:12s} {s['on'][peak]:7,}  "
-              f"{s['on'][peak]/3600:.2f}명/초")
+    for r in top(peak)[:TOP]:
+        print(f"  {r['name']:12s} {r['on'][peak]:7,}  "
+              f"{r['on'][peak]/3600:.2f}명/초")
     print(f"  241역 평균     {out['avgN']:7,}  {out['avgPerSec']}명/초  "
           f"→ {out['peakN']/avg:.1f}배")
-    print(f"\n{STAR} 하루 총량 {out['dayN']:,}명 · 서울 {out['dayRank']}위 "
-          f"(1위 {out['dayTop']} {out['dayTopN']:,}명)")
+    print(f"\n1위 자리를 {len(holders)}개 역이 나눠 갖고 {swaps}번 바뀐다 — "
+          + " · ".join(holders))
     print("\n걸음")
     for b in beats:
-        print(f"  {hours[b['hour']]:9s} {'승차' if b['on'] else '하차'}  "
-              f"1위 {b['lead']:10s} {b['leadN']:6,}  ·  "
-              f"{STAR} {b['starN']:6,} {b['starRank']}위")
+        line = "  ".join(f"{r['name']} {r['n']:,}" for r in b["top"])
+        print(f"  {hours[b['hour']]:9s} {line}")
     print("→", OUT)
 
 
