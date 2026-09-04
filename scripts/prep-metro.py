@@ -21,6 +21,25 @@
 1km를 밑에 두는 까닭은, 그보다 가까우면 걸어가는 거리라 「돌아간다」는
 말이 안 서기 때문이다.
 
+## 같은 역이 이름 두 개로 갈려 있다
+
+OSM은 노선마다 정차 노드를 따로 둔다. 환승역은 그 노드들 이름이
+어긋나 있는 데가 있다 — 4호선은 「총신대입구 (이수)」인데 7호선은
+「이수」다. **이름으로만 묶으면 환승이 안 이어진다.**
+
+첫 판이 여기서 틀렸다. 낙성대~남성을 사당(2·4)·이수(4·7)로 3정거장에
+가는데, 4호선 환승이 끊겨 있어 교대·고속터미널로 8정거장 돌아가는
+길이 최단으로 나왔다.
+
+**가까우면 같은 역으로 묶는다.**
+
+    100m 안                          무조건 같은 역
+    300m 안 + 이름이 서로 들어감      같은 역 (괄호 설명만 다른 것)
+
+둘째 조건이 필요한 까닭은 **송정과 공항시장이 274m**라서다. 이름이
+안 겹치므로 안 묶인다. 반대로 「의정부」와 「경전철의정부」는 278m인데
+이름이 겹쳐 묶인다.
+
 ## 급행을 걸러야 한다
 
 이름에 「급행」이 든 계통은 역을 건너뛰어 이어져 있다. 정거장 수를
@@ -51,6 +70,7 @@ import heapq
 import json
 import math
 import os
+import re
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(HERE, "..", "data", "osm-metro.json")
@@ -62,11 +82,14 @@ R = 6371.0088
 # 이보다 가까우면 걸어가는 거리라 「돌아간다」는 말이 안 선다
 FLOOR_KM = 1.0
 TOP = 3
+# 1·2·3등이 같은 동네면 지도를 세 번 같은 데로 날아간다.
+# 이미 쓴 역에서 이만큼 떨어진 쌍만 다음 자리에 올린다
+SPREAD_KM = 3.0
 
 # 한 구간을 여러 노선이 같이 쓸 때 앞선 것을 그린다
 LINE_ORDER = ["1", "2", "3", "4", "5", "6", "7", "8", "9",
               "수인·분당", "경의·중앙", "경춘", "경강", "서해", "공항철도",
-              "신분당", "GTX-A", "인천1", "I2", "용인", "U",
+              "신분당", "GTX-A", "인천1", "I2", "용인", "E", "W", "U",
               "김포 골드라인", "Silim", "의정부경전철"]
 RANK = {r: i for i, r in enumerate(LINE_ORDER)}
 
@@ -128,6 +151,58 @@ def main():
     for n in raw["nodes"]:
         st.setdefault(nm(n), (n["lon"], n["lat"]))
 
+    # ── 갈린 이름을 하나로 묶는다 ──
+    freq = collections.Counter()
+    for r in raw["routes"]:
+        for m in r["members"]:
+            if m["type"] == "node" and m["ref"] in nod:
+                freq[nm(nod[m["ref"]])] += 1
+
+    def core(s):
+        """이름에서 띄어쓰기와 괄호 기호만 턴다.
+
+        **괄호 안을 지우면 안 된다.** 같은 역이라는 단서가 바로
+        거기 있다 — 「총신대입구 (이수)」에서 「(이수)」를 지우면
+        7호선 쪽 「이수」와 안 겹친다.
+        """
+        return re.sub(r"[\s()·・]", "", s)
+
+    parent = {k: k for k in st}
+
+    def find(a):
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+
+    keys = list(st)
+    for i, a in enumerate(keys):
+        for b in keys[i + 1:]:
+            d = km(st[a], st[b]) * 1000
+            ca, cb = core(a), core(b)
+            same = d < 100 or (d < 300 and ca and cb
+                               and (ca in cb or cb in ca))
+            if same:
+                ra, rb = find(a), find(b)
+                if ra != rb:
+                    parent[rb] = ra
+    group = collections.defaultdict(list)
+    for k in keys:
+        group[find(k)].append(k)
+    # 대표 이름은 노선에 더 자주 적힌 쪽, 같으면 짧은 쪽
+    alias = {}
+    merged = 0
+    for g in group.values():
+        best = sorted(g, key=lambda n: (-freq[n], len(n), n))[0]
+        for n in g:
+            alias[n] = best
+        if len(g) > 1:
+            merged += len(g) - 1
+    st = {alias[k]: v for k, v in st.items() if alias[k] == k}
+
+    def nm2(n):
+        return alias[nm(n)]
+
     seg = {}
     segline = {}
     G = collections.defaultdict(dict)
@@ -143,9 +218,9 @@ def main():
              if m["type"] == "node" and m["role"].startswith("stop")
              and m["ref"] in nod]
         for n in s:
-            line[nm(n)].add(ref)
+            line[nm2(n)].add(ref)
         for a, b in zip(s, s[1:]):
-            x, y = nm(a), nm(b)
+            x, y = nm2(a), nm2(b)
             if x == y:
                 continue
             d = km(st[x], st[y])
@@ -219,14 +294,29 @@ def main():
                       "y": project(*st[n])[1]} for n in p],
         }
 
-    # 같은 자리 이야기가 겹치지 않게, 한 역은 한 번만 쓴다
+    # 같은 자리 이야기가 겹치지 않게 고른다.
+    #
+    # 한 역을 두 번 쓰지 않는 것만으로는 모자랐다. 우이신설선이
+    # 들어오자 1·2·3등이 다 강북구 미아·수유·삼양이 됐다 — 4호선과
+    # 나란히 달리는데 환승이 성신여대입구 하나뿐이라 그 언저리가
+    # 다 높게 나온다. **이미 쓴 역에서 3km 밖**이어야 다음 자리에
+    # 올린다.
     top = []
-    used = set()
+    used = []
+    usedline = set()
     for rec in ranked:
-        if rec[3] in used or rec[4] in used:
+        a, b = rec[3], rec[4]
+        if any(km(st[a], st[u]) < SPREAD_KM or km(st[b], st[u]) < SPREAD_KM
+               for u in used):
+            continue
+        # **한 노선도 한 번만 쓴다.** 3km 규칙만으로는 2등이 또
+        # 우이신설선 이야기였다(방학↔북한산우이). 노선까지 갈라야
+        # 세 자리가 서로 다른 이야기가 된다
+        if (line[a] | line[b]) & usedline:
             continue
         top.append(build(rec))
-        used |= {rec[3], rec[4]}
+        used += [a, b]
+        usedline |= line[a] | line[b]
         if len(top) == TOP:
             break
 
@@ -242,6 +332,7 @@ def main():
     json.dump(out, open(OUT, "w", encoding="utf-8"),
               ensure_ascii=False, separators=(",", ":"))
 
+    print(f"이름이 갈려 있던 역 {merged}곳을 묶었다")
     print(f"서울 안 역 {len(names)}곳 · 직선 {FLOOR_KM}km 이상 쌍 {pairs:,}개")
     for t in top:
         print(f"  {t['ratio']:4.1f}배  직선 {t['straightKm']}km → "
