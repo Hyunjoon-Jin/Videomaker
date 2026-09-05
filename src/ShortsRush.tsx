@@ -446,7 +446,7 @@ export const ShortsRush: React.FC = () => {
             position: "absolute",
             left: TEXT_X,
             right: SAFE_RIGHT,
-            bottom: BOTTOM_INSET + 56,
+            bottom: BOTTOM_INSET + 116,
             opacity: outroIn,
           }}
         >
@@ -488,7 +488,7 @@ export const ShortsRush: React.FC = () => {
             position: "absolute",
             left: TEXT_X,
             right: SAFE_RIGHT,
-            bottom: BOTTOM_INSET + 56,
+            bottom: BOTTOM_INSET + 116,
             opacity: hookOut,
           }}
         >
