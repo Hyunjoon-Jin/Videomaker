@@ -7,13 +7,12 @@ import {
   useCurrentFrame,
 } from "remotion";
 import {
-  BEATS,
+  STEPS,
   DAYS,
   HOLD,
   HOLDER_PTS,
   HOLDERS,
   HOOK_SEC,
-  HOURS,
   LAND,
   OUTRO_SEC,
   PEAK_HOUR,
@@ -45,6 +44,9 @@ const DIM = "#8B94A0";
 
 const HOOK = Math.round(HOOK_SEC * FPS);
 
+/* 첫차부터 막차까지 **열아홉 칸을 다 지나간다.** 나레이션이 붙는
+   여섯 칸만 오래 머물고 나머지는 0.7초씩 스쳐 지나가며 순위가
+   갈아엎힌다 — 시간대를 건너뛰면 그게 안 보인다. */
 const SLOTS: Array<{ t0: number; t1: number }> = [];
 {
   let f = HOOK;
@@ -94,7 +96,7 @@ const rOf = (n: number | null) => (n && n > 0 ? Math.sqrt(n) * K : 0);
 const CALM = 0;
 
 /** 순위표 자리 */
-const LIST_TOP = 1234;
+const LIST_TOP = 1216;
 const LEAD_H = 82;
 const ROW_H = 60;
 /** 오른쪽 기둥(930~1080)을 피해 숫자를 여기에 맞춰 세운다 */
@@ -118,7 +120,10 @@ export const ShortsRush: React.FC = () => {
   const started = frame >= HOOK;
   const inOutro = frame >= BODY_END;
   const age = frame - SLOTS[bi].t0;
-  const settle = interpolate(age, [2, 14], [0, 1], {
+  /** 스쳐 지나가는 칸은 21프레임밖에 안 되니 페이드도 그만큼 짧다 */
+  const span = SLOTS[bi].t1 - SLOTS[bi].t0;
+  const quick = Math.min(8, Math.max(3, Math.round(span * 0.35)));
+  const settle = interpolate(age, [1, quick], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -127,15 +132,13 @@ export const ShortsRush: React.FC = () => {
     extrapolateRight: "clamp",
   });
 
-  const cur = BEATS[bi];
-  const prev = bi > 0 ? BEATS[bi - 1] : null;
+  const cur = STEPS[bi];
+  const prev = bi > 0 ? STEPS[bi - 1] : null;
 
-  /* 거품이 앞 걸음에서 이번 걸음으로 자란다. **시간이 흐르는 화면이라
-     값이 튀면 안 된다.** */
-  const grow = interpolate(age, [0, Math.round(0.7 * FPS)], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
+  /* 거품이 앞 칸에서 이번 칸으로 자란다. **시간이 흐르는 화면이라
+     값이 튀면 안 된다.** 칸이 짧으면 자라는 시간도 짧다 */
+  const grow = interpolate(age, [0, Math.min(Math.round(0.7 * FPS), span - 2)],
+    [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   const fromHour = started ? (prev ? prev.hour : CALM) : CALM;
   const toHour = started ? cur.hour : CALM;
 
@@ -163,8 +166,11 @@ export const ShortsRush: React.FC = () => {
       {HAS_BGM && <Audio src={staticFile("bgm-rs.wav")} volume={0.4} />}
       {!VOICE_ESTIMATED &&
         VOICE.map((v, i) => {
+          /* 줄 하나가 어느 칸에서 나오는지는 `say`가 정한다.
+             칸이 열아홉인데 줄은 여덟이라 번호가 안 맞는다 */
+          const k = STEPS.findIndex((s) => s.say === i);
           const at =
-            i === 0 ? 0 : i <= SLOTS.length ? SLOTS[i - 1].t0 + 4 : BODY_END + 6;
+            i === 0 ? 0 : k >= 0 ? SLOTS[k].t0 + 4 : BODY_END + 6;
           return (
             <Audio
               key={v.file}
@@ -323,7 +329,7 @@ export const ShortsRush: React.FC = () => {
           style={{
             position: "absolute",
             left: TEXT_X,
-            top: 1076,
+            top: 1050,
             display: "flex",
             alignItems: "baseline",
             gap: 18,
@@ -353,21 +359,21 @@ export const ShortsRush: React.FC = () => {
             style={{
               position: "absolute",
               left: TEXT_X,
-              top: 1176,
+              top: 1150,
               width: NUM_RIGHT - TEXT_X,
               display: "flex",
               gap: 5,
             }}
           >
-            {HOURS.map((h, i) => (
+            {STEPS.map((st, i) => (
               <div
-                key={h}
+                key={st.hour}
                 style={{
                   flex: 1,
                   height: 13,
                   borderRadius: 3,
-                  background: inOutro || i === showHour ? HOT : INK,
-                  opacity: inOutro ? 0.75 : i === showHour ? 1 : i < showHour ? 0.3 : 0.12,
+                  background: inOutro || i === bi ? HOT : INK,
+                  opacity: inOutro ? 0.75 : i === bi ? 1 : i < bi ? 0.3 : 0.12,
                 }}
               />
             ))}
@@ -376,7 +382,7 @@ export const ShortsRush: React.FC = () => {
             style={{
               position: "absolute",
               left: TEXT_X,
-              top: 1200,
+              top: 1174,
               width: NUM_RIGHT - TEXT_X,
               display: "flex",
               justifyContent: "space-between",
@@ -519,7 +525,9 @@ export const ShortsRush: React.FC = () => {
           lineHeight: 1.35,
         }}
       >
-        원 넓이가 인원 · 서울교통공사 1~8호선 241역 · 2024년 평일 {DAYS}일 평균
+        원 넓이가 인원 · 서울교통공사 1~8호선 241역
+        <br />
+        2024년 평일 {DAYS}일 평균 · 13-14시간대 제외
       </div>
 
       <Grain opacity={0.26} vignette={0.34} />

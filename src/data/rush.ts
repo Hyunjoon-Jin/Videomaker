@@ -24,9 +24,17 @@ export interface Rank {
   y: number;
 }
 
-export interface Beat {
+export interface Step {
   /** 시간대 번호 */
   hour: number;
+  /**
+   * 나레이션 줄 번호. 없으면 **스쳐 지나가는 칸**이다.
+   *
+   * 시간대를 건너뛰지 않는다 — 첫차부터 막차까지 열아홉 칸을 다
+   * 지난다. 나레이션이 붙는 여섯 칸만 오래 머물고 나머지는 짧게
+   * 지나가며 순위가 갈아엎힌다.
+   */
+  say: number | null;
   /** 그 시각 241역 평균. **이 편의 자다** — 순위표 밑에 같이 띄운다 */
   avg: number;
   top: Rank[];
@@ -41,7 +49,7 @@ export const SEG = raw.seg as [number, number, number, number, string][];
 export const LAND = raw.land as string[];
 export const SEOUL = raw.seoul as string[];
 
-export const BEATS = raw.beats as Beat[];
+export const STEPS = raw.steps as Step[];
 /** 하루 중 승차가 가장 몰리는 시간대 */
 export const PEAK_HOUR = raw.peakHour as number;
 export const PEAK_NAME = raw.peakName as string;
@@ -73,9 +81,11 @@ export const VOICE_ESTIMATED = voice.estimated as boolean;
 /** 말끝에 두는 여유 */
 const PAD = 0.55;
 const FLOOR = 3.4;
+/** 나레이션이 안 붙는 칸에 머무는 시간. 순위가 갈아엎히는 게 보일 만큼만 */
+const PASS = 0.7;
 
 export const HOOK_SEC = VOICE[0].sec + 0.4;
-export const HOLD = BEATS.map((_, i) =>
-  Math.max(VOICE[i + 1].sec + PAD, FLOOR)
+export const HOLD = STEPS.map((s) =>
+  s.say === null ? PASS : Math.max(VOICE[s.say].sec + PAD, FLOOR)
 );
 export const OUTRO_SEC = VOICE[VOICE.length - 1].sec + 0.7;

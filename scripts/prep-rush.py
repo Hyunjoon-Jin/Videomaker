@@ -60,11 +60,16 @@ ALIAS = {"당고개": "불암산"}
 LINE_ORDER = ["1", "2", "3", "4", "5", "6", "7", "8"]
 RANK = {r: i for i, r in enumerate(LINE_ORDER)}
 
-# 걸음마다 시간대 번호. **1위가 바뀌는 자리만 골랐다** —
+# **시간대를 건너뛰지 않는다.** 첫차부터 막차까지 열아홉 칸을 다
+# 지나간다(13-14시간대는 오염돼 있어 뺀다). 그게 「때가 흐르는
+# 지도」다 — 여섯 칸만 찍고 나머지를 뛰어넘으면 순위가 어떻게
+# 갈아엎히는지가 안 보인다.
+#
+# 나레이션이 붙는 여섯 칸만 오래 머문다. 1위가 바뀌는 자리로 골랐고,
+# 여기에 여섯 역이 다 나온다 —
 # 첫차 대림 · 08시 신림 · 15시 잠실 · 18시 시청 · 21시 강남 ·
-# 막차 홍대입구. 여섯 걸음에 여섯 역이 다 나온다.
-# 13-14시간대(8번)는 오염돼 있어 애초에 고를 수 없다.
-BEATS = [0, 3, 10, 13, 16, 18]
+# 막차 홍대입구. 값은 나레이션 줄 번호다(1번부터).
+SAY = {0: 1, 3: 2, 10: 3, 13: 4, 16: 5, 18: 6}
 
 
 def rings(g):
@@ -191,11 +196,13 @@ def main():
     def top(i):
         return sorted(stations, key=lambda s: -(s["on"][i] or 0))
 
-    # ── 걸음마다 그 시각 승차 TOP 5 ──
-    beats = []
-    for i in BEATS:
-        beats.append({
+    # ── 시간대마다 그 시각 승차 TOP 5 ──
+    steps = []
+    for i in live:
+        steps.append({
             "hour": i,
+            # 나레이션 줄 번호. 없으면 스쳐 지나간다
+            "say": SAY.get(i),
             # **자는 표 안에 둔다.** 241역 평균을 순위 밑에 한 줄로
             # 같이 띄우면 「1위가 평균의 몇 배인가」를 눈이 바로 잰다
             "avg": round(sum(s["on"][i] for s in stations) / len(stations)),
@@ -233,11 +240,11 @@ def main():
         "avgPerSec": round(avg / 3600, 2),
         "gangnamN": idx["강남"]["on"][peak],
         # 1위 자리를 나눠 갖는 역들과 바뀐 횟수
+        "steps": steps,
         "holders": holders,
         "holderPts": [{"name": n, "x": idx[n]["x"], "y": idx[n]["y"]}
                       for n in holders],
         "swaps": swaps,
-        "beats": beats,
     }
     json.dump(out, open(OUT, "w", encoding="utf-8"),
               ensure_ascii=False, separators=(",", ":"))
@@ -252,10 +259,13 @@ def main():
           f"→ {out['peakN']/avg:.1f}배")
     print(f"\n1위 자리를 {len(holders)}개 역이 나눠 갖고 {swaps}번 바뀐다 — "
           + " · ".join(holders))
-    print("\n걸음")
-    for b in beats:
-        line = "  ".join(f"{r['name']} {r['n']:,}" for r in b["top"])
-        print(f"  {hours[b['hour']]:9s} {line}")
+    print(f"\n{len(steps)}개 시간대를 다 지나간다 "
+          f"(나레이션이 붙는 칸은 {len(SAY)}개)")
+    for b in steps:
+        mark = f" ←{b['say']}" if b["say"] else "  "
+        print(f"  {hours[b['hour']]:9s}{mark} "
+              f"{b['top'][0]['name']:8s} {b['top'][0]['n']:6,}  "
+              f"평균 {b['avg']:5,}")
     print("→", OUT)
 
 
